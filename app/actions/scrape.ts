@@ -571,11 +571,36 @@ async function extractBranding(page: Page, origin: string): Promise<BrandingExtr
       return `#${byteToHex(red)}${byteToHex(green)}${byteToHex(blue)}`;
     }
 
+    function extractColorTokensFromCssText(cssText: string): string[] {
+      if (!cssText || cssText === "none") return [];
+      const text = cssText.trim();
+      const tokens: string[] = [];
+
+      // Common hex forms (#rgb, #rrggbb, #rrggbbaa)
+      tokens.push(...(text.match(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?)\b/g) ?? []));
+
+      // Functional colors (rgb/rgba/hsl/hsla, oklch, lab/lch, etc.)
+      const functionalMatches =
+        text.match(
+          /(rgba?\([^)]*\)|hsla?\([^)]*\)|hwb\([^)]*\)|lab\([^)]*\)|lch\([^)]*\)|oklab\([^)]*\)|oklch\([^)]*\)|color\([^)]*\))/gi,
+        ) ?? [];
+      tokens.push(...functionalMatches);
+
+      // Keywords that can appear in gradients
+      tokens.push(...(text.match(/\btransparent\b/gi) ?? []));
+
+      return [...new Set(tokens)];
+    }
+
     const colorCounts = new Map<string, number>();
     const addColor = (cssColor: string) => {
       const hex = toHex(cssColor);
       if (hex) colorCounts.set(hex, (colorCounts.get(hex) || 0) + 1);
     };
+
+    function addGradientColors(cssBackgroundImageOrVarValue: string) {
+      for (const token of extractColorTokensFromCssText(cssBackgroundImageOrVarValue)) addColor(token);
+    }
 
     function skipSvg(el: Element): boolean {
       return Boolean(el.closest("svg"));
@@ -598,9 +623,14 @@ async function extractBranding(page: Page, origin: string): Promise<BrandingExtr
       ) {
         const val = rootStyle.getPropertyValue(prop).trim();
         if (!val) continue;
-        tempDiv.style.backgroundColor = val;
-        const computed = getComputedStyle(tempDiv).backgroundColor;
-        if (computed && computed !== "rgba(0, 0, 0, 0)") addColor(computed);
+        const lowerVal = val.toLowerCase();
+        if (lowerVal.includes("gradient(")) {
+          addGradientColors(val);
+        } else {
+          tempDiv.style.backgroundColor = val;
+          const computed = getComputedStyle(tempDiv).backgroundColor;
+          if (computed && computed !== "rgba(0, 0, 0, 0)") addColor(computed);
+        }
       }
     }
     document.body.removeChild(tempDiv);
@@ -618,6 +648,7 @@ async function extractBranding(page: Page, origin: string): Promise<BrandingExtr
         if (skipSvg(el)) return;
         const style = getComputedStyle(el);
         addColor(style.backgroundColor);
+        if (style.backgroundImage && style.backgroundImage !== "none") addGradientColors(style.backgroundImage);
         addColor(style.color);
         addColor(style.borderColor);
       });
@@ -639,6 +670,7 @@ async function extractBranding(page: Page, origin: string): Promise<BrandingExtr
         const style = getComputedStyle(el);
         addColor(style.color);
         addColor(style.backgroundColor);
+        if (style.backgroundImage && style.backgroundImage !== "none") addGradientColors(style.backgroundImage);
       });
 
     const sortedHex = [...colorCounts.entries()]
@@ -1150,6 +1182,30 @@ export async function loadContextFromLibrary(
   const outcome = await loadSavedContext(id);
   if (!outcome.ok) return { error: outcome.error };
   return { result: outcome.result };
+}
+
+export type DeleteDNAState = {
+  error?: string;
+  deletedContextId?: string | null;
+};
+
+export async function deleteSavedContext(
+  _prevState: DeleteDNAState,
+  formData: FormData,
+): Promise<DeleteDNAState> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) return { error: ERR_UNAUTHORIZED };
+
+  const contextId = formData.get("contextId") as string;
+  if (!contextId?.trim()) return { error: "Missing context." };
+
+  const deleted = await prisma.scrapedContext.deleteMany({
+    where: { id: contextId, userId: session.user.id },
+  });
+
+  if (deleted.count === 0) return { error: "Context not found." };
+
+  return { deletedContextId: contextId };
 }
 
 export async function getScrapedContexts(): Promise<ScrapeResult[]> {

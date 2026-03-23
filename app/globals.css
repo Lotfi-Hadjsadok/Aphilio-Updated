@@ -268,6 +268,32 @@
       radial-gradient(ellipse 70% 50% at 85% 100%, oklch(0.26 0 0 / 0.3), transparent 58%);
   }
 
+  /* DNA preview — slightly stronger accent glow */
+  .dna-preview-shell-bg {
+    background-color: var(--background);
+    background-image:
+      linear-gradient(oklch(0.7 0 0 / 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(0.7 0 0 / 0.06) 1px, transparent 1px),
+      radial-gradient(ellipse 70% 60% at 15% 0%, oklch(0.95 0 0 / 0.6), transparent 60%),
+      radial-gradient(ellipse 65% 55% at 85% 100%, oklch(0.93 0 0 / 0.42), transparent 58%),
+      radial-gradient(ellipse 45% 35% at 50% 20%, oklch(0.6 0 0 / 0.14), transparent 60%);
+    background-size:
+      52px 52px,
+      52px 52px,
+      100% 100%,
+      100% 100%,
+      100% 100%;
+    background-position: 0 0, 0 0, 0 0, 0 0, 0 0;
+  }
+  .dark .dna-preview-shell-bg {
+    background-image:
+      linear-gradient(oklch(1 0 0 / 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 0.04) 1px, transparent 1px),
+      radial-gradient(ellipse 70% 60% at 15% 0%, oklch(0.28 0 0 / 0.4), transparent 60%),
+      radial-gradient(ellipse 65% 55% at 85% 100%, oklch(0.26 0 0 / 0.34), transparent 58%),
+      radial-gradient(ellipse 45% 35% at 50% 20%, oklch(0.55 0 0 / 0.18), transparent 60%);
+  }
+
   /* glass surfaces */
   .glass-card {
     @apply border border-border/50 bg-background/60;
