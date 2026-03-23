@@ -16,8 +16,9 @@ model User {
   image         String?
   createdAt     DateTime
   updatedAt     DateTime
-  sessions      Session[]
-  accounts      Account[]
+  sessions         Session[]
+  accounts         Account[]
+  scrapedContexts  ScrapedContext[]
 
   @@unique([email])
   @@map("user")
@@ -66,4 +67,63 @@ model Verification {
   updatedAt  DateTime?
 
   @@map("verification")
+}
+
+/// Site-level context (one row per scrape target / brand)
+model ScrapedContext {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Hostname only, e.g. confirmix.com
+  baseUrl   String
+  name      String
+
+  /// Extra branding payload (personality, favicon, og, full font stacks, etc.)
+  branding  Json?
+
+  logo            String?
+  primaryColor    String?
+  secondaryColor  String?
+  /// Font-weight summary, e.g. "body:400 · heading:600"
+  typography      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subcontexts SubContext[]
+  documents   ContextDocument[]
+
+  @@unique([userId, baseUrl])
+  @@map("context")
+}
+
+model SubContext {
+  id        String   @id @default(cuid())
+  contextId String
+  context   ScrapedContext @relation(fields: [contextId], references: [id], onDelete: Cascade)
+
+  /// Normalized path, e.g. / or /login
+  path      String
+  title     String
+
+  documents ContextDocument[]
+
+  @@unique([contextId, path])
+  @@map("sub_context")
+}
+
+model ContextDocument {
+  id           String   @id @default(cuid())
+  contextId    String
+  context      ScrapedContext @relation(fields: [contextId], references: [id], onDelete: Cascade)
+  subcontextId String
+  subcontext   SubContext @relation(fields: [subcontextId], references: [id], onDelete: Cascade)
+
+  section String
+  content String @db.Text
+  images  String[] @default([])
+  videos  String[] @default([])
+
+  @@map("context_document")
 }

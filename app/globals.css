@@ -7,9 +7,12 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-baloo), var(--font-inter), ui-sans-serif, sans-serif;
+  --font-arabic: var(--font-cairo), ui-sans-serif, sans-serif;
+  --font-logo: var(--font-baloo), ui-sans-serif, sans-serif;
+  --font-fuzzy: var(--font-fuzzy-bubbles), cursive, ui-sans-serif, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -55,7 +58,7 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: oklch(0.38 0 0);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -72,7 +75,20 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 0.75rem;
+  --accent-gradient: linear-gradient(
+    135deg,
+    #f97316 0%,
+    #ef4444 25%,
+    #a855f7 50%,
+    #3b82f6 75%,
+    #ec4899 100%
+  );
+  --accent-gradient-subtle: linear-gradient(
+    135deg,
+    oklch(0.97 0 0 / 0.95) 0%,
+    oklch(0.93 0 0 / 0.98) 100%
+  );
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -84,14 +100,14 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --background: oklch(0.13 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: oklch(0.72 0 0);
+  --primary-foreground: oklch(0.12 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -109,12 +125,17 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary: oklch(0.55 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --accent-gradient-subtle: linear-gradient(
+    135deg,
+    oklch(0.28 0 0 / 0.9) 0%,
+    oklch(0.22 0 0 / 0.95) 100%
+  );
 }
 
 @layer base {
@@ -122,9 +143,322 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans text-[15px] leading-relaxed sm:text-base antialiased;
+    font-feature-settings:
+      "kern" 1,
+      "liga" 1,
+      "calt" 1;
+    text-rendering: optimizeLegibility;
+    background-image: radial-gradient(
+      ellipse 120% 80% at 50% -20%,
+      oklch(0.96 0 0 / 0.4),
+      transparent 55%
+    );
+  }
+  .dark body {
+    background-image: radial-gradient(
+      ellipse 120% 80% at 50% -20%,
+      oklch(0.32 0 0 / 0.28),
+      transparent 55%
+    );
+  }
+  [lang="ar"] body,
+  .font-arabic {
+    font-family: var(--font-arabic);
   }
   html {
     @apply font-sans;
+  }
+  h1,
+  h2 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.03em;
+  }
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-sans tracking-normal;
+  }
+}
+
+@layer utilities {
+  .bg-accent-gradient {
+    background-image: var(--accent-gradient);
+  }
+  .bg-accent-gradient-subtle {
+    background-image: var(--accent-gradient-subtle);
+  }
+  .text-gradient {
+    background-image: var(--accent-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .gradient-pill {
+    @apply inline-flex items-center rounded-full border-0 px-2.5 py-0.5 text-[0.625rem] font-bold uppercase tracking-wider text-white;
+    background-image: var(--accent-gradient);
+  }
+  .ring-accent-gradient {
+    --tw-ring-color: oklch(0.55 0 0 / 0.35);
+  }
+  .dark .ring-accent-gradient {
+    --tw-ring-color: oklch(0.72 0 0 / 0.35);
+  }
+
+  /* gradient border — double-background trick */
+  .gradient-border-2 {
+    position: relative;
+    border-radius: var(--radius);
+  }
+  .gradient-border-2::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    background: var(--accent-gradient);
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  .gradient-border-2-bg {
+    @apply bg-card;
+  }
+
+  /* backgrounds */
+  .landing-grid-bg {
+    background-image:
+      linear-gradient(oklch(0.7 0 0 / 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(0.7 0 0 / 0.07) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  .dark .landing-grid-bg {
+    background-image:
+      linear-gradient(oklch(1 0 0 / 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 0.05) 1px, transparent 1px);
+  }
+  .dot-grid-bg {
+    background-image: radial-gradient(oklch(0.6 0 0 / 0.18) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .dark .dot-grid-bg {
+    background-image: radial-gradient(oklch(1 0 0 / 0.1) 1px, transparent 1px);
+  }
+
+  /* Context retriever — full-viewport shell: soft corners + grid, no rainbow blobs */
+  .retriever-shell-bg {
+    background-color: var(--background);
+    background-image:
+      linear-gradient(oklch(0.7 0 0 / 0.055) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(0.7 0 0 / 0.055) 1px, transparent 1px),
+      radial-gradient(ellipse 80% 55% at 15% 0%, oklch(0.96 0 0 / 0.55), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 85% 100%, oklch(0.94 0 0 / 0.45), transparent 58%);
+    background-size: 52px 52px, 52px 52px, 100% 100%, 100% 100%;
+    background-position: 0 0, 0 0, 0 0, 0 0;
+  }
+  .dark .retriever-shell-bg {
+    background-image:
+      linear-gradient(oklch(1 0 0 / 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 0.045) 1px, transparent 1px),
+      radial-gradient(ellipse 80% 55% at 15% 0%, oklch(0.28 0 0 / 0.35), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 85% 100%, oklch(0.26 0 0 / 0.3), transparent 58%);
+  }
+
+  /* glass surfaces */
+  .glass-card {
+    @apply border border-border/50 bg-background/60;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  .frosted-card {
+    @apply border border-border/40 bg-background/50;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* decorative glow blob */
+  .glow-orb {
+    border-radius: 9999px;
+    filter: blur(80px);
+    opacity: 0.18;
+    pointer-events: none;
+  }
+
+  /* neutral surface (use accent gradient only for brand CTAs / pills, not feature tints) */
+  .feature-card-muted {
+    background-color: oklch(0.97 0 0);
+    border-color: oklch(0.88 0 0);
+  }
+  .dark .feature-card-muted {
+    background-color: oklch(0.22 0 0);
+    border-color: oklch(0.38 0 0);
+  }
+}
+
+@layer base {
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+  @keyframes grid-fade {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  @keyframes orbit {
+    from { transform: rotate(0deg) translateX(60px) rotate(0deg); }
+    to   { transform: rotate(360deg) translateX(60px) rotate(-360deg); }
+  }
+  @keyframes scan-line {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100vh); }
+  }
+  @keyframes bounce-slow {
+    0%, 100% { transform: translateY(0); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
+    50% { transform: translateY(-6px); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }
+  }
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  .animate-float        { animation: float 4s ease-in-out infinite; }
+  .animate-pulse-glow   { animation: pulse-glow 2.5s ease-in-out infinite; }
+  .animate-grid-fade    { animation: grid-fade 0.8s ease forwards; }
+  .animate-shimmer      { animation: shimmer 2s linear infinite; }
+  .animate-orbit        { animation: orbit 6s linear infinite; }
+  .animate-scan-line    { animation: scan-line 3s linear infinite; }
+  .animate-bounce-slow  { animation: bounce-slow 2.5s infinite; }
+  .animate-spin-slow    { animation: spin-slow 8s linear infinite; }
+  .animate-gradient-shift { animation: gradient-shift 5s ease infinite; background-size: 200% 200%; }
+
+  @media (max-width: 767px), (prefers-reduced-motion: reduce) {
+    .animate-float,
+    .animate-pulse-glow,
+    .animate-grid-fade,
+    .animate-orbit,
+    .animate-scan-line,
+    .animate-bounce-slow,
+    .animate-spin-slow {
+      animation: none;
+    }
+  }
+}
+
+@layer components {
+  .markdown-preview {
+    @apply text-sm leading-relaxed text-foreground max-w-none;
+  }
+  .markdown-preview h1 {
+    @apply font-heading text-2xl font-semibold mt-6 mb-3 first:mt-0 tracking-tight;
+  }
+  .markdown-preview h2 {
+    @apply font-heading text-xl font-semibold mt-5 mb-2 tracking-tight;
+  }
+  .markdown-preview h3 {
+    @apply font-sans text-sm font-medium mt-4 mb-2 text-foreground;
+  }
+  .markdown-preview p {
+    @apply my-3;
+  }
+  .markdown-preview ul {
+    @apply my-3 list-disc pl-6;
+  }
+  .markdown-preview ol {
+    @apply my-3 list-decimal pl-6;
+  }
+  .markdown-preview li {
+    @apply my-1;
+  }
+  .markdown-preview a {
+    @apply text-primary underline underline-offset-2;
+  }
+  .markdown-preview code {
+    @apply rounded bg-muted px-1.5 py-0.5 font-mono text-[0.9em];
+  }
+  .markdown-preview pre {
+    @apply my-4 overflow-x-auto rounded-md border bg-muted p-4 font-mono text-xs;
+  }
+  .markdown-preview pre code {
+    @apply bg-transparent p-0;
+  }
+  .markdown-preview blockquote {
+    @apply my-4 border-l-4 border-border pl-4 italic text-muted-foreground;
+  }
+  .markdown-preview table {
+    @apply my-4 w-full border-collapse text-sm;
+  }
+  .markdown-preview th,
+  .markdown-preview td {
+    @apply border px-2 py-1.5 text-left;
+  }
+  .markdown-preview th {
+    @apply bg-muted/60 font-medium;
+  }
+  .markdown-preview hr {
+    @apply my-6 border-border;
+  }
+  .markdown-preview img {
+    @apply my-4 max-w-full rounded-md;
+  }
+
+  @keyframes dna-orbit {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .dna-orbit-spin {
+    animation: dna-orbit 52s linear infinite;
+  }
+
+  /* Compact preview (e.g. hover popover) — semantic colors so text stays readable on popover/card */
+  .markdown-preview-dna {
+    @apply text-xs leading-relaxed text-foreground max-w-none;
+  }
+  .markdown-preview-dna h1 {
+    @apply font-heading text-base font-semibold mt-3 mb-2 text-foreground first:mt-0 tracking-tight;
+  }
+  .markdown-preview-dna h2 {
+    @apply font-heading text-sm font-semibold mt-2 mb-1.5 text-foreground tracking-tight;
+  }
+  .markdown-preview-dna h3 {
+    @apply font-sans text-xs font-normal mt-2 mb-1 text-foreground;
+  }
+  .markdown-preview-dna p {
+    @apply my-2 text-foreground;
+  }
+  .markdown-preview-dna ul {
+    @apply my-2 list-disc pl-4;
+  }
+  .markdown-preview-dna ol {
+    @apply my-2 list-decimal pl-4;
+  }
+  .markdown-preview-dna a {
+    @apply text-primary underline underline-offset-2;
+  }
+  .markdown-preview-dna code {
+    @apply rounded bg-muted px-1 py-0.5 font-mono text-[0.85em] text-foreground;
+  }
+  .markdown-preview-dna pre {
+    @apply my-3 overflow-x-auto rounded-md border border-border bg-muted p-3 font-mono text-[0.8em] text-foreground;
+  }
+  .markdown-preview-dna img {
+    @apply my-2 max-w-full rounded-md border border-border;
   }
 }
