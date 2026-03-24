@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { ComponentType, ReactNode } from "react";
 import { useRouter } from "next/navigation";
@@ -23,7 +23,7 @@ import {
   Share2,
   Trash2,
   Loader2,
-  Copy,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AlertDialog } from "@base-ui/react/alert-dialog";
@@ -66,35 +66,136 @@ function SectionLabel({
   );
 }
 
+function getReadableTextColor(backgroundHex: string): string {
+  const normalizedHex = backgroundHex.startsWith("#") ? backgroundHex.slice(1) : backgroundHex;
+  const expandedHex =
+    normalizedHex.length === 3 ? normalizedHex.split("").map((character) => `${character}${character}`).join("") : normalizedHex;
+
+  if (expandedHex.length !== 6) return "#FFFFFF";
+
+  const red = Number.parseInt(expandedHex.slice(0, 2), 16) / 255;
+  const green = Number.parseInt(expandedHex.slice(2, 4), 16) / 255;
+  const blue = Number.parseInt(expandedHex.slice(4, 6), 16) / 255;
+
+  const linearize = (component: number) => {
+    return component <= 0.03928 ? component / 12.92 : ((component + 0.055) / 1.055) ** 2.4;
+  };
+
+  const relativeLuminance =
+    0.2126 * linearize(red) + 0.7152 * linearize(green) + 0.0722 * linearize(blue);
+
+  // WCAG-friendly heuristic: pick dark text for light backgrounds, and vice versa.
+  return relativeLuminance > 0.6 ? "#0B0F19" : "#FFFFFF";
+}
+
 function ColorSwatch({ label, hex }: { label: string; hex: string }) {
+  const readableTextColor = getReadableTextColor(hex);
+  const overlayBackground = readableTextColor === "#0B0F19" ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)";
+  const [copyFeedback, setCopyFeedback] = useState<"idle" | "copied" | "failed">("idle");
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+    };
+  }, []);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(hex);
+      setCopyFeedback("copied");
+    } catch {
+      setCopyFeedback("failed");
+    } finally {
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = setTimeout(() => setCopyFeedback("idle"), 1200);
+    }
+  };
+
   return (
-    <div className="group flex min-w-0 flex-1 flex-col gap-2 sm:max-w-[180px]">
-      <div
-        className="aspect-[3/1.6] w-full rounded-2xl shadow-sm ring-1 ring-inset ring-black/[0.08] dark:ring-white/[0.1]"
+    <div className="group flex min-w-0 flex-1 flex-col sm:max-w-[180px]">
+      <button
+        type="button"
+        onClick={() => void handleCopy()}
+        className="relative aspect-[3/1.6] w-full cursor-pointer rounded-2xl shadow-sm ring-[0.5px] ring-inset ring-black/[0.08] dark:ring-white/[0.1] transition-transform group-hover:-translate-y-[1px] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20"
         style={{ backgroundColor: hex }}
-        title={hex}
-      />
-      <div className="flex items-center gap-1.5">
-        <div>
-          <p className="text-[0.58rem] font-semibold uppercase tracking-wider text-muted-foreground">
-            {label}
-          </p>
-          <p className="font-mono text-[0.75rem] font-medium tabular-nums tracking-wide text-foreground">
-            {hex.toUpperCase()}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => void navigator.clipboard.writeText(hex)}
-          className="ml-auto opacity-0 transition-opacity group-hover:opacity-100"
-          aria-label={`Copy ${label} color`}
-          title="Copy hex"
+        title={`Click to copy ${hex}`}
+        aria-label={`Copy ${label} ${hex} color`}
+      >
+        <span
+          className="absolute left-2 top-2 rounded-md px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-wider"
+          style={{
+            color: readableTextColor,
+            backgroundColor: overlayBackground,
+            textShadow: "0 1px 2px rgba(0,0,0,0.35)",
+          }}
         >
-          <Copy className="size-3 text-muted-foreground hover:text-foreground" />
-        </button>
+          {label}
+        </span>
+
+        <span
+          className="flex h-full w-full items-center justify-center px-3 text-center font-mono text-[0.8rem] font-semibold tracking-wide"
+          style={{
+            color: readableTextColor,
+            textShadow: "0 1px 2px rgba(0,0,0,0.35)",
+          }}
+        >
+          {hex.toUpperCase()}
+        </span>
+
+        <span
+          className={`pointer-events-none absolute right-2 top-2 rounded-md px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-wider backdrop-blur transition-opacity ${
+            copyFeedback === "idle" ? "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100" : "opacity-100"
+          }`}
+          style={{
+            backgroundColor: overlayBackground,
+            color: readableTextColor,
+            textShadow: "0 1px 2px rgba(0,0,0,0.35)",
+          }}
+        >
+          {copyFeedback === "copied" ? (
+            <span className="inline-flex items-center gap-1.5">
+              <Check className="size-3.5" />
+              Copied
+            </span>
+          ) : copyFeedback === "failed" ? (
+            "Failed"
+          ) : (
+            "Copy"
+          )}
+        </span>
+      </button>
+    </div>
+  );
+}
+
+const QUESTION_MARK_TOKEN = "?";
+
+function MissingColorSwatch({ label }: { label: string }) {
+  const hint = `${label} color not available`;
+  return (
+    <div className="group flex min-w-0 flex-1 sm:max-w-[180px]">
+      <div className="relative flex aspect-[3/1.6] w-full items-center justify-center rounded-2xl border-[0.5px] border-dashed border-border/70 bg-background/20">
+        <span className="absolute left-2 top-2 rounded-md bg-background/60 px-2 py-0.5 text-[0.58rem] font-bold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
+        <span className="font-mono text-[0.95rem] font-bold tracking-wide text-muted-foreground" title={hint}>
+          {QUESTION_MARK_TOKEN}
+        </span>
+        <div
+          role="tooltip"
+          className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-max max-w-[220px] -translate-x-1/2 rounded-lg border-[0.5px] border-border/60 bg-background/95 px-2 py-1 text-center text-[0.65rem] font-medium text-muted-foreground opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100"
+        >
+          {hint}
+        </div>
       </div>
     </div>
   );
+}
+
+function ColorSwatchSlot({ label, hex }: { label: string; hex: string | null }) {
+  if (!hex) return <MissingColorSwatch label={label} />;
+  return <ColorSwatch label={label} hex={hex} />;
 }
 
 function VoiceCard({
@@ -107,9 +208,9 @@ function VoiceCard({
   value: string;
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-border/70 bg-muted/10 p-3 sm:p-4">
+    <div className="flex flex-col gap-2 rounded-2xl border-[0.5px] border-border/70 bg-muted/10 p-2 sm:p-3">
       <div className="flex items-center gap-2">
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-background shadow-sm ring-1 ring-border/60">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-background shadow-sm ring-[0.5px] ring-border/60">
           <VoiceIcon className="size-3.5 text-muted-foreground" strokeWidth={1.75} />
         </span>
         <p className="text-[0.6rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">
@@ -123,28 +224,85 @@ function VoiceCard({
   );
 }
 
+function BrandPaletteStrip({ branding }: { branding: BrandingDNA }) {
+  const { primary, secondary } = resolveBrandColors(branding);
+  if (!primary && !secondary) return null;
+  const singleHex = primary ?? secondary;
+  return (
+    <div className="flex h-2.5 w-full min-w-0 shrink-0" aria-hidden>
+      {primary && secondary ? (
+        <>
+          <div
+            className="min-h-0 min-w-0 flex-1 basis-0"
+            style={{ backgroundColor: primary }}
+          />
+          <div
+            className="min-h-0 min-w-0 flex-1 basis-0"
+            style={{ backgroundColor: secondary }}
+          />
+        </>
+      ) : (
+        <div
+          className="min-h-0 w-full min-w-0 flex-1"
+          style={{ backgroundColor: singleHex ?? undefined }}
+        />
+      )}
+    </div>
+  );
+}
+
+function OpenGraphPreview({ ogImage }: { ogImage: string | null }) {
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [ogImage]);
+
+  const shouldShowFallback = !ogImage || imageFailed;
+  const hint = "Open Graph preview unavailable";
+
+  return (
+    <div className="relative aspect-[1200/280] w-full">
+      {shouldShowFallback ? (
+        <div className="group absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 text-center">
+          <div className="flex size-10 items-center justify-center rounded-full border-[0.5px] border-dashed border-border/70 bg-background/25">
+            <span className="font-mono text-sm font-bold tracking-wide text-muted-foreground" title={hint}>
+              {QUESTION_MARK_TOKEN}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">Open Graph preview unavailable</p>
+          <div className="mt-1 hidden text-[0.65rem] text-muted-foreground/80 group-hover:block">
+            Image missing or failed to load (404/blocked).
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={ogImage}
+            alt=""
+            className="absolute inset-0 h-full w-full object-contain object-center"
+            onError={() => {
+              setImageFailed(true);
+            }}
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
 function BrandPalette({ branding }: { branding: BrandingDNA }) {
   const { primary, secondary } = resolveBrandColors(branding);
   const fonts = resolveBrandFonts(branding);
   const hasPalette = Boolean(primary || secondary);
 
   return (
-    <div className="space-y-4">
-      {/* Full-bleed palette strip at top */}
-      {hasPalette && (
-        <div className="-mx-4 -mt-4 overflow-hidden rounded-t-2xl sm:-mx-6 sm:-mt-6" aria-hidden>
-          <div className="flex h-2.5">
-            {primary && <div className="min-w-0 flex-1" style={{ backgroundColor: primary }} />}
-            {secondary && <div className="min-w-0 flex-1" style={{ backgroundColor: secondary }} />}
-            <div className="min-w-0 flex-[2] bg-gradient-to-r from-muted to-border/30" />
-          </div>
-        </div>
-      )}
-
+    <div className="space-y-3">
       {/* DNA header */}
       <div className="flex items-center gap-3">
         <span
-          className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-muted/50 ring-1 ring-border/70"
+          className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-muted/50 ring-[0.5px] ring-border/70"
           style={primary ? { boxShadow: `inset 0 0 0 1px ${primary}50` } : undefined}
         >
           <Dna className="size-4.5 text-foreground" strokeWidth={1.5} />
@@ -160,18 +318,18 @@ function BrandPalette({ branding }: { branding: BrandingDNA }) {
       </div>
 
       {/* 2x2 grid: Palette, Identity, Voice, Typography */}
-      <div className="grid gap-4 sm:grid-cols-2" aria-label="DNA sections">
+      <div className="grid gap-3 sm:grid-cols-2" aria-label="DNA sections">
         {/* Color palette */}
         <section aria-label="Brand colors" className="space-y-3">
             <SectionLabel icon={Palette}>Palette</SectionLabel>
-            <div className="rounded-2xl border border-border/60 bg-card/60 p-4 shadow-sm sm:p-5">
+            <div className="rounded-2xl border-[0.5px] border-border/60 bg-card/60 p-3 shadow-sm sm:p-4">
               {hasPalette ? (
-                <div className="flex flex-wrap gap-4 sm:gap-5">
-                  {primary && <ColorSwatch label="Primary" hex={primary} />}
-                  {secondary && <ColorSwatch label="Secondary" hex={secondary} />}
+                <div className="flex flex-wrap gap-3 sm:gap-4">
+                  <ColorSwatchSlot label="Primary" hex={primary} />
+                  <ColorSwatchSlot label="Secondary" hex={secondary} />
                 </div>
               ) : (
-                <div className="flex flex-col items-start gap-2 rounded-xl border border-dashed border-border/60 bg-background/40 px-3 py-4">
+                <div className="flex flex-col items-start gap-2 rounded-xl border-[0.5px] border-dashed border-border/60 bg-background/40 px-3 py-3">
                   <p className="text-sm font-medium text-foreground">No colors detected</p>
                   <p className="text-xs text-muted-foreground">
                     We couldn’t extract enough signals from this page to infer a palette.
@@ -184,19 +342,19 @@ function BrandPalette({ branding }: { branding: BrandingDNA }) {
         {/* Identity assets */}
         <section aria-label="Identity assets" className="space-y-3">
             <SectionLabel icon={Images}>Identity</SectionLabel>
-            <div className="rounded-2xl border border-border/60 bg-card/60 p-4 shadow-sm sm:p-5">
+            <div className="rounded-2xl border-[0.5px] border-border/60 bg-card/60 p-3 shadow-sm sm:p-4">
               {(branding.logo || branding.favicon || branding.ogImage) ? (
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3">
                   {/* Logo + Favicon row */}
                   {(branding.logo || branding.favicon) && (
-                    <div className="flex flex-wrap gap-4">
+                    <div className="flex flex-wrap gap-3">
                       {branding.logo && (
                         <div className="space-y-2">
                           <p className="text-[0.58rem] font-semibold uppercase tracking-wider text-muted-foreground">
                             Logo
                           </p>
                           <div
-                            className="flex h-14 w-24 items-center justify-center rounded-xl border-2 border-border/60 bg-background p-2 shadow-sm"
+                            className="flex h-14 w-24 items-center justify-center rounded-xl border-[0.5px] border-border/60 bg-background p-2 shadow-sm"
                             style={primary ? { borderColor: `${primary}80` } : undefined}
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -216,7 +374,7 @@ function BrandPalette({ branding }: { branding: BrandingDNA }) {
                           <p className="text-[0.58rem] font-semibold uppercase tracking-wider text-muted-foreground">
                             Favicon
                           </p>
-                          <div className="flex size-14 items-center justify-center rounded-xl bg-background shadow-sm ring-1 ring-border/60">
+                          <div className="flex size-14 items-center justify-center rounded-xl bg-background shadow-sm ring-[0.5px] ring-border/60">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={branding.favicon}
@@ -233,32 +391,20 @@ function BrandPalette({ branding }: { branding: BrandingDNA }) {
                   )}
 
                   {/* OG image */}
-                  {branding.ogImage && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-1.5">
-                        <Share2 className="size-2.5 text-muted-foreground" strokeWidth={2} />
-                        <p className="text-[0.58rem] font-semibold uppercase tracking-wider text-muted-foreground">
-                          Open Graph preview
-                        </p>
-                      </div>
-                      <div className="overflow-hidden rounded-xl bg-muted/25 ring-1 ring-border/60">
-                        <div className="relative aspect-[1200/280] w-full">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={branding.ogImage}
-                            alt=""
-                            className="absolute inset-0 h-full w-full object-contain object-center"
-                            onError={(event) => {
-                              event.currentTarget.style.display = "none";
-                            }}
-                          />
-                        </div>
-                      </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <Share2 className="size-2.5 text-muted-foreground" strokeWidth={2} />
+                      <p className="text-[0.58rem] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Open Graph preview
+                      </p>
                     </div>
-                  )}
+                    <div className="overflow-hidden rounded-xl bg-muted/25 ring-[0.5px] ring-border/60">
+                      <OpenGraphPreview ogImage={branding.ogImage} />
+                    </div>
+                  </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-start gap-2 rounded-xl border border-dashed border-border/60 bg-background/40 px-3 py-4">
+                <div className="flex flex-col items-start gap-2 rounded-xl border-[0.5px] border-dashed border-border/60 bg-background/40 px-3 py-3">
                   <p className="text-sm font-medium text-foreground">No identity assets</p>
                   <p className="text-xs text-muted-foreground">
                     We couldn’t find logo, favicon, or an OG image for this page.
@@ -281,13 +427,13 @@ function BrandPalette({ branding }: { branding: BrandingDNA }) {
         {/* Typography */}
         <section aria-label="Typography" className="space-y-3">
             <SectionLabel icon={Type}>Typography</SectionLabel>
-            <div className="rounded-2xl border border-border/60 bg-card/60 p-4 shadow-sm sm:p-5">
+            <div className="rounded-2xl border-[0.5px] border-border/60 bg-card/60 p-3 shadow-sm sm:p-4">
               {(fonts.primary || fonts.secondary || branding.typography) ? (
                 <>
                   {(fonts.primary || fonts.secondary) && (
                     <div className="flex flex-wrap gap-2">
                       {fonts.primary && (
-                        <span className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border/60 bg-background px-3 py-1.5 font-mono text-[0.8rem] text-foreground shadow-sm">
+                        <span className="inline-flex max-w-full items-center gap-1.5 rounded-lg border-[0.5px] border-border/60 bg-background px-3 py-1.5 font-mono text-[0.8rem] text-foreground shadow-sm">
                           <span className="text-[0.6rem] font-sans font-bold uppercase tracking-wider text-muted-foreground">
                             Aa
                           </span>
@@ -295,7 +441,7 @@ function BrandPalette({ branding }: { branding: BrandingDNA }) {
                         </span>
                       )}
                       {fonts.secondary && (
-                        <span className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border/60 bg-background px-3 py-1.5 font-mono text-[0.8rem] text-foreground shadow-sm">
+                        <span className="inline-flex max-w-full items-center gap-1.5 rounded-lg border-[0.5px] border-border/60 bg-background px-3 py-1.5 font-mono text-[0.8rem] text-foreground shadow-sm">
                           <span className="text-[0.6rem] font-sans font-bold uppercase tracking-wider text-muted-foreground">
                             Aa
                           </span>
@@ -308,7 +454,7 @@ function BrandPalette({ branding }: { branding: BrandingDNA }) {
                     <p
                       className={cn(
                         "font-mono text-[0.8rem] leading-relaxed text-muted-foreground",
-                        (fonts.primary || fonts.secondary) && "mt-3 border-t border-border/50 pt-3",
+                        (fonts.primary || fonts.secondary) && "mt-3 border-t-[0.5px] border-border/50 pt-3",
                         "line-clamp-3",
                       )}
                     >
@@ -317,7 +463,7 @@ function BrandPalette({ branding }: { branding: BrandingDNA }) {
                   )}
                 </>
               ) : (
-                <div className="flex flex-col items-start gap-2 rounded-xl border border-dashed border-border/60 bg-background/40 px-3 py-4">
+                <div className="flex flex-col items-start gap-2 rounded-xl border-[0.5px] border-dashed border-border/60 bg-background/40 px-3 py-3">
                   <p className="text-sm font-medium text-foreground">No typography signals</p>
                   <p className="text-xs text-muted-foreground">
                     We couldn’t extract font families or typing behavior from this URL.
@@ -379,7 +525,7 @@ export function ResultExperience({
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
       {/* Header */}
-      <header className="relative flex shrink-0 flex-col gap-2 border-b border-border/60 bg-card/50 px-4 py-3 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:px-5">
+      <header className="relative flex shrink-0 flex-col gap-1.5 border-b-[0.5px] border-border/60 bg-card/50 px-4 py-2 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div
           className="pointer-events-none absolute inset-x-0 -top-8 h-28 bg-accent-gradient-subtle opacity-15 blur-2xl"
           aria-hidden
@@ -400,12 +546,18 @@ export function ResultExperience({
                 {result.name}
               </h1>
               {fromLibrary ? (
-                <Badge variant="secondary" className="gap-1 border-border/70 bg-muted/60 text-foreground">
+                <Badge
+                  variant="secondary"
+                  className="gap-1 border-[0.5px] border-border/70 bg-muted/60 text-foreground"
+                >
                   <Library className="size-2.5 opacity-80" />
                   Saved
                 </Badge>
               ) : (
-                <Badge variant="secondary" className="gap-1 border-border/70 bg-muted/60 text-foreground">
+                <Badge
+                  variant="secondary"
+                  className="gap-1 border-[0.5px] border-border/70 bg-muted/60 text-foreground"
+                >
                   <Dna className="size-2.5 opacity-80" />
                   DNA ready
                 </Badge>
@@ -431,10 +583,10 @@ export function ResultExperience({
 
       {/* Content */}
       <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain scroll-smooth lg:overflow-y-hidden">
-        <div className="mx-auto w-full max-w-6xl space-y-4 px-3 py-4 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] sm:px-4 sm:py-5 sm:pb-[max(2rem,env(safe-area-inset-bottom,0px))]">
+        <div className="mx-auto w-full max-w-6xl space-y-3 px-3 py-3 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] sm:px-4 sm:py-4 sm:pb-[max(2rem,env(safe-area-inset-bottom,0px))]">
           {/* DNA hero */}
-          <div className="rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm ring-1 ring-foreground/[0.03] backdrop-blur-sm sm:p-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="rounded-2xl border-[0.5px] border-border/60 bg-card/70 p-3 shadow-sm ring-[0.5px] ring-foreground/[0.03] backdrop-blur-sm sm:p-5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div className="space-y-2">
                 <span className="gradient-pill flex items-center gap-1.5 text-[0.61rem]">
                   <Dna className="size-3.5" /> DNA preview
@@ -457,15 +609,17 @@ export function ResultExperience({
           </div>
 
           {/* Main grid */}
-          <div className="grid gap-4">
+          <div className="grid gap-3">
             {result.branding ? (
-              <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/90 p-4 shadow-sm ring-1 ring-foreground/[0.03] backdrop-blur-sm sm:p-6">
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+              <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border-[0.5px] border-border/60 bg-card/90 shadow-sm ring-[0.5px] ring-foreground/[0.03] backdrop-blur-sm">
+                <BrandPaletteStrip branding={result.branding} />
+                {/* Mobile: let the page scroll. Desktop: allow independent scroll for the DNA panel. */}
+                <div className="min-h-0 flex-1 overflow-visible p-3 pr-1 sm:p-5 lg:overflow-y-auto lg:overscroll-contain">
                   <BrandPalette branding={result.branding} />
                 </div>
               </section>
             ) : (
-              <section className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/60 bg-card/80 px-4 py-12 text-center sm:py-16">
+              <section className="flex flex-col items-center justify-center gap-3 rounded-2xl border-[0.5px] border-dashed border-border/60 bg-card/80 px-4 py-10 text-center sm:py-12">
                 <Dna className="size-8 text-muted-foreground/40" strokeWidth={1.5} />
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-foreground">No DNA found</p>
@@ -511,7 +665,7 @@ function DeleteDnaButton({
       <AlertDialog.Portal>
         <AlertDialog.Backdrop className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]" />
         <AlertDialog.Viewport>
-          <AlertDialog.Popup className="fixed left-1/2 top-1/2 z-[60] w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border/70 bg-background p-5 shadow-xl">
+          <AlertDialog.Popup className="fixed left-1/2 top-1/2 z-[60] w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border-[0.5px] border-border/70 bg-background p-5 shadow-xl">
             <AlertDialog.Title className="text-base font-semibold text-foreground">
               Delete DNA?
             </AlertDialog.Title>

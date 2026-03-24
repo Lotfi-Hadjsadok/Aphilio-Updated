@@ -7,6 +7,7 @@ import prisma from "@/lib/prisma";
 import type { AnyNode } from "domhandler";
 import { load, type CheerioAPI, type Cheerio } from "cheerio";
 import TurndownService from "turndown";
+import { extractBrandingInBrowserContext } from "./scrape-branding-page-evaluate";
 
 // ── Markdown pipeline ───────────────────────────────────────────────────────
 
@@ -102,6 +103,10 @@ const ERR_ALREADY_SCRAPED =
 const PAGE_GOTO_TIMEOUT_MS = 600_000;
 const NETWORK_IDLE_TIMEOUT_MS = 12_000;
 const POST_LOAD_SETTLE_MS = 600;
+
+async function readSession() {
+  return auth.api.getSession({ headers: await headers() });
+}
 
 // ── Public types ────────────────────────────────────────────────────────────
 
@@ -338,8 +343,8 @@ function resolveImgUrl($img: Cheerio<AnyNode>, baseUrl: string): string | null {
 /** Remove duplicate <img> nodes (same resource); keeps first occurrence in document order. */
 function dedupeImagesInRoot($: CheerioAPI, root: Cheerio<AnyNode>, pageBaseUrl: string): void {
   const seen = new Set<string>();
-  root.find("img").each((index, element) => {
-    const $img = $(element);
+  root.find("img").each((_imageIndex, imageElement) => {
+    const $img = $(imageElement);
     const key = resolveImgUrl($img, pageBaseUrl);
     if (!key) return;
     if (seen.has(key)) {
@@ -395,7 +400,9 @@ function splitIntoSectionHtmls(
     return [{ heading: null, html: root.html() ?? "" }];
   }
 
-  const topSections = root.find("section").filter((index, element) => $(element).parents("section").length === 0);
+  const topSections = root
+    .find("section")
+    .filter((_sectionIndex, sectionElement) => $(sectionElement).parents("section").length === 0);
 
   if (topSections.length >= 2) {
     return topSections
@@ -507,301 +514,8 @@ function analyzePersonality(markdown: string, ogDescription: string): BrandingPe
 /** Visual + font signals from the page (personality is derived later from markdown + meta). */
 type BrandingExtracted = Omit<BrandingDNA, "personality">;
 
-/**
- * Runs in the browser context (serialized by Playwright). Keep self-contained — no outer closures.
- */
 async function extractBranding(page: Page, origin: string): Promise<BrandingExtracted> {
-  const raw = await page.evaluate(async (siteOrigin: string) => {
-    await document.fonts.ready;
-
-    /** Normalize any CSS color to #rrggbb; browsers often return rgb() from getComputedStyle. */
-    function toHex(color: string): string | null {
-      if (!color || color === "transparent" || color === "none") return null;
-      const normalizedColor = color.trim().toLowerCase();
-      if (normalizedColor === "rgba(0, 0, 0, 0)" || normalizedColor === "rgba(0,0,0,0)") return null;
-      if (normalizedColor === "rgb(0, 0, 0)" || normalizedColor === "rgb(0,0,0)" || normalizedColor === "#000" || normalizedColor === "#000000") return null;
-      if (normalizedColor === "rgb(255, 255, 255)" || normalizedColor === "rgb(255,255,255)" || normalizedColor === "#fff" || normalizedColor === "#ffffff")
-        return null;
-
-      let red = 0;
-      let green = 0;
-      let blue = 0;
-
-      const hexLong = normalizedColor.match(/^#([0-9a-f]{6})([0-9a-f]{2})?$/i);
-      if (hexLong?.[1]) {
-        red = parseInt(hexLong[1].slice(0, 2), 16);
-        green = parseInt(hexLong[1].slice(2, 4), 16);
-        blue = parseInt(hexLong[1].slice(4, 6), 16);
-      } else if (/^#[0-9a-f]{3}$/i.test(normalizedColor)) {
-        const shortHex = normalizedColor.slice(1);
-        red = parseInt(shortHex[0]! + shortHex[0]!, 16);
-        green = parseInt(shortHex[1]! + shortHex[1]!, 16);
-        blue = parseInt(shortHex[2]! + shortHex[2]!, 16);
-      } else {
-        const rgb = normalizedColor.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-        if (rgb) {
-          red = parseInt(rgb[1]!, 10);
-          green = parseInt(rgb[2]!, 10);
-          blue = parseInt(rgb[3]!, 10);
-        } else {
-          const canvas = document.createElement("canvas");
-          canvas.width = canvas.height = 1;
-          const ctx = canvas.getContext("2d");
-          if (!ctx) return null;
-          ctx.fillStyle = color;
-          const normalized = ctx.fillStyle as string;
-          const rgb2 = typeof normalized === "string" && normalized.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-          if (rgb2) {
-            red = parseInt(rgb2[1]!, 10);
-            green = parseInt(rgb2[2]!, 10);
-            blue = parseInt(rgb2[3]!, 10);
-          } else if (typeof normalized === "string" && normalized.startsWith("#") && normalized.length === 7) {
-            red = parseInt(normalized.slice(1, 3), 16);
-            green = parseInt(normalized.slice(3, 5), 16);
-            blue = parseInt(normalized.slice(5, 7), 16);
-          } else {
-            return null;
-          }
-        }
-      }
-
-      const brightness = (red * 299 + green * 587 + blue * 114) / 1000;
-      if (brightness < 28 || brightness > 228) return null;
-      const byteToHex = (value: number) => value.toString(16).padStart(2, "0");
-      return `#${byteToHex(red)}${byteToHex(green)}${byteToHex(blue)}`;
-    }
-
-    function extractColorTokensFromCssText(cssText: string): string[] {
-      if (!cssText || cssText === "none") return [];
-      const text = cssText.trim();
-      const tokens: string[] = [];
-
-      // Common hex forms (#rgb, #rrggbb, #rrggbbaa)
-      tokens.push(...(text.match(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?)\b/g) ?? []));
-
-      // Functional colors (rgb/rgba/hsl/hsla, oklch, lab/lch, etc.)
-      const functionalMatches =
-        text.match(
-          /(rgba?\([^)]*\)|hsla?\([^)]*\)|hwb\([^)]*\)|lab\([^)]*\)|lch\([^)]*\)|oklab\([^)]*\)|oklch\([^)]*\)|color\([^)]*\))/gi,
-        ) ?? [];
-      tokens.push(...functionalMatches);
-
-      // Keywords that can appear in gradients
-      tokens.push(...(text.match(/\btransparent\b/gi) ?? []));
-
-      return [...new Set(tokens)];
-    }
-
-    const colorCounts = new Map<string, number>();
-    const addColor = (cssColor: string) => {
-      const hex = toHex(cssColor);
-      if (hex) colorCounts.set(hex, (colorCounts.get(hex) || 0) + 1);
-    };
-
-    function addGradientColors(cssBackgroundImageOrVarValue: string) {
-      for (const token of extractColorTokensFromCssText(cssBackgroundImageOrVarValue)) addColor(token);
-    }
-
-    function skipSvg(el: Element): boolean {
-      return Boolean(el.closest("svg"));
-    }
-
-    const rootStyle = getComputedStyle(document.documentElement);
-    const tempDiv = document.createElement("div");
-    document.body.appendChild(tempDiv);
-    for (const prop of Array.from(rootStyle)) {
-      if (!prop.startsWith("--")) continue;
-      const lower = prop.toLowerCase();
-      if (
-        lower.includes("color") ||
-        lower.includes("primary") ||
-        lower.includes("secondary") ||
-        lower.includes("accent") ||
-        lower.includes("brand") ||
-        lower.includes("bg") ||
-        lower.includes("background")
-      ) {
-        const val = rootStyle.getPropertyValue(prop).trim();
-        if (!val) continue;
-        const lowerVal = val.toLowerCase();
-        if (lowerVal.includes("gradient(")) {
-          addGradientColors(val);
-        } else {
-          tempDiv.style.backgroundColor = val;
-          const computed = getComputedStyle(tempDiv).backgroundColor;
-          if (computed && computed !== "rgba(0, 0, 0, 0)") addColor(computed);
-        }
-      }
-    }
-    document.body.removeChild(tempDiv);
-
-    addColor(getComputedStyle(document.documentElement).backgroundColor);
-    if (document.body) {
-      const bs = getComputedStyle(document.body);
-      addColor(bs.backgroundColor);
-      addColor(bs.color);
-    }
-
-    document
-      .querySelectorAll<HTMLElement>('button, [role="button"], a[class*="btn"], a[class*="button"]')
-      .forEach((el) => {
-        if (skipSvg(el)) return;
-        const style = getComputedStyle(el);
-        addColor(style.backgroundColor);
-        if (style.backgroundImage && style.backgroundImage !== "none") addGradientColors(style.backgroundImage);
-        addColor(style.color);
-        addColor(style.borderColor);
-      });
-
-    document.querySelectorAll<HTMLElement>("a[href]").forEach((el) => {
-      if (skipSvg(el)) return;
-      addColor(getComputedStyle(el).color);
-    });
-
-    document.querySelectorAll<HTMLElement>("h1, h2, h3").forEach((el) => {
-      if (skipSvg(el)) return;
-      addColor(getComputedStyle(el).color);
-    });
-
-    document
-      .querySelectorAll<HTMLElement>('[class*="accent"], [class*="primary"], [class*="highlight"], [class*="brand"]')
-      .forEach((el) => {
-        if (skipSvg(el)) return;
-        const style = getComputedStyle(el);
-        addColor(style.color);
-        addColor(style.backgroundColor);
-        if (style.backgroundImage && style.backgroundImage !== "none") addGradientColors(style.backgroundImage);
-      });
-
-    const sortedHex = [...colorCounts.entries()]
-      .sort((left, right) => right[1] - left[1])
-      .map(([hex]) => hex);
-    const primaryColor = sortedHex[0] ?? null;
-    const secondaryColor =
-      sortedHex.find((hexValue, index) => index > 0 && hexValue !== primaryColor) ?? sortedHex[1] ?? null;
-
-    function resolveUrl(src: string): string {
-      if (!src) return "";
-      if (src.startsWith("http") || src.startsWith("//")) return src;
-      return siteOrigin + (src.startsWith("/") ? src : "/" + src);
-    }
-
-    let logoUrl: string | null = null;
-
-    const logoImgs = document.querySelectorAll<HTMLImageElement>(
-      'img[src*="logo" i], img[alt*="logo" i], img[class*="logo" i], img[id*="logo" i]'
-    );
-    if (logoImgs.length > 0) {
-      const src = logoImgs[0].getAttribute("src");
-      if (src) logoUrl = resolveUrl(src);
-    }
-
-    if (!logoUrl) {
-      const navImg = document.querySelector<HTMLImageElement>('header img, nav img, [role="banner"] img');
-      if (navImg) {
-        const src = navImg.getAttribute("src");
-        if (src) logoUrl = resolveUrl(src);
-      }
-    }
-
-    let faviconUrl: string | null = null;
-    const faviconSelectors = [
-      'link[rel="icon"][type="image/svg+xml"]',
-      'link[rel="icon"]',
-      'link[rel="shortcut icon"]',
-      'link[rel="apple-touch-icon"]',
-    ];
-    for (const sel of faviconSelectors) {
-      const el = document.querySelector<HTMLLinkElement>(sel);
-      if (el?.href) {
-        faviconUrl = el.href;
-        break;
-      }
-    }
-    if (!faviconUrl) faviconUrl = siteOrigin + "/favicon.ico";
-
-    if (!logoUrl && faviconUrl && faviconUrl.endsWith(".svg")) {
-      logoUrl = faviconUrl;
-    }
-
-    const ogImgEl = document.querySelector<HTMLMetaElement>('meta[property="og:image"]');
-    const ogImageUrl = ogImgEl?.content ?? null;
-
-    const GENERIC_FAMILIES = new Set([
-      "serif",
-      "sans-serif",
-      "monospace",
-      "cursive",
-      "fantasy",
-      "system-ui",
-      "-apple-system",
-      "BlinkMacSystemFont",
-      "Segoe UI",
-      "Roboto",
-      "Helvetica Neue",
-      "Arial",
-      "Helvetica",
-      "Times New Roman",
-      "Georgia",
-    ]);
-
-    function isGeneric(name: string): boolean {
-      const trimmedName = name.trim();
-      const lower = trimmedName.toLowerCase();
-      return GENERIC_FAMILIES.has(trimmedName) || GENERIC_FAMILIES.has(lower);
-    }
-
-    function primaryFontFamilyFor(el: Element): string | null {
-      const stack = getComputedStyle(el).fontFamily
-        .split(",")
-        .map((family) => family.replace(/['"]/g, "").trim())
-        .filter(Boolean);
-      for (const family of stack) {
-        if (!isGeneric(family)) return family;
-      }
-      return null;
-    }
-
-    const fontCounts = new Map<string, number>();
-    const nodes = document.body?.querySelectorAll("*") ?? [];
-    const maxNodes = 4000;
-    let nodeCount = 0;
-    for (const el of nodes) {
-      if (nodeCount++ >= maxNodes) break;
-      const fam = primaryFontFamilyFor(el);
-      if (fam) fontCounts.set(fam, (fontCounts.get(fam) || 0) + 1);
-    }
-    const bodyRoot = document.body;
-    if (bodyRoot) {
-      const bodyFont = primaryFontFamilyFor(bodyRoot);
-      if (bodyFont) fontCounts.set(bodyFont, (fontCounts.get(bodyFont) || 0) + 1);
-    }
-
-    const sortedFonts = [...fontCounts.entries()]
-      .sort((left, right) => right[1] - left[1])
-      .map(([name]) => name);
-    const primaryFont = sortedFonts[0] ?? null;
-    const secondaryFont = sortedFonts[1] ?? null;
-
-    const bodyEl = document.body;
-    const bodyW = bodyEl ? getComputedStyle(bodyEl).fontWeight : null;
-    const headingEl = document.querySelector("h1, h2, h3");
-    const headingW = headingEl ? getComputedStyle(headingEl).fontWeight : null;
-    const typography =
-      [bodyW && `body:${bodyW}`, headingW && `heading:${headingW}`].filter(Boolean).join(" · ") || null;
-
-    return {
-      primaryColor,
-      secondaryColor,
-      logoUrl,
-      faviconUrl,
-      ogImageUrl,
-      primaryFont,
-      secondaryFont,
-      typography,
-    };
-  }, origin);
-
+  const raw = await page.evaluate(extractBrandingInBrowserContext, origin);
   return {
     colors: { primary: raw.primaryColor, secondary: raw.secondaryColor },
     favicon: raw.faviconUrl,
@@ -972,7 +686,7 @@ async function buildScrapedContent(targetUrl: URL): Promise<{ ok: true; data: Bu
 }
 
 export async function scrapeWebsite(_prevState: ScrapeState, formData: FormData): Promise<ScrapeState> {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await readSession();
   if (!session) return { error: ERR_UNAUTHORIZED };
 
   const rawUrl = formData.get("url") as string;
@@ -1126,7 +840,7 @@ function recordToScrapeResult(record: {
 }
 
 export async function listSavedContexts(): Promise<SavedContextSummary[]> {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await readSession();
   if (!session) return [];
 
   const rows = await prisma.scrapedContext.findMany({
@@ -1154,7 +868,7 @@ export async function listSavedContexts(): Promise<SavedContextSummary[]> {
 export async function loadSavedContext(
   contextId: string,
 ): Promise<{ ok: true; result: ScrapeResult } | { ok: false; error: string }> {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await readSession();
   if (!session) return { ok: false, error: ERR_UNAUTHORIZED };
 
   const contextRecord = await prisma.scrapedContext.findFirst({
@@ -1193,7 +907,7 @@ export async function deleteSavedContext(
   _prevState: DeleteDNAState,
   formData: FormData,
 ): Promise<DeleteDNAState> {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await readSession();
   if (!session) return { error: ERR_UNAUTHORIZED };
 
   const contextId = formData.get("contextId") as string;
@@ -1209,7 +923,7 @@ export async function deleteSavedContext(
 }
 
 export async function getScrapedContexts(): Promise<ScrapeResult[]> {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await readSession();
   if (!session) return [];
 
   const records = await prisma.scrapedContext.findMany({
