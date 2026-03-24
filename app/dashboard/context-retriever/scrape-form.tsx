@@ -15,7 +15,6 @@ import {
   Library,
   Layers,
   Clock,
-  Sparkles,
   Trash2,
   ChevronRight,
 } from "lucide-react";
@@ -26,12 +25,6 @@ import { Drawer } from "@base-ui/react/drawer";
 
 const initialState: ScrapeState = {};
 const initialDeleteState: DeleteDNAState = {};
-
-const processSteps = [
-  { stepNumber: "01", label: "Paste URL" },
-  { stepNumber: "02", label: "We render" },
-  { stepNumber: "03", label: "You review" },
-] as const;
 
 function DeleteConfirmDialog({
   savedContext,
@@ -60,7 +53,7 @@ function DeleteConfirmDialog({
         <AlertDialog.Viewport>
           <AlertDialog.Popup className="fixed left-1/2 top-1/2 z-[60] w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border/70 bg-background p-5 shadow-xl">
             <AlertDialog.Title className="text-base font-semibold text-foreground">
-              Delete DNA?
+              Delete this capture?
             </AlertDialog.Title>
             <AlertDialog.Description className="mt-1.5 text-sm text-muted-foreground">
               This will permanently remove{" "}
@@ -158,7 +151,7 @@ function LibrarySection({
           </span>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-foreground">Your library</p>
-            <p className="text-[0.65rem] text-muted-foreground">Previously captured sites</p>
+            <p className="text-[0.65rem] text-muted-foreground">DNA profiles you’ve saved</p>
           </div>
           <span className="ml-auto shrink-0 rounded-full bg-muted px-2 py-0.5 text-[0.65rem] font-medium tabular-nums text-muted-foreground ring-1 ring-border/60">
             {savedContexts.length}
@@ -209,7 +202,7 @@ function ScrapeFormInner({ savedContexts }: { savedContexts: SavedContextSummary
       <div className="flex min-h-0 w-full flex-1 items-center justify-center px-4">
         <div className="flex items-center gap-3 rounded-2xl border border-border/70 bg-card/50 px-5 py-4 shadow-md backdrop-blur-sm">
           <Loader2 className="size-5 animate-spin text-muted-foreground" />
-          <span className="text-sm font-medium text-foreground">Redirecting to your DNA…</span>
+          <span className="text-sm font-medium text-foreground">Opening your DNA preview…</span>
         </div>
       </div>
     );
@@ -230,7 +223,7 @@ function ScrapeFormInner({ savedContexts }: { savedContexts: SavedContextSummary
           <div className="min-w-0">
             <p className="font-heading text-sm font-semibold tracking-tight text-foreground">DNA</p>
             <p className="hidden text-[0.65rem] text-muted-foreground sm:block">
-              URL in → structured context &amp; brand DNA out
+              Branding extracted from the page you paste
             </p>
           </div>
         </div>
@@ -273,10 +266,6 @@ function ScrapeFormInner({ savedContexts }: { savedContexts: SavedContextSummary
             </Drawer.Root>
           )}
 
-          <span className="hidden items-center gap-1.5 rounded-full border border-border/60 bg-background/50 px-3 py-1.5 text-[0.65rem] font-medium uppercase tracking-wider text-muted-foreground sm:inline-flex">
-            <Sparkles className="size-3" />
-            Live capture
-          </span>
         </div>
       </header>
 
@@ -285,32 +274,14 @@ function ScrapeFormInner({ savedContexts }: { savedContexts: SavedContextSummary
         {/* Main content */}
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain lg:overflow-y-hidden lg:flex-[1.2]">
           <div className="mx-auto w-full max-w-2xl px-5 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
-            {/* Steps strip */}
-            <div className="mb-8 flex items-center gap-2 rounded-xl border border-border/60 bg-card/50 px-4 py-2.5 shadow-sm sm:gap-3">
-              {processSteps.map((step, stepIndex) => (
-                <div key={step.stepNumber} className="flex min-w-0 flex-1 items-center gap-2">
-                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[0.55rem] font-bold tabular-nums text-muted-foreground ring-1 ring-border/70">
-                    {step.stepNumber}
-                  </span>
-                  <span className="hidden truncate text-xs font-medium text-muted-foreground sm:block">
-                    {step.label}
-                  </span>
-                  {stepIndex < processSteps.length - 1 && (
-                    <div className="ml-auto h-px w-4 shrink-0 bg-border/60 sm:w-6" aria-hidden />
-                  )}
-                </div>
-              ))}
-            </div>
-
             {/* Heading */}
             <div className="mb-8 space-y-3">
-              <span className="gradient-pill text-[0.6rem] tracking-[0.14em]">Step 1 of 3</span>
               <h1 className="font-heading text-balance text-2xl font-semibold leading-[1.1] tracking-tight text-foreground sm:text-3xl lg:text-[2rem]">
                 Drop your website link.
               </h1>
               <p className="max-w-[48ch] text-sm leading-relaxed text-muted-foreground sm:text-base">
-                A real browser session, then one structured result — identity assets, voice, and
-                typography you can trust for downstream workflows.
+                DNA captures branding from the website at your URL: colors, typography, logos, and
+                voice, after we open that page in a real browser session.
               </p>
             </div>
 
@@ -339,10 +310,10 @@ function ScrapeFormInner({ savedContexts }: { savedContexts: SavedContextSummary
                   {scrapePending ? (
                     <>
                       <Loader2 className="mr-2 size-4 animate-spin" />
-                      Capturing…
+                      Extracting…
                     </>
                   ) : (
-                    "Retrieve context"
+                    "Extract DNA"
                   )}
                 </Button>
               </div>

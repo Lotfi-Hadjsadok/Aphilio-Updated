@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 /**
  * Next.js 16 uses `proxy.ts` (replaces `middleware.ts`). Cookie-only checks are
- * fast but not a security boundary — always validate with `auth.api.getSession`
+ * fast but not a security boundary; always validate with `auth.api.getSession`
  * in server components / server actions for protected data.
  */
 export function proxy(request: NextRequest) {

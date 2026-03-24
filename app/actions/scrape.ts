@@ -44,7 +44,7 @@ const ATX_HEADING_LINE_RE = /^#{1,6}\s+(.+?)(?:\s+#*)?\s*$/;
 /**
  * Section HTML becomes markdown that often repeats the same title we store in `heading`.
  * Turndown sometimes splits one logical title across an ATX line and the next plain line, so
- * exact single-line match is not enough — strip leading `#` lines (prefix/suffix overlap with
+ * exact single-line match is not enough; strip leading `#` lines (prefix/suffix overlap with
  * `heading`) and, when needed, one following plain line that completes the same title.
  */
 function stripLeadingAtxHeadingIfMatches(content: string, heading: string | null): string {

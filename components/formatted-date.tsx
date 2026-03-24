@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-/** Stable reference for callers — avoids unnecessary effect runs when passed as `options`. */
+/** Stable reference for callers; avoids unnecessary effect runs when passed as `options`. */
 export const FORMAT_DATE_SHORT: Intl.DateTimeFormatOptions = {
   year: "numeric",
   month: "short",
@@ -27,7 +27,7 @@ export function FormattedDate({
   options = FORMAT_DATE_SHORT,
   locale,
   className,
-  placeholder = "—",
+  placeholder = "-",
 }: FormattedDateProps) {
   const [label, setLabel] = useState<string | null>(null);
 

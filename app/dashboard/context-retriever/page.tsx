@@ -5,7 +5,8 @@ import { ScrapeForm } from "./scrape-form";
 
 export const metadata = {
   title: "DNA",
-  description: "Capture full-page URL context — brand DNA and visual identity.",
+  description:
+    "DNA extracts branding from the website you paste: colors, typography, logos, and voice from that page.",
 };
 
 export default async function ContextRetrieverPage() {

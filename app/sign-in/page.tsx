@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { BrandLogoLink } from "@/components/brand-logo";
 import { authClient } from "@/lib/auth-client";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -30,11 +31,9 @@ export default function SignInPage() {
           <div className="gradient-border-2-bg flex flex-col items-center gap-7 rounded-[calc(var(--radius)-1px)] px-7 py-9 sm:px-8 sm:py-10">
             {/* Brand mark */}
             <div className="flex flex-col items-center gap-2 text-center">
-              <p className="font-logo text-4xl font-semibold tracking-tight sm:text-5xl">
-                <span className="text-gradient">Aphilio</span>
-              </p>
+              <BrandLogoLink size="signIn" />
               <p className="mt-1 max-w-[24ch] text-pretty text-sm leading-relaxed text-muted-foreground">
-                Sign in once. Your captured contexts and brand signals stay in this workspace.
+                Sign in once. Your saved DNA profiles stay in this workspace.
               </p>
             </div>
 
@@ -45,7 +44,7 @@ export default function SignInPage() {
               <span className="gradient-pill text-[0.6rem] tracking-[0.14em]">Secure access</span>
               <p className="text-center text-sm font-medium text-foreground">Welcome back</p>
               <p className="text-center text-xs leading-relaxed text-muted-foreground">
-                Continue with Google — no new password to remember.
+                Continue with Google. No new password to remember.
               </p>
               <button
                 type="button"

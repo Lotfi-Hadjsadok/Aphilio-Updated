@@ -42,11 +42,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: {
     default: "Aphilio",
-    template: "%s · Aphilio",
+    template: "%s | Aphilio",
   },
   description:
-    "Aphilio — capture context from the web: brand DNA, structured content, and assets in one flow.",
+    "Aphilio: DNA reads branding from any site you give it: colors, typography, logos, and voice in one flow.",
   applicationName: "Aphilio",
+  icons: {
+    icon: "/aphilio-logo.webp",
+    apple: "/aphilio-logo.webp",
+  },
+  openGraph: {
+    images: ["/aphilio-logo.webp"],
+  },
 };
 
 export const viewport: Viewport = {

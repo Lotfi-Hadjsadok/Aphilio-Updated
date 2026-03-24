@@ -27,8 +27,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AlertDialog } from "@base-ui/react/alert-dialog";
-import { FormattedDate, FORMAT_DATE_SHORT } from "@/components/formatted-date";
-
 const initialDeleteState: DeleteDNAState = {};
 
 function resolveBrandColors(branding: BrandingDNA): { primary: string | null; secondary: string | null } {
@@ -298,27 +296,30 @@ function BrandPalette({ branding }: { branding: BrandingDNA }) {
   const hasPalette = Boolean(primary || secondary);
 
   return (
-    <div className="space-y-3">
-      {/* DNA header */}
-      <div className="flex items-center gap-3">
+    <div className="space-y-5 sm:space-y-6">
+      {/* Branding panel header */}
+      <div className="flex items-start gap-3 sm:gap-4">
         <span
-          className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-muted/50 ring-[0.5px] ring-border/70"
+          className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-muted/50 ring-[0.5px] ring-border/70 sm:size-12"
           style={primary ? { boxShadow: `inset 0 0 0 1px ${primary}50` } : undefined}
         >
-          <Dna className="size-4.5 text-foreground" strokeWidth={1.5} />
+          <Dna className="size-5 text-foreground sm:size-6" strokeWidth={1.5} />
         </span>
-        <div>
-          <h2 className="font-heading text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-            Brand DNA Preview
+        <div className="min-w-0 space-y-1">
+          <h2 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+            DNA preview
           </h2>
-          <p className="text-[0.65rem] text-muted-foreground">
-            Captured identity signals from this URL
+          <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">
+            Branding from the website at this URL
           </p>
         </div>
       </div>
 
       {/* 2x2 grid: Palette, Identity, Voice, Typography */}
-      <div className="grid gap-3 sm:grid-cols-2" aria-label="DNA sections">
+      <div
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5"
+        aria-label="Branding sections"
+      >
         {/* Color palette */}
         <section aria-label="Brand colors" className="space-y-3">
             <SectionLabel icon={Palette}>Palette</SectionLabel>
@@ -415,9 +416,9 @@ function BrandPalette({ branding }: { branding: BrandingDNA }) {
           </section>
 
         {/* Voice & personality */}
-        <section aria-label="Voice and personality" className="space-y-3">
+        <section aria-label="Voice and personality" className="space-y-3 sm:col-span-2">
           <SectionLabel icon={Sparkles}>Voice &amp; personality</SectionLabel>
-          <div className="grid gap-2.5 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
             <VoiceCard icon={MessageSquare} label="Tone" value={branding.personality.tone} />
             <VoiceCard icon={Zap} label="Energy" value={branding.personality.energy} />
             <VoiceCard icon={Users} label="Audience" value={branding.personality.audience} />
@@ -425,7 +426,7 @@ function BrandPalette({ branding }: { branding: BrandingDNA }) {
         </section>
 
         {/* Typography */}
-        <section aria-label="Typography" className="space-y-3">
+        <section aria-label="Typography" className="space-y-3 sm:col-span-2">
             <SectionLabel icon={Type}>Typography</SectionLabel>
             <div className="rounded-2xl border-[0.5px] border-border/60 bg-card/60 p-3 shadow-sm sm:p-4">
               {(fonts.primary || fonts.secondary || branding.typography) ? (
@@ -507,7 +508,7 @@ export function ResultExperience({
       className="shrink-0 gap-1.5 rounded-lg"
     >
       <Globe className="size-3.5" />
-      Re-extract DNA
+      Re-extract branding
     </Button>
   ) : (
     <Link
@@ -581,48 +582,22 @@ export function ResultExperience({
         </div>
       </header>
 
-      {/* Content */}
-      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain scroll-smooth lg:overflow-y-hidden">
-        <div className="mx-auto w-full max-w-6xl space-y-3 px-3 py-3 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] sm:px-4 sm:py-4 sm:pb-[max(2rem,env(safe-area-inset-bottom,0px))]">
-          {/* DNA hero */}
-          <div className="rounded-2xl border-[0.5px] border-border/60 bg-card/70 p-3 shadow-sm ring-[0.5px] ring-foreground/[0.03] backdrop-blur-sm sm:p-5">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div className="space-y-2">
-                <span className="gradient-pill flex items-center gap-1.5 text-[0.61rem]">
-                  <Dna className="size-3.5" /> DNA preview
-                </span>
-                <h2 className="font-heading text-balance text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-                  Brand signals, distilled into a single identity profile.
-                </h2>
-                <p className="max-w-[60ch] text-sm leading-relaxed text-muted-foreground sm:text-base">
-                  Captured from{" "}
-                  <span className="font-mono text-foreground">{result.baseUrl}</span> on{" "}
-                  <span className="font-mono text-foreground">
-                    <FormattedDate date={result.createdAt} options={FORMAT_DATE_SHORT} />
-                  </span>{" "}
-                  — {result.sections.length} sections
-                  {result.subpages?.length ? ` · ${result.subpages.length} paths` : null}. Review
-                  palette, voice, and typography below.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Main grid */}
-          <div className="grid gap-3">
+      {/* Content: scrollable; inner centers the panel when shorter than the viewport */}
+      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain scroll-smooth">
+        <div className="flex min-h-[calc(100dvh-5.25rem)] flex-col items-center justify-center px-3 py-6 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] sm:px-5 sm:py-8 sm:pb-[max(1.75rem,env(safe-area-inset-bottom,0px))] lg:px-8">
+          <div className="w-full max-w-5xl">
             {result.branding ? (
-              <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border-[0.5px] border-border/60 bg-card/90 shadow-sm ring-[0.5px] ring-foreground/[0.03] backdrop-blur-sm">
+              <section className="overflow-hidden rounded-2xl border-[0.5px] border-border/60 bg-card/90 shadow-sm ring-[0.5px] ring-foreground/[0.03] backdrop-blur-sm">
                 <BrandPaletteStrip branding={result.branding} />
-                {/* Mobile: let the page scroll. Desktop: allow independent scroll for the DNA panel. */}
-                <div className="min-h-0 flex-1 overflow-visible p-3 pr-1 sm:p-5 lg:overflow-y-auto lg:overscroll-contain">
+                <div className="p-5 sm:p-6">
                   <BrandPalette branding={result.branding} />
                 </div>
               </section>
             ) : (
-              <section className="flex flex-col items-center justify-center gap-3 rounded-2xl border-[0.5px] border-dashed border-border/60 bg-card/80 px-4 py-10 text-center sm:py-12">
+              <section className="flex flex-col items-center justify-center gap-3 rounded-2xl border-[0.5px] border-dashed border-border/60 bg-card/80 px-4 py-12 text-center sm:py-14">
                 <Dna className="size-8 text-muted-foreground/40" strokeWidth={1.5} />
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-foreground">No DNA found</p>
+                  <p className="text-sm font-medium text-foreground">No branding found</p>
                   <p className="text-xs text-muted-foreground">
                     We couldn’t detect enough branding signals for this URL.
                   </p>
@@ -654,7 +629,7 @@ function DeleteDnaButton({
           "shrink-0 rounded-lg text-muted-foreground hover:border-destructive/40 hover:bg-destructive/8 hover:text-destructive",
         )}
         disabled={deletePending}
-        aria-label="Delete DNA"
+        aria-label="Delete saved branding"
       >
         {deletePending ? (
           <Loader2 className="size-3.5 animate-spin" />
@@ -667,11 +642,10 @@ function DeleteDnaButton({
         <AlertDialog.Viewport>
           <AlertDialog.Popup className="fixed left-1/2 top-1/2 z-[60] w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border-[0.5px] border-border/70 bg-background p-5 shadow-xl">
             <AlertDialog.Title className="text-base font-semibold text-foreground">
-              Delete DNA?
+              Delete saved branding?
             </AlertDialog.Title>
             <AlertDialog.Description className="mt-1.5 text-sm text-muted-foreground">
-              This permanently removes the saved context from your library. This action cannot be
-              undone.
+              This permanently removes this capture from your library. This action cannot be undone.
             </AlertDialog.Description>
             <form action={deleteFormAction} className="mt-5 flex items-center justify-end gap-2">
               <input type="hidden" name="contextId" value={contextId} />

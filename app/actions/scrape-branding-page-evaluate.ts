@@ -1,5 +1,5 @@
 /**
- * Runs inside Chromium via Playwright `page.evaluate`. Serialized as a single function —
+ * Runs inside Chromium via Playwright `page.evaluate`. Serialized as a single function;
  * must not import other modules or close over server scope. Only `siteOrigin` is injected.
  */
 export type BrandingPageEvaluatePayload = {

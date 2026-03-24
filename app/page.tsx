@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Dna, Globe, Shield } from "lucide-react";
+import { BrandLogoLink } from "@/components/brand-logo";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 
@@ -7,23 +8,24 @@ const steps = [
   {
     stepNumber: "01",
     title: "Input your URL",
-    description: "Drop a link and we load the real page in a real browser session.",
+    description: "Drop a link and we load that page in a real browser session.",
   },
   {
     stepNumber: "02",
-    title: "We capture context",
-    description: "Structured content, assets, and signals — not a dead static fetch.",
+    title: "DNA pulls branding from that page",
+    description:
+      "Colors, typography, logos, and marks from the live site you opened.",
   },
   {
     stepNumber: "03",
-    title: "Review brand DNA",
-    description: "Voice, marks, and typography surfaced in one calm, structured view.",
+    title: "Review the profile",
+    description: "Palette, voice, and typography together in one view.",
   },
 ] as const;
 
 const trustItems = [
   { icon: Globe, label: "Real browser rendering" },
-  { icon: Dna, label: "Brand DNA extraction" },
+  { icon: Dna, label: "DNA: branding from your URL" },
   { icon: Shield, label: "Your workspace, your data" },
 ] as const;
 
@@ -37,9 +39,7 @@ export default function Home() {
       </div>
 
       <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-5 sm:px-8 sm:py-6">
-        <Link href="/" className="font-logo text-2xl font-semibold tracking-tight sm:text-[1.75rem]">
-          <span className="text-gradient">Aphilio</span>
-        </Link>
+        <BrandLogoLink priority />
         <Link
           href="/sign-in"
           className={cn(
@@ -55,17 +55,17 @@ export default function Home() {
       <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 pb-24 pt-6 sm:px-8 sm:pb-28 sm:pt-10 lg:pb-32 lg:pt-14">
         {/* Hero */}
         <div className="flex flex-1 flex-col items-center justify-center text-center">
-          <span className="gradient-pill mb-7 tracking-[0.13em]">Context from the web</span>
+          <span className="gradient-pill mb-7 tracking-[0.13em]">DNA: branding from any URL</span>
 
           <h1 className="font-heading max-w-4xl text-balance text-[2.4rem] font-semibold leading-[1.07] tracking-tight sm:text-[3.25rem] sm:leading-[1.06] lg:text-[4.5rem] lg:leading-[1.04]">
-            Turn any site into{" "}
-            <span className="text-gradient">brand-ready</span>{" "}
-            context.
+            Extract{" "}
+            <span className="text-gradient">branding</span>{" "}
+            from any live site with DNA
           </h1>
 
           <p className="mx-auto mt-6 max-w-[50ch] text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Capture how a page actually looks and sounds — then ship campaigns, docs, and AI
-            workflows that stay on-brand, without the tab sprawl.
+            DNA reads branding from whatever site you paste: colors, type, logos, and voice, so you
+            can stay on-brand without the tab sprawl.
           </p>
 
           <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
@@ -117,7 +117,7 @@ export default function Home() {
               id="how-it-works-title"
               className="font-heading text-xl font-semibold tracking-tight sm:text-2xl"
             >
-              Three steps. One structured result.
+              Three steps. One branding profile.
             </h2>
           </div>
 

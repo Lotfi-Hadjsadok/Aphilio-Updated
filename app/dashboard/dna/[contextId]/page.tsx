@@ -15,8 +15,8 @@ export async function generateMetadata({ params }: PageProps) {
   if (!loaded.ok) redirect("/dashboard/dna");
 
   return {
-    title: `${loaded.result.name} · DNA`,
-    description: `Saved brand DNA for ${loaded.result.baseUrl}`,
+    title: `${loaded.result.name} | DNA`,
+    description: `DNA branding profile saved from ${loaded.result.baseUrl}`,
   };
 }
 
