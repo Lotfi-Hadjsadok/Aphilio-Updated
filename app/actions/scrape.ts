@@ -1,13 +1,85 @@
 "use server";
 
-import { headers } from "next/headers";
 import { chromium, type Page } from "playwright";
-import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { getServerSession } from "@/lib/server-auth";
+import { embedTextsForContextDocuments } from "@/lib/openrouter";
+import type {
+  BrandingDNA,
+  BrandingPersonality,
+  DeleteDNAState,
+  LibraryLoadState,
+  LoadSavedContextOutcome,
+  SavedContextSummary,
+  ScrapeResult,
+  ScrapeState,
+  ScrapedSection,
+  SubpageSnapshot,
+} from "@/types/scrape";
 import type { AnyNode } from "domhandler";
 import { load, type CheerioAPI, type Cheerio } from "cheerio";
 import TurndownService from "turndown";
 import { extractBrandingInBrowserContext } from "./scrape-branding-page-evaluate";
+
+// ── Video URLs (HTML fragments + markdown → `contextDocumentVideo`) ───────
+
+/** Direct video file URLs in paths (query/hash allowed). */
+const VIDEO_FILE_EXT_RE = /\.(mp4|webm|ogg|ogv|mov|m4v|m3u8|mkv|avi)(\?|#|$)/i;
+
+function isLikelyVideoEmbedUrl(trimmedUrl: string): boolean {
+  if (trimmedUrl.startsWith("blob:") || trimmedUrl.startsWith("data:")) {
+    return false;
+  }
+  try {
+    const host = new URL(trimmedUrl).hostname.toLowerCase();
+    if (host === "youtu.be" || host.endsWith(".youtu.be")) return true;
+    if (/^(www\.)?youtube(-nocookie)?\.com$/i.test(host)) return true;
+    if (host.endsWith("vimeo.com")) return true;
+    if (host.endsWith("loom.com")) return true;
+    if (host.endsWith("wistia.net")) return true;
+    if (host.endsWith("streamable.com")) return true;
+    if (host.endsWith("dailymotion.com") || host === "dai.ly") return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/** URLs we normalize in HTML/markdown and persist on `contextDocumentVideo`. */
+function isTrackableVideoUrl(trimmed: string): boolean {
+  if (!trimmed || trimmed.startsWith("blob:") || trimmed.startsWith("data:")) return false;
+  if (VIDEO_FILE_EXT_RE.test(trimmed)) return true;
+  return isLikelyVideoEmbedUrl(trimmed);
+}
+
+type TurndownElement = {
+  getAttribute?: (name: string) => string | null;
+  getElementsByTagName?: (name: string) => ArrayLike<{ getAttribute?: (name: string) => string | null }>;
+};
+
+function markdownLinkLabelFromDomAttributes(node: unknown, defaultLabel: string): string {
+  const element = node as TurndownElement;
+  const raw =
+    element.getAttribute?.("title")?.trim() || element.getAttribute?.("aria-label")?.trim() || defaultLabel;
+  return raw.replace(/\s+/g, " ").trim() || defaultLabel;
+}
+
+function collectVideoUrlsFromVideoElement(node: unknown): string[] {
+  const element = node as TurndownElement;
+  const getAttribute = element.getAttribute?.bind(element);
+  if (!getAttribute) return [];
+  const urls: string[] = [];
+  const fromVideo = getAttribute("src")?.trim();
+  if (fromVideo) urls.push(fromVideo);
+  const sources = element.getElementsByTagName?.("source");
+  if (sources) {
+    for (let index = 0; index < sources.length; index++) {
+      const sourceElementSrc = sources[index]?.getAttribute?.("src")?.trim();
+      if (sourceElementSrc) urls.push(sourceElementSrc);
+    }
+  }
+  return [...new Set(urls)];
+}
 
 // ── Markdown pipeline ───────────────────────────────────────────────────────
 
@@ -22,21 +94,45 @@ turndown.addRule("stripSvg", {
   replacement: () => "",
 });
 
+turndown.addRule("videoToMarkdownLink", {
+  filter: "video",
+  replacement(_content, node) {
+    const urls = collectVideoUrlsFromVideoElement(node);
+    if (urls.length === 0) return "";
+    const label = markdownLinkLabelFromDomAttributes(node, "Video");
+    return `${urls.map((url) => `[${label}](${url})`).join("\n\n")}\n\n`;
+  },
+});
+
+turndown.addRule("iframeVideoEmbedToMarkdownLink", {
+  filter(node) {
+    if (node.nodeName.toLowerCase() !== "iframe") return false;
+    const src = (node as TurndownElement).getAttribute?.("src")?.trim() ?? "";
+    return isTrackableVideoUrl(src);
+  },
+  replacement(_content, node) {
+    const src = (node as TurndownElement).getAttribute?.("src")?.trim() ?? "";
+    if (!src) return "";
+    const label = markdownLinkLabelFromDomAttributes(node, "Video embed");
+    return `[${label}](${src})\n\n`;
+  },
+});
+
 /** Single-line copy: collapse internal whitespace, trim ends (titles, headings, meta). */
 function cleanTextLine(text: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
 /**
- * Markdown / body text for downstream AI: strip trailing spaces per line, normalize
- * line endings, collapse runaway blank lines, trim the tail.
+ * Markdown / body text for downstream AI: no literal newlines — collapse breaks and
+ * runs of spaces so scraped HTML→markdown is a single fluid line per block.
  */
 function cleanExtractedMarkdown(markdown: string): string {
   return markdown
     .replace(/\r\n/g, "\n")
-    .replace(/[ \t]+$/gm, "")
-    .replace(/\n{3,}/g, "\n\n")
-    .trimEnd();
+    .replace(/\n+/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .trim();
 }
 
 const ATX_HEADING_LINE_RE = /^#{1,6}\s+(.+?)(?:\s+#*)?\s*$/;
@@ -99,84 +195,12 @@ const ERR_INVALID_URL = "Invalid URL. Please enter a valid website address.";
 const ERR_EMPTY_CONTENT = "Could not retrieve any content from this URL.";
 const ERR_ALREADY_SCRAPED =
   "This page is already in your library. Only new paths on a site are scraped.";
+const ERR_EMBEDDING_FAILED =
+  "Could not generate embeddings for scraped content. Check your OpenRouter API key and try again.";
 
 const PAGE_GOTO_TIMEOUT_MS = 600_000;
 const NETWORK_IDLE_TIMEOUT_MS = 12_000;
 const POST_LOAD_SETTLE_MS = 600;
-
-async function readSession() {
-  return auth.api.getSession({ headers: await headers() });
-}
-
-// ── Public types ────────────────────────────────────────────────────────────
-
-export type BrandingPersonality = {
-  tone: string;
-  energy: string;
-  audience: string;
-};
-
-export type BrandingDNA = {
-  /** Top 2 most-occurring brand colors from the page (frequency-sorted). */
-  colors: { primary: string | null; secondary: string | null };
-  favicon: string | null;
-  logo: string | null;
-  ogImage: string | null;
-  personality: BrandingPersonality;
-  /** Top 2 most-occurring font families (by element count). */
-  fonts: { primary: string | null; secondary: string | null };
-  /** Font-weight summary from body + first heading, e.g. "body:400 · heading:600" */
-  typography: string | null;
-};
-
-export type ScrapedSection = {
-  /** First heading in the block, or <section> aria-label / title when present */
-  heading: string | null;
-  /** Markdown for this section only */
-  content: string;
-};
-
-/** One scraped path under a site context (stored sub_context + documents). */
-export type SubpageSnapshot = {
-  path: string;
-  title: string;
-  scrapedUrl: string;
-  markdown: string;
-  sections: ScrapedSection[];
-};
-
-export type ScrapeResult = {
-  id: string;
-  baseUrl: string;
-  name: string;
-  scrapedUrl: string;
-  markdown: string;
-  sections: ScrapedSection[];
-  branding: BrandingDNA | null;
-  createdAt: Date;
-  /** Present when more than one path was captured for this site. */
-  subpages?: SubpageSnapshot[];
-};
-
-/** Lightweight row for browsing saved contexts in the UI. */
-export type SavedContextSummary = {
-  id: string;
-  baseUrl: string;
-  name: string;
-  createdAt: Date;
-  subcontextCount: number;
-};
-
-export type ScrapeState = {
-  error?: string;
-  result?: ScrapeResult;
-};
-
-/** Server action state for opening a saved context from the library. */
-export type LibraryLoadState = {
-  error?: string;
-  result?: ScrapeResult;
-};
 
 // ── Personality heuristics (keyword sets) ──────────────────────────────────
 
@@ -296,10 +320,32 @@ async function waitForPageReady(page: Page): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, POST_LOAD_SETTLE_MS));
 }
 
-function loadCleanContentRoot(fullDocumentHtml: string): { $: CheerioAPI; root: Cheerio<AnyNode> } | null {
+/** Drop `<iframe>` nodes that are not video files or known embed hosts (maps, ads, etc.). */
+function pruneNonVideoIframes($: CheerioAPI, pageBaseUrl: string): void {
+  $("iframe").each((_index, iframeElement) => {
+    const $iframe = $(iframeElement);
+    const raw = $iframe.attr("src")?.trim();
+    if (!raw) {
+      $iframe.remove();
+      return;
+    }
+    try {
+      const absolute = new URL(raw, pageBaseUrl).href;
+      if (!isTrackableVideoUrl(absolute)) $iframe.remove();
+    } catch {
+      $iframe.remove();
+    }
+  });
+}
+
+function loadCleanContentRoot(
+  fullDocumentHtml: string,
+  pageBaseUrl: string,
+): { $: CheerioAPI; root: Cheerio<AnyNode> } | null {
   const $ = load(fullDocumentHtml);
 
-  $("script, style, noscript, svg, iframe, template, link[rel=preload]").remove();
+  $("script, style, noscript, svg, template, link[rel=preload]").remove();
+  pruneNonVideoIframes($, pageBaseUrl);
 
   const main = $("main").first();
   const article = $("article").first();
@@ -355,16 +401,182 @@ function dedupeImagesInRoot($: CheerioAPI, root: Cheerio<AnyNode>, pageBaseUrl: 
   });
 }
 
+/** Rewrite `src` / `href` in a section HTML fragment so Turndown emits absolute URLs. */
+function absolutizeImgAndMediaInHtml(htmlFragment: string, pageBaseUrl: string): string {
+  const trimmed = htmlFragment.trim();
+  if (!trimmed) return htmlFragment;
+
+  const wrapped = `<div id="scrape-media-root">${htmlFragment}</div>`;
+  const $fragment = load(wrapped);
+  const root = $fragment("#scrape-media-root");
+
+  root.find("img").each((_index, imageElement) => {
+    const $img = $fragment(imageElement);
+    const absolute = resolveImgUrl($img, pageBaseUrl);
+    if (absolute) $img.attr("src", absolute);
+  });
+
+  root.find("video, source").each((_index, element) => {
+    const $node = $fragment(element);
+    const raw = $node.attr("src")?.trim();
+    if (!raw) return;
+    try {
+      $node.attr("src", new URL(raw, pageBaseUrl).href);
+    } catch {
+      /* keep original */
+    }
+  });
+
+  root.find("iframe[src]").each((_index, iframeElement) => {
+    const $iframe = $fragment(iframeElement);
+    const raw = $iframe.attr("src")?.trim();
+    if (!raw) return;
+    try {
+      $iframe.attr("src", new URL(raw, pageBaseUrl).href);
+    } catch {
+      /* keep original */
+    }
+  });
+
+  root.find("a[href]").each((_index, anchorElement) => {
+    const $anchor = $fragment(anchorElement);
+    const href = $anchor.attr("href")?.trim();
+    if (!href) return;
+    try {
+      const absolute = new URL(href, pageBaseUrl).href;
+      if (!isTrackableVideoUrl(absolute)) return;
+      $anchor.attr("href", absolute);
+    } catch {
+      /* keep original */
+    }
+  });
+
+  return root.html() ?? htmlFragment;
+}
+
+/** Semantic headings: native levels plus ARIA headings (e.g. custom components). */
+const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6, [role="heading"]';
+
+function headingLevelOf($: CheerioAPI, element: AnyNode): number | null {
+  const tagName = $(element).prop("tagName") as string | undefined;
+  if (tagName && /^H[1-6]$/i.test(tagName)) {
+    return Number.parseInt(tagName.charAt(1), 10);
+  }
+  if ($(element).attr("role") === "heading") {
+    const ariaLevel = $(element).attr("aria-level");
+    if (ariaLevel) {
+      const parsed = Number.parseInt(ariaLevel, 10);
+      if (parsed >= 1 && parsed <= 6) return parsed;
+    }
+    return 2;
+  }
+  return null;
+}
+
 function firstHeadingIn($: CheerioAPI, el: AnyNode): string | null {
-  const headingEl = $(el).find("h1, h2, h3, h4, h5, h6").first();
+  const $el = $(el);
+  if ($el.is(HEADING_SELECTOR)) {
+    const direct = $el.text().trim();
+    if (direct) return direct;
+  }
+  const headingEl = $el.find(HEADING_SELECTOR).first();
   return headingEl.length ? headingEl.text().trim() || null : null;
 }
 
 function findMinHeadingLevel($: CheerioAPI, root: Cheerio<AnyNode>): number | null {
-  for (let level = 1; level <= 6; level++) {
-    if (root.find(`h${level}`).length > 0) return level;
+  const candidates = root.find(HEADING_SELECTOR).toArray();
+  let minLevel: number | null = null;
+  for (const element of candidates) {
+    const level = headingLevelOf($, element);
+    if (level === null) continue;
+    minLevel = minLevel === null ? level : Math.min(minLevel, level);
   }
-  return null;
+  return minLevel;
+}
+
+/** Remove nodes that appear before `marker` in document order (marker stays). */
+function removePrecedingSiblingsInDocumentOrder(
+  $: CheerioAPI,
+  root: Cheerio<AnyNode>,
+  marker: AnyNode,
+) {
+  let current: Cheerio<AnyNode> = $(marker);
+  for (;;) {
+    current.prevAll().remove();
+    const parent = current.parent();
+    if (!parent.length) break;
+    if (parent[0] === root[0]) break;
+    current = parent;
+  }
+}
+
+/** Remove nodes that appear after `marker` in document order (marker stays). */
+function removeFollowingInDocumentOrder(
+  $: CheerioAPI,
+  root: Cheerio<AnyNode>,
+  marker: AnyNode,
+) {
+  let current: Cheerio<AnyNode> = $(marker);
+  for (;;) {
+    current.nextAll().remove();
+    const parent = current.parent();
+    if (!parent.length) break;
+    if (parent[0] === root[0]) break;
+    current = parent;
+  }
+}
+
+/** Remove `marker` and everything that follows it in document order (within `root`). */
+function removeInclusiveAndFollowingInDocumentOrder(
+  $: CheerioAPI,
+  root: Cheerio<AnyNode>,
+  marker: AnyNode,
+) {
+  removeFollowingInDocumentOrder($, root, marker);
+  $(marker).remove();
+}
+
+function sliceHtmlByHeadingIndices(
+  $: CheerioAPI,
+  root: Cheerio<AnyNode>,
+  headingsAtLevel: AnyNode[],
+  startIndex: number | null,
+  endIndexExclusive: number | null,
+): string {
+  const htmlString = root.html() ?? "";
+  if (!htmlString.trim()) return "";
+  if (headingsAtLevel.length === 0) return htmlString;
+
+  const outlineLevel = headingLevelOf($, headingsAtLevel[0]);
+  if (outlineLevel === null) return htmlString;
+
+  const $clone = load(`<div id="scrape-slice-root">${htmlString}</div>`);
+  const cloneRoot = $clone("#scrape-slice-root");
+
+  const cloneHeadings = cloneRoot
+    .find(HEADING_SELECTOR)
+    .toArray()
+    .filter((element) => headingLevelOf($clone, element) === outlineLevel);
+
+  if (cloneHeadings.length !== headingsAtLevel.length) {
+    return htmlString;
+  }
+
+  if (startIndex === null && endIndexExclusive !== null) {
+    const endClone = cloneHeadings[endIndexExclusive];
+    removeInclusiveAndFollowingInDocumentOrder($clone, cloneRoot, endClone);
+    return cloneRoot.html() ?? "";
+  }
+
+  if (startIndex !== null) {
+    removePrecedingSiblingsInDocumentOrder($clone, cloneRoot, cloneHeadings[startIndex]);
+  }
+
+  if (endIndexExclusive !== null) {
+    removeInclusiveAndFollowingInDocumentOrder($clone, cloneRoot, cloneHeadings[endIndexExclusive]);
+  }
+
+  return cloneRoot.html() ?? "";
 }
 
 function splitHtmlByHeadingsAtLevel(
@@ -374,19 +586,34 @@ function splitHtmlByHeadingsAtLevel(
 ): { heading: string | null; html: string }[] {
   const inner = root.html() ?? "";
   if (!inner.trim()) return [];
-  const tag = `h${level}`;
-  if (root.find(tag).length === 0) {
+
+  const headingsAtLevel = root
+    .find(HEADING_SELECTOR)
+    .toArray()
+    .filter((element) => headingLevelOf($, element) === level);
+
+  if (headingsAtLevel.length === 0) {
     return [{ heading: null, html: inner }];
   }
 
-  const parts = inner.split(new RegExp(`(?=<${tag}\\b[^>]*>)`, "i")).filter((part) => part.trim().length > 0);
+  const parts: { heading: string | null; html: string }[] = [];
 
-  return parts.map((part) => {
-    const wrap = load(`<div>${part}</div>`);
-    const headingEl = wrap(tag).first();
-    const heading = headingEl.length ? headingEl.text().trim() || null : null;
-    return { heading, html: part.trim() };
-  });
+  const introHtml = sliceHtmlByHeadingIndices($, root, headingsAtLevel, null, 0);
+  if (introHtml.trim()) {
+    parts.push({ heading: null, html: introHtml });
+  }
+
+  for (let index = 0; index < headingsAtLevel.length; index++) {
+    const start = headingsAtLevel[index];
+    const endIndexExclusive = index + 1 < headingsAtLevel.length ? index + 1 : null;
+    const chunkHtml = sliceHtmlByHeadingIndices($, root, headingsAtLevel, index, endIndexExclusive);
+    if (chunkHtml.trim()) {
+      const headingText = $(start).text().trim() || null;
+      parts.push({ heading: headingText, html: chunkHtml });
+    }
+  }
+
+  return parts;
 }
 
 const MAX_SECTION_NEST_DEPTH = 10;
@@ -434,12 +661,17 @@ function splitIntoSectionHtmls(
   return splitHtmlByHeadingsAtLevel($, root, level);
 }
 
-function extractSectionsFromRoot($: CheerioAPI, root: Cheerio<AnyNode>): ScrapedSection[] {
+function extractSectionsFromRoot(
+  $: CheerioAPI,
+  root: Cheerio<AnyNode>,
+  pageBaseUrl: string,
+): ScrapedSection[] {
   const chunks = splitIntoSectionHtmls($, root, 0);
   return chunks
     .map(({ heading, html }) => {
       const headingText = heading ? cleanTextLine(heading) : null;
-      let content = turndown.turndown(html);
+      const htmlWithAbsoluteMedia = absolutizeImgAndMediaInHtml(html, pageBaseUrl);
+      let content = turndown.turndown(htmlWithAbsoluteMedia);
       content = stripLeadingAtxHeadingIfMatches(content, headingText);
       content = cleanExtractedMarkdown(content);
       return { heading: headingText, content };
@@ -453,29 +685,57 @@ function combineSectionsToMarkdown(sections: ScrapedSection[]): string {
       .map((section) => {
         const body = cleanExtractedMarkdown(section.content);
         if (section.heading) {
-          return `## ${section.heading}\n\n${body}`;
+          return `## ${section.heading} ${body}`;
         }
         return body;
       })
-      .join("\n\n---\n\n")
+      .join(" --- ")
   );
 }
 
-/** Drop duplicate `![alt](url)` lines by normalized URL (shared `seen` across sections). */
+/** Wrap link destination when markdown would break on spaces or `)` inside the URL. */
+function wrapMarkdownLinkDestination(absoluteUrl: string): string {
+  if (/[\s<>]/.test(absoluteUrl) || absoluteUrl.includes(")")) {
+    return `<${absoluteUrl}>`;
+  }
+  return absoluteUrl;
+}
+
+function resolveUrlAgainstBase(trimmedDest: string, baseUrl: string): { key: string; href: string } {
+  try {
+    const resolved = new URL(trimmedDest, baseUrl);
+    return { key: resolved.href, href: resolved.href };
+  } catch {
+    return { key: trimmedDest, href: trimmedDest };
+  }
+}
+
+/** Dedupe `![alt](url)` by normalized URL and rewrite destinations to absolute URLs (shared `seen`). */
 function dedupeMarkdownImageReferences(markdown: string, baseUrl: string, seen: Set<string>): string {
-  const cleaned = markdown.replace(/!\[([^\]]*)\]\(\s*([^)]+?)\s*\)/g, (fullMatch, altText, dest) => {
-    const trimmed = dest.trim().replace(/^["']|["']$/g, "");
-    let key: string;
-    try {
-      key = new URL(trimmed, baseUrl).href;
-    } catch {
-      key = trimmed;
+  const cleaned = markdown.replace(/!\[([^\]]*)\]\(\s*([^)]+?)\s*\)/g, (_full, altText, dest) => {
+    let trimmed = dest.trim().replace(/^["']|["']$/g, "");
+    if (trimmed.startsWith("<") && trimmed.endsWith(">")) {
+      trimmed = trimmed.slice(1, -1).trim();
     }
+    const { key, href } = resolveUrlAgainstBase(trimmed, baseUrl);
     if (seen.has(key)) return "";
     seen.add(key);
-    return fullMatch;
+    return `![${altText}](${wrapMarkdownLinkDestination(href)})`;
   });
   return cleanExtractedMarkdown(cleaned.replace(/\n{3,}/g, "\n\n"));
+}
+
+/** Resolve relative `[label](url)` video links to absolute (not `![image](...)`). */
+function absolutizeMarkdownVideoLinks(markdown: string, baseUrl: string): string {
+  return markdown.replace(/(?<!!)\[([^\]]*)\]\(\s*([^)]+?)\s*\)/g, (fullMatch, label, dest) => {
+    let trimmed = dest.trim().replace(/^["']|["']$/g, "");
+    if (trimmed.startsWith("<") && trimmed.endsWith(">")) {
+      trimmed = trimmed.slice(1, -1).trim();
+    }
+    if (!isTrackableVideoUrl(trimmed)) return fullMatch;
+    const { href } = resolveUrlAgainstBase(trimmed, baseUrl);
+    return `[${label}](${wrapMarkdownLinkDestination(href)})`;
+  });
 }
 
 function analyzePersonality(markdown: string, ogDescription: string): BrandingPersonality {
@@ -542,40 +802,62 @@ function normalizeHostname(hostname: string): string {
 
 /** Stable path for dedupe: leading slash, no trailing slash except root */
 function normalizePath(pathname: string): string {
-  if (!pathname || pathname === "") return "/";
+  if (!pathname) return "/";
   let normalizedPath = pathname.startsWith("/") ? pathname : `/${pathname}`;
   if (normalizedPath.length > 1 && normalizedPath.endsWith("/")) normalizedPath = normalizedPath.slice(0, -1);
   return normalizedPath;
 }
 
+function stripMarkdownLinkDestination(raw: string): string {
+  let trimmed = raw.trim().replace(/^["']|["']$/g, "");
+  if (trimmed.startsWith("<") && trimmed.endsWith(">")) {
+    trimmed = trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+}
+
+const MD_IMAGE_LINK_RE = /!\[([^\]]*)\]\(\s*([^)]+?)\s*\)/g;
+const MD_PLAIN_LINK_RE = /(?<!!)\[([^\]]*)\]\(\s*([^)]+?)\s*\)/g;
+
+function forEachMarkdownImageDestination(markdown: string, visit: (rawDestination: string) => void) {
+  const expression = new RegExp(MD_IMAGE_LINK_RE.source, MD_IMAGE_LINK_RE.flags);
+  let match: RegExpExecArray | null;
+  while ((match = expression.exec(markdown)) !== null) {
+    visit(match[2]);
+  }
+}
+
+function forEachMarkdownPlainLinkDestination(markdown: string, visit: (rawDestination: string) => void) {
+  const expression = new RegExp(MD_PLAIN_LINK_RE.source, MD_PLAIN_LINK_RE.flags);
+  let match: RegExpExecArray | null;
+  while ((match = expression.exec(markdown)) !== null) {
+    visit(match[2]);
+  }
+}
+
 function extractImageUrlsFromMarkdown(markdown: string, baseHref: string): string[] {
   const urls: string[] = [];
-  const re = /!\[([^\]]*)\]\(\s*([^)]+?)\s*\)/g;
-  let match: RegExpExecArray | null;
-  while ((match = re.exec(markdown)) !== null) {
-    const dest = match[2].trim().replace(/^["']|["']$/g, "");
-    try {
-      urls.push(new URL(dest, baseHref).href);
-    } catch {
-      urls.push(dest);
-    }
-  }
+  forEachMarkdownImageDestination(markdown, (rawDestination) => {
+    const trimmed = stripMarkdownLinkDestination(rawDestination);
+    const { href } = resolveUrlAgainstBase(trimmed, baseHref);
+    urls.push(href);
+  });
   return [...new Set(urls)];
 }
 
 function extractVideoUrlsFromMarkdown(markdown: string, baseHref: string): string[] {
   const urls: string[] = [];
-  const re = /!\[([^\]]*)\]\(\s*([^)]+?)\s*\)|\]\(\s*(https?:\/\/[^)\s]+)\s*\)/g;
-  let match: RegExpExecArray | null;
-  while ((match = re.exec(markdown)) !== null) {
-    const dest = (match[2] ?? "").trim().replace(/^["']|["']$/g, "");
-    if (!dest || !/\.(mp4|webm|ogg)(\?|#|$)/i.test(dest)) continue;
-    try {
-      urls.push(new URL(dest, baseHref).href);
-    } catch {
-      urls.push(dest);
-    }
-  }
+
+  const pushIfVideo = (rawDestination: string) => {
+    const trimmed = stripMarkdownLinkDestination(rawDestination);
+    if (!isTrackableVideoUrl(trimmed)) return;
+    const { href } = resolveUrlAgainstBase(trimmed, baseHref);
+    urls.push(href);
+  };
+
+  forEachMarkdownImageDestination(markdown, pushIfVideo);
+  forEachMarkdownPlainLinkDestination(markdown, pushIfVideo);
+
   return [...new Set(urls)];
 }
 
@@ -635,14 +917,14 @@ async function buildScrapedContent(targetUrl: URL): Promise<{ ok: true; data: Bu
     const brandingExtracted = await extractBranding(page, targetUrl.origin).catch(() => null);
     await page.close();
 
-    const prepared = loadCleanContentRoot(fullHtml);
+    const prepared = loadCleanContentRoot(fullHtml, targetUrl.href);
     if (!prepared) {
       return { ok: false, error: ERR_EMPTY_CONTENT };
     }
 
     const { $, root } = prepared;
     dedupeImagesInRoot($, root, targetUrl.href);
-    const sectionsRaw = extractSectionsFromRoot($, root);
+    const sectionsRaw = extractSectionsFromRoot($, root, targetUrl.href);
     if (sectionsRaw.length === 0) {
       return { ok: false, error: ERR_EMPTY_CONTENT };
     }
@@ -651,7 +933,10 @@ async function buildScrapedContent(targetUrl: URL): Promise<{ ok: true; data: Bu
     const sections = sectionsRaw
       .map((section) => ({
         ...section,
-        content: dedupeMarkdownImageReferences(section.content, targetUrl.href, imageUrlSeen),
+        content: absolutizeMarkdownVideoLinks(
+          dedupeMarkdownImageReferences(section.content, targetUrl.href, imageUrlSeen),
+          targetUrl.href,
+        ),
       }))
       .filter((section) => section.content.trim().length > 0);
 
@@ -685,12 +970,16 @@ async function buildScrapedContent(targetUrl: URL): Promise<{ ok: true; data: Bu
   }
 }
 
+function textForContextDocumentEmbedding(section: ScrapedSection): string {
+  const sectionLabel = section.heading ?? "Content";
+  return `${sectionLabel}\n\n${section.content}`.trim();
+}
+
 export async function scrapeWebsite(_prevState: ScrapeState, formData: FormData): Promise<ScrapeState> {
-  const session = await readSession();
+  const session = await getServerSession();
   if (!session) return { error: ERR_UNAUTHORIZED };
 
-  const rawUrl = formData.get("url") as string;
-  const targetUrl = parseTargetUrl(rawUrl);
+  const targetUrl = parseTargetUrl(String(formData.get("url") ?? ""));
   if (!targetUrl) return { error: ERR_INVALID_URL };
 
   const baseUrl = normalizeHostname(targetUrl.hostname);
@@ -712,6 +1001,15 @@ export async function scrapeWebsite(_prevState: ScrapeState, formData: FormData)
 
   const { title, markdown, sections, branding } = built.data;
   const name = title || baseUrl;
+
+  let sectionEmbeddings: number[][];
+  try {
+    sectionEmbeddings = await embedTextsForContextDocuments(
+      sections.map((section) => textForContextDocumentEmbedding(section)),
+    );
+  } catch {
+    return { error: ERR_EMBEDDING_FAILED };
+  }
 
   const { parent } = await prisma.$transaction(async (transaction) => {
     let parent = existingContext;
@@ -739,15 +1037,29 @@ export async function scrapeWebsite(_prevState: ScrapeState, formData: FormData)
       },
     });
 
-    for (const section of sections) {
+    for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
+      const section = sections[sectionIndex]!;
+      const imageUrls = extractImageUrlsFromMarkdown(section.content, targetUrl.href);
+      const videoUrls = extractVideoUrlsFromMarkdown(section.content, targetUrl.href);
+      const embeddingVector = sectionEmbeddings[sectionIndex]!;
+
       await transaction.contextDocument.create({
         data: {
           contextId: parent.id,
           subcontextId: sub.id,
           section: section.heading ?? "Content",
           content: section.content,
-          images: extractImageUrlsFromMarkdown(section.content, targetUrl.href),
-          videos: extractVideoUrlsFromMarkdown(section.content, targetUrl.href),
+          embedding: embeddingVector,
+          ...(imageUrls.length > 0 && {
+            documentImages: {
+              create: imageUrls.map((url, sortOrder) => ({ url, sortOrder })),
+            },
+          }),
+          ...(videoUrls.length > 0 && {
+            documentVideos: {
+              create: videoUrls.map((url, sortOrder) => ({ url, sortOrder })),
+            },
+          }),
         },
       });
     }
@@ -840,7 +1152,7 @@ function recordToScrapeResult(record: {
 }
 
 export async function listSavedContexts(): Promise<SavedContextSummary[]> {
-  const session = await readSession();
+  const session = await getServerSession();
   if (!session) return [];
 
   const rows = await prisma.scrapedContext.findMany({
@@ -865,10 +1177,8 @@ export async function listSavedContexts(): Promise<SavedContextSummary[]> {
   }));
 }
 
-export async function loadSavedContext(
-  contextId: string,
-): Promise<{ ok: true; result: ScrapeResult } | { ok: false; error: string }> {
-  const session = await readSession();
+export async function loadSavedContext(contextId: string): Promise<LoadSavedContextOutcome> {
+  const session = await getServerSession();
   if (!session) return { ok: false, error: ERR_UNAUTHORIZED };
 
   const contextRecord = await prisma.scrapedContext.findFirst({
@@ -890,28 +1200,23 @@ export async function loadContextFromLibrary(
   _prev: LibraryLoadState,
   formData: FormData,
 ): Promise<LibraryLoadState> {
-  const id = formData.get("contextId") as string;
-  if (!id?.trim()) return { error: "Missing context." };
+  const id = String(formData.get("contextId") ?? "");
+  if (!id.trim()) return { error: "Missing context." };
 
   const outcome = await loadSavedContext(id);
   if (!outcome.ok) return { error: outcome.error };
   return { result: outcome.result };
 }
 
-export type DeleteDNAState = {
-  error?: string;
-  deletedContextId?: string | null;
-};
-
 export async function deleteSavedContext(
   _prevState: DeleteDNAState,
   formData: FormData,
 ): Promise<DeleteDNAState> {
-  const session = await readSession();
+  const session = await getServerSession();
   if (!session) return { error: ERR_UNAUTHORIZED };
 
-  const contextId = formData.get("contextId") as string;
-  if (!contextId?.trim()) return { error: "Missing context." };
+  const contextId = String(formData.get("contextId") ?? "");
+  if (!contextId.trim()) return { error: "Missing context." };
 
   const deleted = await prisma.scrapedContext.deleteMany({
     where: { id: contextId, userId: session.user.id },
@@ -923,7 +1228,7 @@ export async function deleteSavedContext(
 }
 
 export async function getScrapedContexts(): Promise<ScrapeResult[]> {
-  const session = await readSession();
+  const session = await getServerSession();
   if (!session) return [];
 
   const records = await prisma.scrapedContext.findMany({

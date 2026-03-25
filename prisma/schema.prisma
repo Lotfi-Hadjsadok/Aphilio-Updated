@@ -122,8 +122,34 @@ model ContextDocument {
 
   section String
   content String @db.Text
-  images  String[] @default([])
-  videos  String[] @default([])
+
+  /// Vector from OpenRouter `openai/text-embedding-3-small` (JSON array of floats, dim 1536).
+  embedding Json?
+
+  documentImages ContextDocumentImage[]
+  documentVideos ContextDocumentVideo[]
 
   @@map("context_document")
+}
+
+/// One row per image URL linked to a scraped document section.
+model ContextDocumentImage {
+  id         String          @id @default(cuid())
+  documentId String
+  document   ContextDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  url        String          @db.Text
+  sortOrder  Int             @default(0)
+
+  @@map("context_document_image")
+}
+
+/// One row per video URL linked to a scraped document section.
+model ContextDocumentVideo {
+  id         String          @id @default(cuid())
+  documentId String
+  document   ContextDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  url        String          @db.Text
+  sortOrder  Int             @default(0)
+
+  @@map("context_document_video")
 }

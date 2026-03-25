@@ -4,8 +4,8 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { ComponentType, ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import type { BrandingDNA, ScrapeResult, DeleteDNAState } from "@/app/actions/scrape";
 import { deleteSavedContext } from "@/app/actions/scrape";
+import type { BrandingDNA, DeleteDNAState, ScrapeResult } from "@/types/scrape";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {

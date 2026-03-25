@@ -5,7 +5,7 @@ alwaysApply: false
 
 # Context scraping (`app/actions/scrape.ts`)
 
-Server actions that scrape a URL into structured markdown, branding metadata, and Prisma rows (`scrapedContext`, `subContext`, `contextDocument`).
+Server actions that scrape a URL into structured markdown, branding metadata, and Prisma rows (`scrapedContext`, `subContext`, `contextDocument`, `contextDocumentImage`, `contextDocumentVideo`).
 
 ## Related module
 
@@ -36,13 +36,28 @@ Server actions that scrape a URL into structured markdown, branding metadata, an
 2. **`waitForPageReady`** — `networkidle` (12s timeout, errors ignored) + short post-load settle (**600ms**).
 3. **Title + HTML** — `page.title()`, `page.content()`, then **`extractBranding`** (in-page script in `scrape-branding-page-evaluate.ts`), then **page is closed**.
 4. **In-browser branding** — `document.fonts.ready`, color sampling (computed styles, CSS vars on `:root`, buttons/links/headings, brand-ish classes), including gradient stop colors from `background-image`, logo/favicon/OG image, font frequency (capped node walk), typography summary. Returns visual data only; **no** `personality` until markdown exists.
-5. **Cheerio** — `loadCleanContentRoot`: strip `script`, `style`, `noscript`, `svg`, `iframe`, `template`, `link[rel=preload]`; prefer `<main>` → `<article>` → `body`; dedupe `<img>` by resolved URL (`src` / lazy attrs / first `srcset` entry).
-6. **Sections** — `splitIntoSectionHtmls`: prefer multiple **top-level** `<section>` blocks (nested sections recurse up to depth **10**); else split at the **smallest present heading level** (`h1`…`h6`). Turndown each chunk; **`stripLeadingAtxHeadingIfMatches`** removes duplicate ATX headings vs stored `heading`; **`cleanExtractedMarkdown`** normalizes whitespace.
-7. **Combine** — `combineSectionsToMarkdown` joins sections with `---` and optional `##` headings.
-8. **Images in markdown** — **`dedupeMarkdownImageReferences`** drops repeated `![alt](url)` lines by normalized URL across sections (shared `Set`).
-9. **Personality** — If branding extraction succeeded: read `og:description` / `meta name=description`, then **`analyzePersonality(markdown, ogDescription)`** fills `BrandingDNA.personality` (keyword heuristics for tone, energy, audience).
+5. **Cheerio** — `loadCleanContentRoot(fullHtml, pageBaseUrl)`:
+   - Removes `script`, `style`, `noscript`, `svg`, `template`, `link[rel=preload]` (not all iframes).
+   - **`pruneNonVideoIframes`**: removes `<iframe>` whose resolved `src` is **not** a trackable video URL (`isTrackableVideoUrl`). Keeps YouTube, Vimeo, Loom, Wistia, Streamable, Dailymotion, etc., and drops maps/widgets/ads iframes.
+   - Prefers `<main>` → `<article>` → `body`; dedupe `<img>` by resolved URL (`src` / lazy attrs / first `srcset` entry).
+6. **Sections** — `splitIntoSectionHtmls`:
+   - Prefer multiple **top-level** `<section>` blocks (nested sections recurse up to depth **10**); heading text from first semantic heading inside the block, or `aria-label` / `title`.
+   - Otherwise split at the **minimum** present outline level among `h1`–`h6` and `[role="heading"]` (with `aria-level` or default **2** for role-only headings).
+   - Slicing uses **document order** on a cloned subtree (not string-splitting on tags), so layout siblings (e.g. grid columns) stay with the correct heading block.
+7. **Per section** — `absolutizeImgAndMediaInHtml`: absolute URLs for `img`, `video` / `source`, `iframe`, and `a[href]` when the link is a trackable video URL.
+8. **Turndown** — HTML → Markdown:
+   - Strips `<svg>`.
+   - **`<video>`** → one or more `[label](url)` lines (`<video src>` + each `<source src>`, deduped).
+   - **`<iframe>`** with trackable `src` → `[label](url)` (embeds preserved because step 5 no longer deletes all iframes).
+9. **`stripLeadingAtxHeadingIfMatches`** — removes duplicate ATX headings vs stored `heading`; **`cleanExtractedMarkdown`** normalizes whitespace.
+10. **Post-process** — **`dedupeMarkdownImageReferences`** dedupes `![alt](url)` by normalized URL (shared `Set` across sections); **`absolutizeMarkdownVideoLinks`** absolutizes `[label](url)` when the destination is trackable video.
+11. **Combine** — `combineSectionsToMarkdown` joins sections with `---` and optional `##` headings.
+12. **Personality** — If branding extraction succeeded: read `og:description` / `meta name=description`, then **`analyzePersonality(markdown, ogDescription)`** fills `BrandingDNA.personality` (keyword heuristics for tone, energy, audience).
 
-**Turndown:** Custom rule strips `<svg>` nodes.
+## Video tracking
+
+- **`isTrackableVideoUrl`**: file extensions (e.g. `mp4`, `webm`, `m3u8`, …) **or** known embed hosts after resolving the URL.
+- **`extractVideoUrlsFromMarkdown`**: collects URLs from both `![...](...)` and `[...](...)` patterns when the destination is trackable (so poster/thumbnail image syntax pointing at a video file is still stored).
 
 ## Session helper
 
@@ -58,7 +73,9 @@ Server actions that scrape a URL into structured markdown, branding metadata, an
 
 - **`scrapedContext`:** Created on first path for that `baseUrl`; denormalized `logo`, `primaryColor`, `secondaryColor`, `typography`, plus JSON **`branding`** when present.
 - **`subContext`:** One row per scraped path.
-- **`contextDocument`:** One row per section; `section` is the heading or `"Content"`; **`images`** / **`videos`** derived from markdown via `extractImageUrlsFromMarkdown` and `extractVideoUrlsFromMarkdown` (video URLs matched by extension in link/image patterns).
+- **`contextDocument`:** One row per section; `section` is the heading or `"Content"`.
+- **`contextDocumentImage`:** URLs from `extractImageUrlsFromMarkdown` per section.
+- **`contextDocumentVideo`:** URLs from `extractVideoUrlsFromMarkdown` per section (file URLs + embeds per `isTrackableVideoUrl`).
 
 ## Errors (user-facing strings)
 
@@ -67,8 +84,8 @@ Constants: unauthorized, invalid URL, empty content, already scraped path. **`bu
 ## Dependencies
 
 - `playwright` — headless fetch and in-page branding script.
-- `cheerio` — DOM cleanup and section splitting.
-- `turndown` — HTML → Markdown (custom rule strips `<svg>`).
+- `cheerio` — DOM cleanup, iframe pruning, section splitting.
+- `turndown` — HTML → Markdown (custom rules for `svg`, `video`, video `iframe`).
 - `auth` + `prisma` — session and persistence.
 
 When changing persistence, keep **`mergeBrandingFromRecord`** in sync with nullable columns vs JSON `branding` on `scrapedContext` (it merges column overrides with stored JSON, including default `personality` when missing).

@@ -10,8 +10,8 @@ const adapter = new PrismaPg({
   connectionString: databaseUrl,
 });
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
+const globalForPrisma = globalThis as typeof globalThis & {
+  prisma?: PrismaClient;
 };
 
 const prisma =

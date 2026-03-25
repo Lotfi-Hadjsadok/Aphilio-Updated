@@ -3,8 +3,8 @@
 import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { scrapeWebsite, type ScrapeState, type SavedContextSummary } from "@/app/actions/scrape";
-import { deleteSavedContext, type DeleteDNAState } from "@/app/actions/scrape";
+import { scrapeWebsite, deleteSavedContext } from "@/app/actions/scrape";
+import type { DeleteDNAState, SavedContextSummary, ScrapeState } from "@/types/scrape";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -215,14 +215,17 @@ function ScrapeFormInner({ savedContexts }: { savedContexts: SavedContextSummary
         <div className="flex min-w-0 items-center gap-3">
           <Link
             href="/dashboard"
-            className={cn(buttonVariants({ variant: "outline", size: "sm" }), "shrink-0 gap-1.5 rounded-lg")}
+            aria-label="Dashboard"
+            className={cn(
+              buttonVariants({ variant: "outline", size: "icon-lg" }),
+              "shrink-0 rounded-lg",
+            )}
           >
             <ArrowLeft className="size-3.5" />
-            <span className="hidden sm:inline">Back</span>
           </Link>
           <div className="min-w-0">
             <p className="font-heading text-sm font-semibold tracking-tight text-foreground">DNA</p>
-            <p className="hidden text-[0.65rem] text-muted-foreground sm:block">
+            <p className="text-[0.65rem] text-muted-foreground">
               Branding extracted from the page you paste
             </p>
           </div>

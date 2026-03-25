@@ -1,18 +1,9 @@
+import type { BrandingPageEvaluatePayload } from "@/types/branding-evaluate";
+
 /**
  * Runs inside Chromium via Playwright `page.evaluate`. Serialized as a single function;
- * must not import other modules or close over server scope. Only `siteOrigin` is injected.
+ * must not import runtime values from app code. `import type` is erased and safe.
  */
-export type BrandingPageEvaluatePayload = {
-  primaryColor: string | null;
-  secondaryColor: string | null;
-  logoUrl: string | null;
-  faviconUrl: string | null;
-  ogImageUrl: string | null;
-  primaryFont: string | null;
-  secondaryFont: string | null;
-  typography: string | null;
-};
-
 export async function extractBrandingInBrowserContext(
   siteOrigin: string,
 ): Promise<BrandingPageEvaluatePayload> {
@@ -91,15 +82,13 @@ export async function extractBrandingInBrowserContext(
           const context2d = canvas.getContext("2d");
           if (!context2d) return null;
           context2d.fillStyle = color;
-          const normalized = context2d.fillStyle as string;
-          const rgb2 =
-            typeof normalized === "string" &&
-            normalized.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+          const normalized = String(context2d.fillStyle);
+          const rgb2 = normalized.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
           if (rgb2) {
             red = parseInt(rgb2[1]!, 10);
             green = parseInt(rgb2[2]!, 10);
             blue = parseInt(rgb2[3]!, 10);
-          } else if (typeof normalized === "string" && normalized.startsWith("#") && normalized.length === 7) {
+          } else if (normalized.startsWith("#") && normalized.length === 7) {
             red = parseInt(normalized.slice(1, 3), 16);
             green = parseInt(normalized.slice(3, 5), 16);
             blue = parseInt(normalized.slice(5, 7), 16);
