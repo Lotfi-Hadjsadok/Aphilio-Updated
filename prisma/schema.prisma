@@ -79,14 +79,15 @@ model ScrapedContext {
   baseUrl   String
   name      String
 
-  /// Extra branding payload (personality, favicon, og, full font stacks, etc.)
-  branding  Json?
-
   logo            String?
   primaryColor    String?
   secondaryColor  String?
-  /// Font-weight summary, e.g. "body:400 · heading:600"
-  typography      String?
+  /// Array of [{fontfamily, body, heading}] entries from page evaluation.
+  typography      Json?
+  /// AI-derived personality specs.
+  personality     Json?
+  /// AI-derived marketing angles (up to 40 strings).
+  marketingAngles Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -123,8 +124,11 @@ model ContextDocument {
   section String
   content String @db.Text
 
-  /// Vector from OpenRouter `openai/text-embedding-3-small` (JSON array of floats, dim 1536).
+  /// Vector from OpenAI `text-embedding-3-small` (JSON array of floats, dim 1536).
   embedding Json?
+
+  /// Same embedding as `embedding`, stored for pgvector similarity search (cosine via `<=>`).
+  embeddingVector Unsupported("vector(1536)")? @map("embedding_vector")
 
   documentImages ContextDocumentImage[]
   documentVideos ContextDocumentVideo[]

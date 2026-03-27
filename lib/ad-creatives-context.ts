@@ -2,10 +2,9 @@ import "server-only";
 
 import { htmlToText } from "html-to-text";
 import { marked } from "marked";
-import { saasTemplateConstants } from "@/lib/saas-template-constants";
 import type { ScrapeResult, ScrapedSection } from "@/types/scrape";
 import type { AdCreativesSectionOption } from "@/types/ad-creatives";
-import type { FilledTemplate } from "@/types/openrouter";
+import { DEFAULT_SECTION_TITLE } from "@/lib/ad-creatives-constants";
 
 function markdownToPlainText(markdown: string): string {
   const html = marked.parse(markdown, { async: false });
@@ -23,7 +22,7 @@ function sectionToOption(
   id: string,
   sourceLabel: string,
 ): AdCreativesSectionOption | null {
-  const heading = section.heading?.trim() || "Untitled section";
+  const heading = section.heading?.trim() || DEFAULT_SECTION_TITLE;
   const flat = markdownToPlainText(section.content).replace(/\s+/g, " ").trim();
   if (!flat) return null;
   const preview = flat.length > 160 ? `${flat.slice(0, 160).trim()}…` : flat;
@@ -83,37 +82,15 @@ export function resolveScrapedSectionById(result: ScrapeResult, sectionId: strin
   return subpage.sections[sectionIndex] ?? null;
 }
 
-export function buildAdCreativesModelContextJson(result: ScrapeResult, sectionIds: string[]): string {
-  const sectionBlocks = sectionIds
+export function buildSelectedSectionsForModel(
+  result: ScrapeResult,
+  sectionIds: string[],
+): { heading: string | null; markdown: string }[] {
+  return sectionIds
     .map((sectionId) => {
       const section = resolveScrapedSectionById(result, sectionId);
       if (!section) return null;
       return { heading: section.heading, markdown: section.content };
     })
     .filter((block): block is { heading: string | null; markdown: string } => block !== null);
-
-  return JSON.stringify(
-    {
-      brandName: result.name,
-      baseUrl: result.baseUrl,
-      primaryUrl: result.scrapedUrl,
-      branding: result.branding,
-      selectedSections: sectionBlocks,
-    },
-    null,
-    2,
-  );
-}
-
-export function enrichFilledTemplates(modelTemplates: FilledTemplate[]): FilledTemplate[] {
-  return modelTemplates.map((template) => {
-    const definition = saasTemplateConstants[template.templateIndex - 1];
-    return {
-      ...template,
-      prompt: template.prompt || definition?.prompt || "",
-      description: template.description || definition?.description || "",
-      defaultAspectRatio: template.defaultAspectRatio ?? definition?.default_aspect_ratio ?? "4:5",
-      needs: template.needs.length > 0 ? template.needs : definition?.needs ?? [],
-    };
-  });
 }

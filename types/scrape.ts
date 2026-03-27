@@ -1,7 +1,18 @@
+export type TypographyEntry = {
+  fontfamily: string;
+  body: string;
+  heading: string;
+};
+
 export type BrandingPersonality = {
   tone: string;
   energy: string;
   audience: string;
+  voice: string;
+  archetype: string;
+  valueProposition: string;
+  emotionalTriggers: string[];
+  communicationStyle: string;
 };
 
 export type BrandingDNA = {
@@ -10,11 +21,8 @@ export type BrandingDNA = {
   favicon: string | null;
   logo: string | null;
   ogImage: string | null;
-  personality: BrandingPersonality;
-  /** Frequency-ranked font families. */
-  fonts: { primary: string | null; secondary: string | null };
-  /** e.g. body vs heading weights from computed styles. */
-  typography: string | null;
+  /** Font families with body/heading weight per entry. */
+  typography: TypographyEntry[] | null;
 };
 
 export type ScrapedSection = {
@@ -40,6 +48,10 @@ export type ScrapeResult = {
   markdown: string;
   sections: ScrapedSection[];
   branding: BrandingDNA | null;
+  /** AI-derived personality specs. */
+  personality: BrandingPersonality | null;
+  /** AI-derived marketing angles (up to 40). */
+  marketingAngles: string[] | null;
   createdAt: Date;
   /** Present when more than one path exists for this site. */
   subpages?: SubpageSnapshot[];

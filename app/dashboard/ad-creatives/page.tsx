@@ -7,7 +7,7 @@ import { AdCreativesForm } from "./ad-creatives-form";
 export const metadata = {
   title: "Ad creatives",
   description:
-    "Pick saved DNA, choose ad templates and page sections, then generate filled prompts with OpenRouter.",
+    "Pick saved DNA, a marketing angle, and sections — AI shapes the creative to your angle and generates the image prompt.",
 };
 
 export default async function AdCreativesPage() {

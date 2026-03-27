@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { ComponentType, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { deleteSavedContext } from "@/app/actions/scrape";
-import type { BrandingDNA, DeleteDNAState, ScrapeResult } from "@/types/scrape";
+import type { BrandingDNA, BrandingPersonality, DeleteDNAState, ScrapeResult, TypographyEntry } from "@/types/scrape";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -38,14 +38,6 @@ function resolveBrandColors(branding: BrandingDNA): { primary: string | null; se
   return { primary: colorsObject.primary ?? null, secondary: colorsObject.secondary ?? null };
 }
 
-function resolveBrandFonts(branding: BrandingDNA): { primary: string | null; secondary: string | null } {
-  const fonts = branding.fonts as unknown;
-  if (Array.isArray(fonts)) {
-    return { primary: fonts[0] ?? null, secondary: fonts[1] ?? null };
-  }
-  const fontsObject = fonts as { primary?: string | null; secondary?: string | null };
-  return { primary: fontsObject.primary ?? null, secondary: fontsObject.secondary ?? null };
-}
 
 function SectionLabel({
   icon: Icon,
@@ -290,10 +282,16 @@ function OpenGraphPreview({ ogImage }: { ogImage: string | null }) {
   );
 }
 
-function BrandPalette({ branding }: { branding: BrandingDNA }) {
+function BrandPalette({
+  branding,
+  personality,
+}: {
+  branding: BrandingDNA;
+  personality: BrandingPersonality | null;
+}) {
   const { primary, secondary } = resolveBrandColors(branding);
-  const fonts = resolveBrandFonts(branding);
   const hasPalette = Boolean(primary || secondary);
+  const typographyEntries: TypographyEntry[] = Array.isArray(branding.typography) ? branding.typography : [];
 
   return (
     <div className="space-y-5 sm:space-y-6">
@@ -418,56 +416,56 @@ function BrandPalette({ branding }: { branding: BrandingDNA }) {
         {/* Voice & personality */}
         <section aria-label="Voice and personality" className="space-y-3 sm:col-span-2">
           <SectionLabel icon={Sparkles}>Voice &amp; personality</SectionLabel>
-          <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
-            <VoiceCard icon={MessageSquare} label="Tone" value={branding.personality.tone} />
-            <VoiceCard icon={Zap} label="Energy" value={branding.personality.energy} />
-            <VoiceCard icon={Users} label="Audience" value={branding.personality.audience} />
-          </div>
+          {personality ? (
+            <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
+              <VoiceCard icon={MessageSquare} label="Tone" value={personality.tone} />
+              <VoiceCard icon={Zap} label="Energy" value={personality.energy} />
+              <VoiceCard icon={Users} label="Audience" value={personality.audience} />
+              {personality.voice ? (
+                <VoiceCard icon={Sparkles} label="Voice" value={personality.voice} />
+              ) : null}
+              {personality.archetype ? (
+                <VoiceCard icon={Dna} label="Archetype" value={personality.archetype} />
+              ) : null}
+            </div>
+          ) : (
+            <div className="flex flex-col items-start gap-2 rounded-xl border-[0.5px] border-dashed border-border/60 bg-background/40 px-3 py-3">
+              <p className="text-sm font-medium text-foreground">No personality data</p>
+              <p className="text-xs text-muted-foreground">
+                Re-scrape this site to get AI-derived personality specs.
+              </p>
+            </div>
+          )}
         </section>
 
         {/* Typography */}
         <section aria-label="Typography" className="space-y-3 sm:col-span-2">
             <SectionLabel icon={Type}>Typography</SectionLabel>
             <div className="rounded-2xl border-[0.5px] border-border/60 bg-card/60 p-3 shadow-sm sm:p-4">
-              {(fonts.primary || fonts.secondary || branding.typography) ? (
-                <>
-                  {(fonts.primary || fonts.secondary) && (
-                    <div className="flex flex-wrap gap-2">
-                      {fonts.primary && (
-                        <span className="inline-flex max-w-full items-center gap-1.5 rounded-lg border-[0.5px] border-border/60 bg-background px-3 py-1.5 font-mono text-[0.8rem] text-foreground shadow-sm">
-                          <span className="text-[0.6rem] font-sans font-bold uppercase tracking-wider text-muted-foreground">
-                            Aa
-                          </span>
-                          {fonts.primary}
-                        </span>
-                      )}
-                      {fonts.secondary && (
-                        <span className="inline-flex max-w-full items-center gap-1.5 rounded-lg border-[0.5px] border-border/60 bg-background px-3 py-1.5 font-mono text-[0.8rem] text-foreground shadow-sm">
-                          <span className="text-[0.6rem] font-sans font-bold uppercase tracking-wider text-muted-foreground">
-                            Aa
-                          </span>
-                          {fonts.secondary}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  {branding.typography && (
-                    <p
-                      className={cn(
-                        "font-mono text-[0.8rem] leading-relaxed text-muted-foreground",
-                        (fonts.primary || fonts.secondary) && "mt-3 border-t-[0.5px] border-border/50 pt-3",
-                        "line-clamp-3",
-                      )}
+              {typographyEntries.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {typographyEntries.map((entry) => (
+                    <div
+                      key={entry.fontfamily}
+                      className="flex flex-col gap-1 rounded-lg border-[0.5px] border-border/60 bg-background px-3 py-2 shadow-sm"
                     >
-                      {branding.typography}
-                    </p>
-                  )}
-                </>
+                      <span className="inline-flex items-center gap-1.5 font-mono text-[0.8rem] text-foreground">
+                        <span className="text-[0.6rem] font-sans font-bold uppercase tracking-wider text-muted-foreground">
+                          Aa
+                        </span>
+                        {entry.fontfamily}
+                      </span>
+                      <span className="font-mono text-[0.65rem] text-muted-foreground">
+                        body {entry.body} · heading {entry.heading}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <div className="flex flex-col items-start gap-2 rounded-xl border-[0.5px] border-dashed border-border/60 bg-background/40 px-3 py-3">
                   <p className="text-sm font-medium text-foreground">No typography signals</p>
                   <p className="text-xs text-muted-foreground">
-                    We couldn’t extract font families or typing behavior from this URL.
+                    We couldn't extract font families or weight information from this URL.
                   </p>
                 </div>
               )}
@@ -477,6 +475,7 @@ function BrandPalette({ branding }: { branding: BrandingDNA }) {
     </div>
   );
 }
+
 
 export function ResultExperience({
   result,
@@ -590,7 +589,7 @@ export function ResultExperience({
               <section className="overflow-hidden rounded-2xl border-[0.5px] border-border/60 bg-card/90 shadow-sm ring-[0.5px] ring-foreground/[0.03] backdrop-blur-sm">
                 <BrandPaletteStrip branding={result.branding} />
                 <div className="p-5 sm:p-6">
-                  <BrandPalette branding={result.branding} />
+                  <BrandPalette branding={result.branding} personality={result.personality ?? null} />
                 </div>
               </section>
             ) : (

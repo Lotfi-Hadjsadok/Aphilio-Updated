@@ -3,7 +3,11 @@
 import { chromium, type Page } from "playwright";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "@/lib/server-auth";
-import { embedTextsForContextDocuments } from "@/lib/openrouter";
+import {
+  embedTextsForContextDocuments,
+  embeddingArrayToPgVectorLiteral,
+  analyzePersonalityAndAngles,
+} from "@/lib/langchain";
 import type {
   BrandingDNA,
   BrandingPersonality,
@@ -15,6 +19,7 @@ import type {
   ScrapeState,
   ScrapedSection,
   SubpageSnapshot,
+  TypographyEntry,
 } from "@/types/scrape";
 import type { AnyNode } from "domhandler";
 import { load, type CheerioAPI, type Cheerio } from "cheerio";
@@ -196,122 +201,11 @@ const ERR_EMPTY_CONTENT = "Could not retrieve any content from this URL.";
 const ERR_ALREADY_SCRAPED =
   "This page is already in your library. Only new paths on a site are scraped.";
 const ERR_EMBEDDING_FAILED =
-  "Could not generate embeddings for scraped content. Check your OpenRouter API key and try again.";
+  "Could not generate embeddings for scraped content. Check your OpenAI API key and try again.";
 
 const PAGE_GOTO_TIMEOUT_MS = 600_000;
 const NETWORK_IDLE_TIMEOUT_MS = 12_000;
 const POST_LOAD_SETTLE_MS = 600;
-
-// ── Personality heuristics (keyword sets) ──────────────────────────────────
-
-const PROFESSIONAL_TOKENS = new Set([
-  "enterprise",
-  "professional",
-  "solution",
-  "strategy",
-  "optimize",
-  "leverage",
-  "stakeholder",
-  "robust",
-  "scalable",
-  "compliance",
-  "governance",
-  "productivity",
-  "efficiency",
-]);
-
-const CASUAL_TOKENS = new Set([
-  "awesome",
-  "amazing",
-  "love",
-  "cool",
-  "hey",
-  "wow",
-  "super",
-  "fun",
-  "incredible",
-  "fantastic",
-  "delightful",
-  "simple",
-  "easy",
-]);
-
-const HIGH_ENERGY_TOKENS = new Set([
-  "revolutionary",
-  "transform",
-  "powerful",
-  "blazing",
-  "instant",
-  "boost",
-  "explosive",
-  "game-changing",
-  "disruptive",
-  "launch",
-  "unleash",
-]);
-
-const CALM_TOKENS = new Set([
-  "reliable",
-  "steady",
-  "consistent",
-  "trusted",
-  "quality",
-  "thoughtful",
-  "measured",
-  "secure",
-  "dependable",
-]);
-
-const B2B_TOKENS = new Set([
-  "enterprise",
-  "team",
-  "organization",
-  "business",
-  "company",
-  "roi",
-  "workflow",
-  "integration",
-  "dashboard",
-  "analytics",
-  "compliance",
-  "saas",
-  "b2b",
-]);
-
-const B2C_TOKENS = new Set([
-  "personal",
-  "home",
-  "family",
-  "everyday",
-  "everyone",
-  "yourself",
-  "individual",
-  "consumer",
-  "b2c",
-]);
-
-const DEV_TOKENS = new Set([
-  "api",
-  "developer",
-  "code",
-  "open-source",
-  "github",
-  "sdk",
-  "documentation",
-  "endpoint",
-  "cli",
-  "npm",
-  "library",
-  "framework",
-]);
-
-function countTokenHits(words: string[], tokens: ReadonlySet<string>): number {
-  let hits = 0;
-  for (const word of words) {
-    if (tokens.has(word)) hits += 1;
-  }
-  return hits;
-}
 
 // ── Playwright + Cheerio helpers ─────────────────────────────────────────────
 
@@ -342,7 +236,7 @@ function loadCleanContentRoot(
   fullDocumentHtml: string,
   pageBaseUrl: string,
 ): { $: CheerioAPI; root: Cheerio<AnyNode> } | null {
-  const $ = load(fullDocumentHtml);
+  const $ = load(stripSvgElementsFromRawHtml(fullDocumentHtml));
 
   $("script, style, noscript, svg, template, link[rel=preload]").remove();
   pruneNonVideoIframes($, pageBaseUrl);
@@ -356,6 +250,17 @@ function loadCleanContentRoot(
   root.find("script, style, noscript, svg").remove();
 
   return { $, root };
+}
+
+/**
+ * Strip `<svg>…</svg>` blocks from raw HTML before Cheerio parsing.
+ * Prevents htmlparser2 from mis-nesting subsequent siblings inside foreign-content SVG nodes,
+ * which would cause them to be silently removed when we later call `$("svg").remove()`.
+ */
+const SVG_ELEMENT_RE = /<svg\b[^>]*>[\s\S]*?<\/svg>/gi;
+
+function stripSvgElementsFromRawHtml(html: string): string {
+  return html.replace(SVG_ELEMENT_RE, "");
 }
 
 /** Normalize img URL for deduping (absolute when possible). */
@@ -661,6 +566,19 @@ function splitIntoSectionHtmls(
   return splitHtmlByHeadingsAtLevel($, root, level);
 }
 
+/** Extract image URLs directly from an HTML fragment via Cheerio (fallback for Turndown misses). */
+function extractImageUrlsFromHtmlFragment(htmlFragment: string, baseUrl: string): string[] {
+  const $frag = load(`<div id="img-extract-root">${htmlFragment}</div>`);
+  const urls: string[] = [];
+  $frag("#img-extract-root")
+    .find("img")
+    .each((_index, element) => {
+      const resolved = resolveImgUrl($frag(element), baseUrl);
+      if (resolved) urls.push(resolved);
+    });
+  return [...new Set(urls)];
+}
+
 function extractSectionsFromRoot(
   $: CheerioAPI,
   root: Cheerio<AnyNode>,
@@ -671,9 +589,20 @@ function extractSectionsFromRoot(
     .map(({ heading, html }) => {
       const headingText = heading ? cleanTextLine(heading) : null;
       const htmlWithAbsoluteMedia = absolutizeImgAndMediaInHtml(html, pageBaseUrl);
+      const htmlImageUrls = extractImageUrlsFromHtmlFragment(htmlWithAbsoluteMedia, pageBaseUrl);
       let content = turndown.turndown(htmlWithAbsoluteMedia);
       content = stripLeadingAtxHeadingIfMatches(content, headingText);
       content = cleanExtractedMarkdown(content);
+
+      const markdownImageUrls = new Set(extractImageUrlsFromMarkdown(content, pageBaseUrl));
+      const missingImages = htmlImageUrls.filter((url) => !markdownImageUrls.has(url));
+      if (missingImages.length > 0) {
+        const appendix = missingImages
+          .map((url) => `![](${wrapMarkdownLinkDestination(url)})`)
+          .join(" ");
+        content = content ? `${content} ${appendix}` : appendix;
+      }
+
       return { heading: headingText, content };
     })
     .filter((section) => section.content.length > 0);
@@ -738,51 +667,14 @@ function absolutizeMarkdownVideoLinks(markdown: string, baseUrl: string): string
   });
 }
 
-function analyzePersonality(markdown: string, ogDescription: string): BrandingPersonality {
-  const content = `${markdown} ${ogDescription}`.toLowerCase();
-  const words = content.split(/\W+/);
-
-  const proScore = countTokenHits(words, PROFESSIONAL_TOKENS);
-  const casualScore = countTokenHits(words, CASUAL_TOKENS);
-
-  let tone = "neutral";
-  if (proScore > casualScore * 1.5) tone = "professional";
-  else if (casualScore > proScore * 1.5) tone = "casual";
-  else if (proScore > 0 || casualScore > 0) tone = "balanced";
-
-  const exclamations = (content.match(/!/g) || []).length;
-  const highScore = exclamations + countTokenHits(words, HIGH_ENERGY_TOKENS) * 2;
-  const calmScore = countTokenHits(words, CALM_TOKENS);
-
-  let energy = "moderate";
-  if (highScore > 5 || highScore > calmScore * 2) energy = "high";
-  else if (calmScore > highScore * 1.5) energy = "calm";
-
-  const b2bScore = countTokenHits(words, B2B_TOKENS);
-  const b2cScore = countTokenHits(words, B2C_TOKENS);
-  const devScore = countTokenHits(words, DEV_TOKENS);
-
-  let audience = "general";
-  if (devScore >= 3 && devScore >= b2bScore) audience = "developers";
-  else if (b2bScore > b2cScore * 1.5) audience = "B2B";
-  else if (b2cScore > b2bScore * 1.5) audience = "B2C";
-  else if (b2bScore > 0 || b2cScore > 0) audience = "mixed";
-
-  return { tone, energy, audience };
-}
-
-/** Visual + font signals from the page (personality is derived later from markdown + meta). */
-type BrandingExtracted = Omit<BrandingDNA, "personality">;
-
-async function extractBranding(page: Page, origin: string): Promise<BrandingExtracted> {
+async function extractBranding(page: Page, origin: string): Promise<BrandingDNA> {
   const raw = await page.evaluate(extractBrandingInBrowserContext, origin);
   return {
     colors: { primary: raw.primaryColor, secondary: raw.secondaryColor },
     favicon: raw.faviconUrl,
     logo: raw.logoUrl,
     ogImage: raw.ogImageUrl,
-    fonts: { primary: raw.primaryFont, secondary: raw.secondaryFont },
-    typography: raw.typography,
+    typography: raw.typography.length > 0 ? raw.typography : null,
   };
 }
 
@@ -861,27 +753,33 @@ function extractVideoUrlsFromMarkdown(markdown: string, baseHref: string): strin
   return [...new Set(urls)];
 }
 
-function mergeBrandingFromRecord(record: {
-  branding: unknown;
+function brandingFromRecord(record: {
   logo: string | null;
   primaryColor: string | null;
   secondaryColor: string | null;
-  typography: string | null;
+  typography: unknown;
 }): BrandingDNA | null {
-  const stored = record.branding as BrandingDNA | null;
-  if (!stored && !record.logo && !record.primaryColor && !record.secondaryColor && !record.typography) return null;
+  if (!record.logo && !record.primaryColor && !record.secondaryColor && !record.typography) return null;
   return {
     colors: {
-      primary: record.primaryColor ?? stored?.colors?.primary ?? null,
-      secondary: record.secondaryColor ?? stored?.colors?.secondary ?? null,
+      primary: record.primaryColor ?? null,
+      secondary: record.secondaryColor ?? null,
     },
-    favicon: stored?.favicon ?? null,
-    logo: record.logo ?? stored?.logo ?? null,
-    ogImage: stored?.ogImage ?? null,
-    personality: stored?.personality ?? { tone: "neutral", energy: "moderate", audience: "general" },
-    fonts: stored?.fonts ?? { primary: null, secondary: null },
-    typography: record.typography ?? stored?.typography ?? null,
+    favicon: null,
+    logo: record.logo ?? null,
+    ogImage: null,
+    typography: Array.isArray(record.typography) ? (record.typography as TypographyEntry[]) : null,
   };
+}
+
+function personalityFromRecord(record: { personality: unknown }): BrandingPersonality | null {
+  if (!record.personality || typeof record.personality !== "object") return null;
+  return record.personality as BrandingPersonality;
+}
+
+function marketingAnglesFromRecord(record: { marketingAngles: unknown }): string[] | null {
+  if (!Array.isArray(record.marketingAngles)) return null;
+  return record.marketingAngles as string[];
 }
 
 type BuiltSections = {
@@ -946,23 +844,9 @@ async function buildScrapedContent(targetUrl: URL): Promise<{ ok: true; data: Bu
 
     const markdown = combineSectionsToMarkdown(sections);
 
-    let branding: BrandingDNA | null = null;
-    if (brandingExtracted) {
-      const $meta = load(fullHtml);
-      const ogDescription = cleanTextLine(
-        $meta('meta[property="og:description"]').attr("content") ??
-          $meta('meta[name="description"]').attr("content") ??
-          ""
-      );
-      branding = {
-        ...brandingExtracted,
-        personality: analyzePersonality(markdown, ogDescription),
-      };
-    }
-
     return {
       ok: true,
-      data: { title, markdown, sections, branding },
+      data: { title, markdown, sections, branding: brandingExtracted },
     };
   } finally {
     await context.close();
@@ -1011,6 +895,13 @@ export async function scrapeWebsite(_prevState: ScrapeState, formData: FormData)
     return { error: ERR_EMBEDDING_FAILED };
   }
 
+  // Single AI call: personality + marketing angles from all document texts
+  const allDocumentTexts = sections.map((section) => textForContextDocumentEmbedding(section));
+  const { personality, marketingAngles } = await analyzePersonalityAndAngles(allDocumentTexts).catch(() => ({
+    personality: null as BrandingPersonality | null,
+    marketingAngles: [] as string[],
+  }));
+
   const { parent } = await prisma.$transaction(async (transaction) => {
     let parent = existingContext;
 
@@ -1023,8 +914,9 @@ export async function scrapeWebsite(_prevState: ScrapeState, formData: FormData)
           logo: branding?.logo ?? null,
           primaryColor: branding?.colors.primary ?? null,
           secondaryColor: branding?.colors.secondary ?? null,
-          typography: branding?.typography ?? null,
-          branding: branding ?? undefined,
+          typography: branding?.typography ? (branding.typography as object[]) : undefined,
+          personality: personality ? (personality as object) : undefined,
+          marketingAngles: marketingAngles.length > 0 ? marketingAngles : undefined,
         },
       });
     }
@@ -1043,7 +935,7 @@ export async function scrapeWebsite(_prevState: ScrapeState, formData: FormData)
       const videoUrls = extractVideoUrlsFromMarkdown(section.content, targetUrl.href);
       const embeddingVector = sectionEmbeddings[sectionIndex]!;
 
-      await transaction.contextDocument.create({
+      const createdDocument = await transaction.contextDocument.create({
         data: {
           contextId: parent.id,
           subcontextId: sub.id,
@@ -1062,6 +954,12 @@ export async function scrapeWebsite(_prevState: ScrapeState, formData: FormData)
           }),
         },
       });
+
+      await transaction.$executeRawUnsafe(
+        `UPDATE "context_document" SET "embedding_vector" = $1::vector WHERE "id" = $2`,
+        embeddingArrayToPgVectorLiteral(embeddingVector),
+        createdDocument.id,
+      );
     }
 
     return { parent };
@@ -1075,7 +973,9 @@ export async function scrapeWebsite(_prevState: ScrapeState, formData: FormData)
       scrapedUrl: targetUrl.href,
       markdown,
       sections,
-      branding: mergeBrandingFromRecord(parent),
+      branding: brandingFromRecord(parent),
+      personality: personalityFromRecord(parent),
+      marketingAngles: marketingAnglesFromRecord(parent),
       createdAt: new Date(),
     },
   };
@@ -1113,11 +1013,12 @@ function recordToScrapeResult(record: {
   baseUrl: string;
   name: string;
   createdAt: Date;
-  branding: unknown;
   logo: string | null;
   primaryColor: string | null;
   secondaryColor: string | null;
-  typography: string | null;
+  typography: unknown;
+  personality: unknown;
+  marketingAngles: unknown;
   subcontexts: {
     path: string;
     title: string;
@@ -1133,7 +1034,9 @@ function recordToScrapeResult(record: {
       scrapedUrl: `https://${record.baseUrl}/`,
       markdown: "",
       sections: [],
-      branding: mergeBrandingFromRecord(record),
+      branding: brandingFromRecord(record),
+      personality: personalityFromRecord(record),
+      marketingAngles: marketingAnglesFromRecord(record),
       createdAt: record.createdAt,
     };
   }
@@ -1145,7 +1048,9 @@ function recordToScrapeResult(record: {
     scrapedUrl: first.scrapedUrl,
     markdown: first.markdown,
     sections: first.sections,
-    branding: mergeBrandingFromRecord(record),
+    branding: brandingFromRecord(record),
+    personality: personalityFromRecord(record),
+    marketingAngles: marketingAnglesFromRecord(record),
     createdAt: record.createdAt,
     subpages: snapshots.length > 1 ? snapshots : undefined,
   };

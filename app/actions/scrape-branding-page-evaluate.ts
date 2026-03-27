@@ -523,13 +523,31 @@ export async function extractBrandingInBrowserContext(
   }
 
   const fontCounts = new Map<string, number>();
-  const nodes = document.body?.querySelectorAll("*") ?? [];
+  const fontBodyWeights = new Map<string, Map<string, number>>();
+  const fontHeadingWeights = new Map<string, Map<string, number>>();
+
+  function trackFontWeight(
+    familyName: string,
+    weight: string,
+    targetMap: Map<string, Map<string, number>>,
+  ): void {
+    if (!targetMap.has(familyName)) targetMap.set(familyName, new Map());
+    const weightMap = targetMap.get(familyName)!;
+    weightMap.set(weight, (weightMap.get(weight) || 0) + 1);
+  }
+
+  const allNodes = document.body?.querySelectorAll("*") ?? [];
   const maxNodes = 4000;
   let nodeCount = 0;
-  for (const elementNode of nodes) {
+  for (const elementNode of allNodes) {
     if (nodeCount++ >= maxNodes) break;
     const fam = primaryFontFamilyFor(elementNode);
-    if (fam) fontCounts.set(fam, (fontCounts.get(fam) || 0) + 1);
+    if (!fam) continue;
+    fontCounts.set(fam, (fontCounts.get(fam) || 0) + 1);
+    const tagName = elementNode.tagName?.toLowerCase() ?? "";
+    const isHeading = tagName === "h1" || tagName === "h2" || tagName === "h3" ||
+      tagName === "h4" || tagName === "h5" || tagName === "h6";
+    trackFontWeight(fam, getComputedStyle(elementNode).fontWeight, isHeading ? fontHeadingWeights : fontBodyWeights);
   }
   const bodyRoot = document.body;
   if (bodyRoot) {
@@ -540,15 +558,28 @@ export async function extractBrandingInBrowserContext(
   const sortedFonts = [...fontCounts.entries()]
     .sort((left, right) => right[1] - left[1])
     .map(([name]) => name);
-  const primaryFont = sortedFonts[0] ?? null;
-  const secondaryFont = sortedFonts[1] ?? null;
 
-  const bodyEl = document.body;
-  const bodyW = bodyEl ? getComputedStyle(bodyEl).fontWeight : null;
-  const headingEl = document.querySelector("h1, h2, h3");
-  const headingW = headingEl ? getComputedStyle(headingEl).fontWeight : null;
-  const typography =
-    [bodyW && `body:${bodyW}`, headingW && `heading:${headingW}`].filter(Boolean).join(" · ") || null;
+  function getMostCommonWeight(
+    weightMap: Map<string, number> | undefined,
+    defaultWeight: string,
+  ): string {
+    if (!weightMap?.size) return defaultWeight;
+    let best = defaultWeight;
+    let bestCount = 0;
+    for (const [weight, count] of weightMap.entries()) {
+      if (count > bestCount) { bestCount = count; best = weight; }
+    }
+    return best;
+  }
+
+  const typography = sortedFonts
+    .slice(0, 5)
+    .filter((fam) => fontBodyWeights.has(fam) || fontHeadingWeights.has(fam))
+    .map((fam) => ({
+      fontfamily: fam,
+      body: getMostCommonWeight(fontBodyWeights.get(fam), "400"),
+      heading: getMostCommonWeight(fontHeadingWeights.get(fam), "700"),
+    }));
 
   return {
     primaryColor,
@@ -556,8 +587,6 @@ export async function extractBrandingInBrowserContext(
     logoUrl,
     faviconUrl,
     ogImageUrl,
-    primaryFont,
-    secondaryFont,
     typography,
   };
 }

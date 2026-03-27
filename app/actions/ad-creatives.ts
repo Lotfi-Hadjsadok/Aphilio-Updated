@@ -2,33 +2,37 @@
 
 import { loadSavedContext } from "@/app/actions/scrape";
 import {
-  buildAdCreativesModelContextJson,
-  enrichFilledTemplates,
+  buildSelectedSectionsForModel,
   flattenAdCreativesSectionOptions,
   resolveScrapedSectionById,
 } from "@/lib/ad-creatives-context";
-import { fillTemplatesFromContext } from "@/lib/openrouter";
+import {
+  flattenReferenceImageUrls,
+  generateAllAdPromptsFromTemplates,
+  generateImageFromPromptForContext,
+  generateImageWithKnownReferences,
+  findSimilarDocumentsForAngles,
+  IMAGE_MODEL_PREMIUM,
+  IMAGE_MODEL_FAST,
+} from "@/lib/langchain";
+import {
+  parseCommaSeparatedIds,
+  parseJsonStringArray,
+  parseReferenceImageGroups,
+  parseSelectedTemplates,
+  referenceImageGroupsFromLegacyFlatUrls,
+} from "@/lib/ad-creatives-form-data";
 import { getServerUserId } from "@/lib/server-auth";
-import { saasTemplateConstants } from "@/lib/saas-template-constants";
+import { messageFromUnknownError } from "@/lib/utils";
 import type {
-  GenerateAdTemplatesState,
+  AdImageGenerationMode,
+  GenerateAdPromptsState,
+  GenerateImageState,
   LoadAdCreativesDnaState,
+  SelectAngleState,
 } from "@/types/ad-creatives";
 
 const ERR_UNAUTHORIZED = "Unauthorized";
-
-function parseCommaSeparatedIds(raw: string): string[] {
-  return raw
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean);
-}
-
-function parseTemplateIndexes(raw: string): number[] {
-  return parseCommaSeparatedIds(raw)
-    .map((part) => Number(part))
-    .filter((value) => Number.isInteger(value) && value >= 1 && value <= saasTemplateConstants.length);
-}
 
 export async function loadDnaForAdCreativesAction(
   _previous: LoadAdCreativesDnaState,
@@ -58,59 +62,158 @@ export async function loadDnaForAdCreativesAction(
       name: loaded.result.name,
       baseUrl: loaded.result.baseUrl,
       branding: loaded.result.branding,
+      personality: loaded.result.personality,
+      marketingAngles: loaded.result.marketingAngles,
       sectionOptions,
     },
   };
 }
 
-export async function generateAdTemplatesAction(
-  _previous: GenerateAdTemplatesState,
+/**
+ * Embeds the selected marketing angles and returns the top-5 similar context
+ * documents with their image URLs (capped at 6 total). Advances the flow to
+ * the "Configure creative" step.
+ */
+export async function selectAngleWithSimilaritiesAction(
+  _previous: SelectAngleState,
   formData: FormData,
-): Promise<GenerateAdTemplatesState> {
+): Promise<SelectAngleState> {
   const userId = await getServerUserId();
   if (!userId) return { status: "error", message: ERR_UNAUTHORIZED };
 
-  if (!process.env.OPENROUTER_API_KEY?.trim()) {
-    return { status: "error", message: "OpenRouter is not configured. Add OPENROUTER_API_KEY to your environment." };
+  const contextId = String(formData.get("contextId") ?? "").trim();
+  const selectedAngles = parseJsonStringArray(String(formData.get("selectedAngles") ?? "[]"));
+
+  if (!contextId) return { status: "error", message: "Missing DNA context." };
+  if (selectedAngles.length === 0) return { status: "error", message: "Select at least one marketing angle to continue." };
+
+  try {
+    const { similarDocuments, referenceImageUrls, referenceImageGroups } =
+      await findSimilarDocumentsForAngles(selectedAngles, contextId);
+    return {
+      status: "ready",
+      selectedAngles,
+      similarDocuments,
+      referenceImageUrls,
+      referenceImageGroups,
+    };
+  } catch (error) {
+    return {
+      status: "error",
+      message: messageFromUnknownError(error, "Failed to analyse angle."),
+    };
   }
+}
+
+/**
+ * Generates one image-model prompt per selected template in parallel.
+ * Each prompt includes colors, fonts, headline, subheadline, and a complete
+ * ready-to-send description tailored to the template format and marketing angle.
+ */
+export async function generateAdPromptsAction(
+  _previous: GenerateAdPromptsState,
+  formData: FormData,
+): Promise<GenerateAdPromptsState> {
+  const userId = await getServerUserId();
+  if (!userId) return { status: "error", message: ERR_UNAUTHORIZED };
 
   const contextId = String(formData.get("contextId") ?? "").trim();
-  if (!contextId) return { status: "error", message: "Missing DNA context." };
-
-  const templateIndexes = parseTemplateIndexes(String(formData.get("templateIndexes") ?? ""));
-  if (templateIndexes.length === 0) {
-    return { status: "error", message: "Select at least one ad template." };
-  }
-
+  const selectedAngles = parseJsonStringArray(String(formData.get("selectedAngles") ?? "[]"));
   const sectionIds = parseCommaSeparatedIds(String(formData.get("sectionIds") ?? ""));
+  const selectedTemplates = parseSelectedTemplates(String(formData.get("selectedTemplates") ?? "[]"));
+
+  if (!contextId) return { status: "error", message: "Missing DNA context." };
+  if (selectedAngles.length === 0) return { status: "error", message: "Missing marketing angle(s)." };
   if (sectionIds.length === 0) {
     return { status: "error", message: "Select at least one section to include." };
+  }
+  if (selectedTemplates.length === 0) {
+    return { status: "error", message: "Select at least one ad template to generate." };
   }
 
   const loaded = await loadSavedContext(contextId);
   if (!loaded.ok) return { status: "error", message: loaded.error };
 
-  const resolvedSections = sectionIds.filter((sectionId) => resolveScrapedSectionById(loaded.result, sectionId));
-  if (resolvedSections.length === 0) {
+  const resolvedSectionIds = sectionIds.filter(
+    (sectionId) => resolveScrapedSectionById(loaded.result, sectionId),
+  );
+  if (resolvedSectionIds.length === 0) {
     return { status: "error", message: "No valid sections were found for this DNA." };
   }
 
-  const contextString = buildAdCreativesModelContextJson(loaded.result, resolvedSections);
+  const selectedSections = buildSelectedSectionsForModel(loaded.result, resolvedSectionIds);
 
   try {
-    const filled = await fillTemplatesFromContext({
-      templateIndexes,
-      context: contextString,
-    });
-    if (filled.length === 0) {
+    const { referenceImageGroups } = await findSimilarDocumentsForAngles(
+      selectedAngles,
+      contextId,
+    );
+    const prompts = await generateAllAdPromptsFromTemplates(
+      {
+        brandName: loaded.result.name,
+        baseUrl: loaded.result.baseUrl,
+        branding: loaded.result.branding,
+        personality: loaded.result.personality,
+        selectedSections,
+        selectedAngles,
+      },
+      selectedTemplates,
+      referenceImageGroups,
+    );
+
+    return { status: "success", prompts };
+  } catch (error) {
+    return {
+      status: "error",
+      message: messageFromUnknownError(error, "Something went wrong while generating."),
+    };
+  }
+}
+
+export async function generateImageFromPromptAction(
+  _previous: GenerateImageState,
+  formData: FormData,
+): Promise<GenerateImageState> {
+  const userId = await getServerUserId();
+  if (!userId) return { status: "error", message: ERR_UNAUTHORIZED };
+
+  const filledPrompt = String(formData.get("filledPrompt") ?? "").trim();
+  const contextId = String(formData.get("contextId") ?? "").trim();
+  const referenceImageUrls = parseJsonStringArray(String(formData.get("referenceImageUrls") ?? "[]"));
+  const referenceImageGroupsParse = parseReferenceImageGroups(
+    String(formData.get("referenceImageGroups") ?? "[]"),
+  );
+  const referenceImageGroups =
+    referenceImageGroupsParse.length > 0
+      ? referenceImageGroupsParse
+      : referenceImageGroupsFromLegacyFlatUrls(referenceImageUrls);
+  const rawMode = String(formData.get("imageModel") ?? "premium") as AdImageGenerationMode;
+  const imageModel = rawMode === "fast" ? IMAGE_MODEL_FAST : IMAGE_MODEL_PREMIUM;
+
+  if (!filledPrompt) return { status: "error", message: "No prompt provided." };
+  if (!contextId) return { status: "error", message: "No context ID provided." };
+
+  try {
+    if (referenceImageGroups.length > 0) {
+      const imageUrl = await generateImageWithKnownReferences(
+        filledPrompt,
+        contextId,
+        referenceImageGroups,
+        imageModel,
+      );
       return {
-        status: "error",
-        message: "The model returned no templates. Try again or adjust your section selection.",
+        status: "success",
+        imageUrl,
+        referenceImageUrls: flattenReferenceImageUrls(referenceImageGroups),
       };
     }
-    return { status: "success", templates: enrichFilledTemplates(filled) };
+
+    const result = await generateImageFromPromptForContext(filledPrompt, contextId, imageModel);
+    return { status: "success", imageUrl: result.imageUrl, referenceImageUrls: result.referenceImageUrls };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Something went wrong while generating.";
-    return { status: "error", message };
+    return {
+      status: "error",
+      message: messageFromUnknownError(error, "Image generation failed."),
+    };
   }
 }
