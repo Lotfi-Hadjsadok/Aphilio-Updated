@@ -24,6 +24,8 @@ import {
 } from "@/lib/ad-creatives-form-data";
 import { getServerUserId } from "@/lib/server-auth";
 import { messageFromUnknownError } from "@/lib/utils";
+import { uploadImageToR2 } from "@/lib/r2";
+import prisma from "@/lib/prisma";
 import type {
   AdImageGenerationMode,
   GenerateAdPromptsState,
@@ -179,6 +181,10 @@ export async function generateImageFromPromptAction(
 
   const filledPrompt = String(formData.get("filledPrompt") ?? "").trim();
   const contextId = String(formData.get("contextId") ?? "").trim();
+  const headline = String(formData.get("headline") ?? "").trim();
+  const subheadline = String(formData.get("subheadline") ?? "").trim() || undefined;
+  const templateLabel = String(formData.get("templateLabel") ?? "").trim();
+  const aspectRatio = String(formData.get("aspectRatio") ?? "").trim();
   const referenceImageUrls = parseJsonStringArray(String(formData.get("referenceImageUrls") ?? "[]"));
   const referenceImageGroupsParse = parseReferenceImageGroups(
     String(formData.get("referenceImageGroups") ?? "[]"),
@@ -194,26 +200,55 @@ export async function generateImageFromPromptAction(
   if (!contextId) return { status: "error", message: "No context ID provided." };
 
   try {
+    let generatedImageUrl: string;
+    let finalReferenceImageUrls: string[];
+
     if (referenceImageGroups.length > 0) {
-      const imageUrl = await generateImageWithKnownReferences(
+      generatedImageUrl = await generateImageWithKnownReferences(
         filledPrompt,
         contextId,
         referenceImageGroups,
         imageModel,
       );
-      return {
-        status: "success",
-        imageUrl,
-        referenceImageUrls: flattenReferenceImageUrls(referenceImageGroups),
-      };
+      finalReferenceImageUrls = flattenReferenceImageUrls(referenceImageGroups);
+    } else {
+      const result = await generateImageFromPromptForContext(filledPrompt, contextId, imageModel);
+      generatedImageUrl = result.imageUrl;
+      finalReferenceImageUrls = result.referenceImageUrls;
     }
 
-    const result = await generateImageFromPromptForContext(filledPrompt, contextId, imageModel);
-    return { status: "success", imageUrl: result.imageUrl, referenceImageUrls: result.referenceImageUrls };
+    // Upload to Cloudflare R2 and persist metadata in the database.
+    // Generation is considered successful only after persistence succeeds.
+    const r2Key = `creatives/${userId}/${contextId}/${Date.now()}.webp`;
+    const uploaded = await uploadImageToR2({ sourceUrl: generatedImageUrl, key: r2Key });
+
+    const creative = await prisma.generatedCreative.create({
+      data: {
+        userId,
+        contextId,
+        r2Key,
+        imageUrl: uploaded.publicUrl,
+        templateLabel: templateLabel || "Ad creative",
+        aspectRatio: aspectRatio || "1:1",
+        headline: headline || "Generated ad",
+        subheadline,
+        prompt: filledPrompt,
+      },
+    });
+
+    return {
+      status: "success",
+      imageUrl: uploaded.publicUrl,
+      referenceImageUrls: finalReferenceImageUrls,
+      creativeId: creative.id,
+    };
   } catch (error) {
     return {
       status: "error",
-      message: messageFromUnknownError(error, "Image generation failed."),
+      message: messageFromUnknownError(
+        error,
+        "Image generation or saving failed. Please try again.",
+      ),
     };
   }
 }

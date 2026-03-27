@@ -146,6 +146,10 @@ export function GeneratedAdCard({
         <form action={imageFormAction}>
           <input type="hidden" name="filledPrompt" value={prompt.filledPrompt} />
           <input type="hidden" name="contextId" value={contextId} />
+          <input type="hidden" name="headline" value={prompt.headline} />
+          <input type="hidden" name="subheadline" value={prompt.subheadline ?? ""} />
+          <input type="hidden" name="templateLabel" value={prompt.templateLabel} />
+          <input type="hidden" name="aspectRatio" value={prompt.aspectRatio} />
           <input
             type="hidden"
             name="referenceImageUrls"

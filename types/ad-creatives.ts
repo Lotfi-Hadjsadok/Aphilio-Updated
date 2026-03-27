@@ -100,4 +100,10 @@ export type AdImageGenerationMode = "premium" | "fast";
 export type GenerateImageState =
   | { status: "idle" }
   | { status: "error"; message: string }
-  | { status: "success"; imageUrl: string; referenceImageUrls: string[] };
+  | {
+      status: "success";
+      imageUrl: string;
+      referenceImageUrls: string[];
+      /** ID of the saved GeneratedCreative row — present when R2 save succeeded. */
+      creativeId?: string;
+    };

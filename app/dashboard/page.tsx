@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Dna, LayoutTemplate } from "lucide-react";
+import { ArrowRight, Dna, Images, LayoutTemplate } from "lucide-react";
 import { BrandLogoLink } from "@/components/brand-logo";
 
 export default async function DashboardPage() {
@@ -107,6 +107,38 @@ export default async function DashboardPage() {
                     </p>
                     <p className="inline-flex items-center gap-1.5 pt-1.5 text-sm font-semibold text-gradient">
                       Open tool
+                      <ArrowRight
+                        className="size-3.5 transition-transform group-hover:translate-x-0.5"
+                        aria-hidden
+                      />
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Link>
+            <Link
+              href="/dashboard/library"
+              className="group block rounded-[var(--radius)] bg-muted/20 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl sm:col-span-2"
+            >
+              <div className="relative overflow-hidden rounded-[var(--radius)] p-6 sm:p-7">
+                <div
+                  className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-accent-gradient opacity-20 blur-2xl transition-opacity duration-300 group-hover:opacity-45"
+                  aria-hidden
+                />
+                <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent-gradient-subtle ring-1 ring-border">
+                    <Images className="h-5 w-5 text-foreground" strokeWidth={1.75} />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <p className="font-heading text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+                      Creative Library
+                    </p>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      Browse every ad image you've generated — stored in Cloudflare R2 and ready
+                      to download at any time.
+                    </p>
+                    <p className="inline-flex items-center gap-1.5 pt-1.5 text-sm font-semibold text-gradient">
+                      Open library
                       <ArrowRight
                         className="size-3.5 transition-transform group-hover:translate-x-0.5"
                         aria-hidden

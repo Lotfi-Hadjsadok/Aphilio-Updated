@@ -16,9 +16,10 @@ model User {
   image         String?
   createdAt     DateTime
   updatedAt     DateTime
-  sessions         Session[]
-  accounts         Account[]
-  scrapedContexts  ScrapedContext[]
+  sessions           Session[]
+  accounts           Account[]
+  scrapedContexts    ScrapedContext[]
+  generatedCreatives GeneratedCreative[]
 
   @@unique([email])
   @@map("user")
@@ -157,3 +158,39 @@ model ContextDocumentVideo {
 
   @@map("context_document_video")
 }
+
+/// A generated ad creative image saved to Cloudflare R2.
+model GeneratedCreative {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// The ScrapedContext (DNA profile) used to generate this creative.
+  contextId String
+
+  /// Cloudflare R2 object key — used for deletion.
+  r2Key     String   @db.Text
+
+  /// Public CDN URL of the WebP image stored in R2.
+  imageUrl  String   @db.Text
+
+  /// Template / format label (e.g. "Facebook Feed 1:1").
+  templateLabel String
+
+  /// Aspect ratio string (e.g. "1:1", "9:16").
+  aspectRatio   String
+
+  /// Headline used in the prompt.
+  headline      String
+
+  /// Optional subheadline.
+  subheadline   String?
+
+  /// The full image-model prompt that was sent.
+  prompt        String   @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@map("generated_creative")
+}
+
