@@ -654,6 +654,16 @@ function dedupeMarkdownImageReferences(markdown: string, baseUrl: string, seen: 
   return cleanExtractedMarkdown(cleaned.replace(/\n{3,}/g, "\n\n"));
 }
 
+async function filterPublicImageUrls(imageUrls: string[]): Promise<string[]> {
+  const checks = await Promise.all(
+    imageUrls.map(async (imageUrl) => ({
+      imageUrl,
+      isPublic: await isPublicImage(imageUrl),
+    })),
+  );
+  return checks.filter((entry) => entry.isPublic).map((entry) => entry.imageUrl);
+}
+
 /** Resolve relative `[label](url)` video links to absolute (not `![image](...)`). */
 function absolutizeMarkdownVideoLinks(markdown: string, baseUrl: string): string {
   return markdown.replace(/(?<!!)\[([^\]]*)\]\(\s*([^)]+?)\s*\)/g, (fullMatch, label, dest) => {
@@ -676,6 +686,29 @@ async function extractBranding(page: Page, origin: string): Promise<BrandingDNA>
     ogImage: raw.ogImageUrl,
     typography: raw.typography.length > 0 ? raw.typography : null,
   };
+}
+
+export async function isPublicImage(url: string): Promise<boolean> {
+  try {
+    const normalizedUrl = url.trim().toLowerCase();
+    if (
+      normalizedUrl.startsWith("data:image/svg") ||
+      normalizedUrl.startsWith("data:image/gif") ||
+      normalizedUrl.includes(".svg") ||
+      normalizedUrl.includes(".gif")
+    ) {
+      return false;
+    }
+
+    const response = await fetch(url, { redirect: "follow" });
+    if (response.status !== 200) return false;
+    const contentType = (response.headers.get("content-type") || "").toLowerCase();
+    if (!contentType.startsWith("image/")) return false;
+    if (contentType.includes("svg") || contentType.includes("gif")) return false;
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function parseTargetUrl(raw: string): URL | null {
@@ -757,9 +790,10 @@ function brandingFromRecord(record: {
   logo: string | null;
   primaryColor: string | null;
   secondaryColor: string | null;
+  ogImage: string | null;
   typography: unknown;
 }): BrandingDNA | null {
-  if (!record.logo && !record.primaryColor && !record.secondaryColor && !record.typography) return null;
+  if (!record.logo && !record.primaryColor && !record.secondaryColor && !record.ogImage && !record.typography) return null;
   return {
     colors: {
       primary: record.primaryColor ?? null,
@@ -767,7 +801,7 @@ function brandingFromRecord(record: {
     },
     favicon: null,
     logo: record.logo ?? null,
-    ogImage: null,
+    ogImage: record.ogImage ?? null,
     typography: Array.isArray(record.typography) ? (record.typography as TypographyEntry[]) : null,
   };
 }
@@ -846,7 +880,12 @@ async function buildScrapedContent(targetUrl: URL): Promise<{ ok: true; data: Bu
 
     return {
       ok: true,
-      data: { title, markdown, sections, branding: brandingExtracted },
+      data: {
+        title,
+        markdown,
+        sections,
+        branding: brandingExtracted,
+      },
     };
   } finally {
     await context.close();
@@ -886,6 +925,19 @@ export async function scrapeWebsite(_prevState: ScrapeState, formData: FormData)
   const { title, markdown, sections, branding } = built.data;
   const name = title || baseUrl;
 
+  const sanitizedBranding = branding
+    ? {
+        ...branding,
+        logo: (branding.logo && (await isPublicImage(branding.logo))) ? branding.logo : null,
+        favicon: (branding.favicon && (await isPublicImage(branding.favicon))) ? branding.favicon : null,
+        ogImage: (branding.ogImage && (await isPublicImage(branding.ogImage))) ? branding.ogImage : null,
+      }
+    : null;
+
+  const publicImageUrlsBySection = await Promise.all(
+    sections.map((section) => filterPublicImageUrls(extractImageUrlsFromMarkdown(section.content, targetUrl.href))),
+  );
+
   let sectionEmbeddings: number[][];
   try {
     sectionEmbeddings = await embedTextsForContextDocuments(
@@ -911,10 +963,11 @@ export async function scrapeWebsite(_prevState: ScrapeState, formData: FormData)
           userId: session.user.id,
           baseUrl,
           name,
-          logo: branding?.logo ?? null,
-          primaryColor: branding?.colors.primary ?? null,
-          secondaryColor: branding?.colors.secondary ?? null,
-          typography: branding?.typography ? (branding.typography as object[]) : undefined,
+          logo: sanitizedBranding?.logo ?? null,
+          primaryColor: sanitizedBranding?.colors.primary ?? null,
+          secondaryColor: sanitizedBranding?.colors.secondary ?? null,
+          ogImage: sanitizedBranding?.ogImage ?? null,
+          typography: sanitizedBranding?.typography ? (sanitizedBranding.typography as object[]) : undefined,
           personality: personality ? (personality as object) : undefined,
           marketingAngles: marketingAngles.length > 0 ? marketingAngles : undefined,
         },
@@ -931,7 +984,7 @@ export async function scrapeWebsite(_prevState: ScrapeState, formData: FormData)
 
     for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
       const section = sections[sectionIndex]!;
-      const imageUrls = extractImageUrlsFromMarkdown(section.content, targetUrl.href);
+      const imageUrls = publicImageUrlsBySection[sectionIndex] ?? [];
       const videoUrls = extractVideoUrlsFromMarkdown(section.content, targetUrl.href);
       const embeddingVector = sectionEmbeddings[sectionIndex]!;
 
@@ -1016,6 +1069,7 @@ function recordToScrapeResult(record: {
   logo: string | null;
   primaryColor: string | null;
   secondaryColor: string | null;
+  ogImage: string | null;
   typography: unknown;
   personality: unknown;
   marketingAngles: unknown;

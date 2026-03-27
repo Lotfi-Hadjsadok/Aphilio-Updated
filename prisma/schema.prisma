@@ -16,10 +16,17 @@ model User {
   image         String?
   createdAt     DateTime
   updatedAt     DateTime
+
+  /// Whether the user has completed the onboarding flow.
+  onboardingCompleted Boolean @default(false)
+  /// Preferred language code (e.g. "en", "ar", "fr").
+  preferredLanguage   String?
+
   sessions           Session[]
   accounts           Account[]
   scrapedContexts    ScrapedContext[]
   generatedCreatives GeneratedCreative[]
+  chatConversations  ChatConversation[]
 
   @@unique([email])
   @@map("user")
@@ -83,6 +90,7 @@ model ScrapedContext {
   logo            String?
   primaryColor    String?
   secondaryColor  String?
+  ogImage         String?
   /// Array of [{fontfamily, body, heading}] entries from page evaluation.
   typography      Json?
   /// AI-derived personality specs.
@@ -157,6 +165,42 @@ model ContextDocumentVideo {
   sortOrder  Int             @default(0)
 
   @@map("context_document_video")
+}
+
+/// A chat conversation (thread of messages).
+model ChatConversation {
+  id        String                 @id @default(cuid())
+  userId    String
+  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String                 @default("New chat")
+  messages  ChatPersistedMessage[]
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+
+  @@map("chat_conversation")
+}
+
+/// One message inside a chat conversation.
+model ChatPersistedMessage {
+  id                 String           @id @default(cuid())
+  conversationId     String
+  conversation       ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  /// "user" | "assistant"
+  role               String
+
+  text               String?          @db.Text
+  imageUrl           String?          @db.Text
+  aspectRatio        String?
+  contextId          String?
+  contextName        String?
+
+  /// JSON array of image URLs used as reference.
+  referenceImageUrls Json?
+
+  createdAt          DateTime         @default(now())
+
+  @@map("chat_persisted_message")
 }
 
 /// A generated ad creative image saved to Cloudflare R2.

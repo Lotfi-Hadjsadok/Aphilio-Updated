@@ -29,7 +29,7 @@ export default async function SavedContextPage({ params }: PageProps) {
   if (!loaded.ok) redirect("/dashboard/dna");
 
   return (
-    <main className="dna-preview-shell-bg flex h-[100dvh] min-h-0 w-full flex-col overflow-x-hidden overflow-y-hidden text-foreground antialiased">
+    <main className="landing-grid-bg relative flex h-[100dvh] min-h-0 w-full flex-col overflow-x-hidden overflow-y-hidden bg-background text-foreground antialiased">
       <ResultExperience
         result={loaded.result}
         fromLibrary

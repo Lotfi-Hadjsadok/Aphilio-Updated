@@ -16,16 +16,18 @@ const initialLoadState: LoadAdCreativesDnaState = { status: "idle" };
 
 export function AdCreativesFormInner({
   savedContexts,
+  initialContextId,
   onChangeDnaRequest,
 }: {
   savedContexts: SavedContextSummary[];
+  initialContextId?: string;
   onChangeDnaRequest: () => void;
 }) {
   const [loadState, loadFormAction, loadPending] = useActionState(
     loadDnaForAdCreativesAction,
     initialLoadState,
   );
-  const [pickedContextId, setPickedContextId] = useState<string | null>(null);
+  const [pickedContextId, setPickedContextId] = useState<string | null>(initialContextId ?? null);
 
   const hasLibrary = savedContexts.length > 0;
   const loadError = loadState.status === "error" ? loadState.message : null;
@@ -33,20 +35,20 @@ export function AdCreativesFormInner({
 
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
-      <header className="flex shrink-0 items-center justify-between gap-4 border-b border-border/60 bg-card/40 px-4 py-3 backdrop-blur-md sm:px-6">
+      <header className="flex shrink-0 items-center justify-between gap-4 border-b border-border/50 bg-card/30 px-4 py-3 backdrop-blur-xl sm:px-6">
         <div className="flex min-w-0 items-center gap-3">
           <Link
             href="/dashboard"
             aria-label="Dashboard"
-            className={cn(buttonVariants({ variant: "outline", size: "icon-lg" }), "shrink-0 rounded-lg")}
+            className={cn(buttonVariants({ variant: "outline", size: "icon-lg" }), "shrink-0 rounded-xl border-border/60 bg-card/50 shadow-sm")}
           >
             <ArrowLeft className="size-3.5" />
           </Link>
           <div className="min-w-0">
-            <p className="font-heading text-sm font-semibold tracking-tight text-foreground">
-              Ad creatives
+            <p className="font-heading text-base font-semibold tracking-tight text-foreground">
+              Ad Creatives
             </p>
-            <p className="text-[0.65rem] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               DNA → angle → configure → generate
             </p>
           </div>

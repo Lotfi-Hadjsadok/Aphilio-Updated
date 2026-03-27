@@ -126,35 +126,46 @@ export async function extractBrandingInBrowserContext(
     return [...new Set(tokens)];
   }
 
-  const colorCounts = new Map<string, number>();
-  const addColor = (cssColor: string) => {
+  const buttonBackgroundColorCounts = new Map<string, number>();
+  const fallbackColorCounts = new Map<string, number>();
+  const addColorToCounts = (cssColor: string, colorCounts: Map<string, number>) => {
     const hex = toHex(cssColor);
     if (hex) colorCounts.set(hex, (colorCounts.get(hex) || 0) + 1);
   };
 
-  function addGradientColors(cssBackgroundImageOrVarValue: string) {
-    for (const token of extractColorTokensFromCssText(cssBackgroundImageOrVarValue)) addColor(token);
+  function addGradientColorsToCounts(cssBackgroundImageOrVarValue: string, colorCounts: Map<string, number>) {
+    for (const token of extractColorTokensFromCssText(cssBackgroundImageOrVarValue)) {
+      addColorToCounts(token, colorCounts);
+    }
   }
 
   function skipSvg(element: Element): boolean {
     return Boolean(element.closest("svg"));
   }
 
-  addColor(getComputedStyle(document.documentElement).backgroundColor);
+  addColorToCounts(getComputedStyle(document.documentElement).backgroundColor, fallbackColorCounts);
   if (document.body) {
-    const bs = getComputedStyle(document.body);
-    addColor(bs.backgroundColor);
-    addColor(bs.color);
+    const bodyStyle = getComputedStyle(document.body);
+    addColorToCounts(bodyStyle.backgroundColor, fallbackColorCounts);
+    addColorToCounts(bodyStyle.color, fallbackColorCounts);
   }
 
-  function addElementVisualColors(element: HTMLElement) {
+  function addElementVisualColorsToFallback(element: HTMLElement) {
     const computedStyle = getComputedStyle(element);
-    addColor(computedStyle.backgroundColor);
+    addColorToCounts(computedStyle.backgroundColor, fallbackColorCounts);
     if (computedStyle.backgroundImage && computedStyle.backgroundImage !== "none") {
-      addGradientColors(computedStyle.backgroundImage);
+      addGradientColorsToCounts(computedStyle.backgroundImage, fallbackColorCounts);
     }
-    addColor(computedStyle.color);
-    addColor(computedStyle.borderColor);
+    addColorToCounts(computedStyle.color, fallbackColorCounts);
+    addColorToCounts(computedStyle.borderColor, fallbackColorCounts);
+  }
+
+  function addButtonBackgroundColors(element: HTMLElement) {
+    const computedStyle = getComputedStyle(element);
+    addColorToCounts(computedStyle.backgroundColor, buttonBackgroundColorCounts);
+    if (computedStyle.backgroundImage && computedStyle.backgroundImage !== "none") {
+      addGradientColorsToCounts(computedStyle.backgroundImage, buttonBackgroundColorCounts);
+    }
   }
 
   const buttonLikeSelector = [
@@ -171,17 +182,18 @@ export async function extractBrandingInBrowserContext(
 
   document.querySelectorAll<HTMLElement>(buttonLikeSelector).forEach((buttonLikeElement) => {
     if (skipSvg(buttonLikeElement)) return;
-    addElementVisualColors(buttonLikeElement);
+    addButtonBackgroundColors(buttonLikeElement);
+    addElementVisualColorsToFallback(buttonLikeElement);
   });
 
   document.querySelectorAll<HTMLElement>("a[href]").forEach((linkElement) => {
     if (skipSvg(linkElement)) return;
-    addColor(getComputedStyle(linkElement).color);
+    addColorToCounts(getComputedStyle(linkElement).color, fallbackColorCounts);
   });
 
   document.querySelectorAll<HTMLElement>("h1, h2, h3").forEach((headingElement) => {
     if (skipSvg(headingElement)) return;
-    addColor(getComputedStyle(headingElement).color);
+    addColorToCounts(getComputedStyle(headingElement).color, fallbackColorCounts);
   });
 
   document
@@ -189,13 +201,12 @@ export async function extractBrandingInBrowserContext(
     .forEach((highlightElement) => {
       if (skipSvg(highlightElement)) return;
       const style = getComputedStyle(highlightElement);
-      addColor(style.color);
-      addColor(style.backgroundColor);
-      if (style.backgroundImage && style.backgroundImage !== "none") addGradientColors(style.backgroundImage);
+      addColorToCounts(style.color, fallbackColorCounts);
+      addColorToCounts(style.backgroundColor, fallbackColorCounts);
+      if (style.backgroundImage && style.backgroundImage !== "none") {
+        addGradientColorsToCounts(style.backgroundImage, fallbackColorCounts);
+      }
     });
-
-  const sortedColorEntries = [...colorCounts.entries()].sort((left, right) => right[1] - left[1]);
-  const sortedHex = sortedColorEntries.map(([hex]) => hex);
 
   function isTooDarkOrTooLight(hexColor: string): boolean {
     const hexMatch = hexColor.match(/^#([0-9a-f]{6})$/i);
@@ -207,14 +218,39 @@ export async function extractBrandingInBrowserContext(
     return brightness < 48 || brightness > 222;
   }
 
-  const primaryColor = sortedHex.find((hexValue) => !isTooDarkOrTooLight(hexValue)) ?? null;
-  const minSecondaryColorCount = 3;
-  const secondaryColor =
-    sortedColorEntries.find(([hexValue, countValue]) => {
-      if (hexValue === primaryColor) return false;
-      if (countValue < minSecondaryColorCount) return false;
+  const sortedButtonColorEntries = [...buttonBackgroundColorCounts.entries()].sort(
+    (leftEntry, rightEntry) => rightEntry[1] - leftEntry[1],
+  );
+  const sortedFallbackColorEntries = [...fallbackColorCounts.entries()].sort(
+    (leftEntry, rightEntry) => rightEntry[1] - leftEntry[1],
+  );
+
+  const primaryColorFromButtons =
+    sortedButtonColorEntries.find(([hexValue]) => !isTooDarkOrTooLight(hexValue))?.[0] ?? null;
+  const secondaryColorFromButtons =
+    sortedButtonColorEntries.find(([hexValue]) => {
+      if (hexValue === primaryColorFromButtons) return false;
       return !isTooDarkOrTooLight(hexValue);
     })?.[0] ?? null;
+
+  const fallbackPrimaryColor =
+    sortedFallbackColorEntries.find(([hexValue]) => !isTooDarkOrTooLight(hexValue))?.[0] ?? null;
+  const fallbackSecondaryColor = sortedFallbackColorEntries.find(([hexValue, countValue]) => {
+    if (hexValue === primaryColorFromButtons || hexValue === fallbackPrimaryColor) return false;
+    if (countValue < 3) return false;
+    return !isTooDarkOrTooLight(hexValue);
+  })?.[0] ?? null;
+
+  const primaryColor = primaryColorFromButtons ?? fallbackPrimaryColor ?? null;
+  const secondaryColor =
+    secondaryColorFromButtons ??
+    sortedFallbackColorEntries.find(([hexValue, countValue]) => {
+      if (hexValue === primaryColor) return false;
+      if (countValue < 3) return false;
+      return !isTooDarkOrTooLight(hexValue);
+    })?.[0] ??
+    fallbackSecondaryColor ??
+    null;
 
   function resolveUrl(src: string): string {
     if (!src) return "";
@@ -484,8 +520,30 @@ export async function extractBrandingInBrowserContext(
     logoUrl = faviconUrl;
   }
 
-  const ogImgEl = document.querySelector<HTMLMetaElement>('meta[property="og:image"]');
-  const ogImageUrl = ogImgEl?.content ?? null;
+  const ogImageSelectors = [
+    'meta[property="og:image:secure_url"]',
+    'meta[property="og:image:url"]',
+    'meta[property="og:image"]',
+    'meta[name="og:image"]',
+    'meta[name="twitter:image"]',
+    'meta[property="twitter:image"]',
+    'meta[name="twitter:image:src"]',
+    'meta[property="twitter:image:src"]',
+    'link[rel="image_src"]',
+  ];
+
+  let ogImageUrl: string | null = null;
+  for (const selector of ogImageSelectors) {
+    const metaElement = document.querySelector(selector);
+    if (!metaElement) continue;
+    const contentValue =
+      metaElement.getAttribute("content")?.trim() ||
+      metaElement.getAttribute("href")?.trim() ||
+      "";
+    if (!contentValue) continue;
+    ogImageUrl = resolveUrl(contentValue);
+    break;
+  }
 
   const GENERIC_FAMILIES = new Set([
     "serif",

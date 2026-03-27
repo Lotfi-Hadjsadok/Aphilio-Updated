@@ -4,7 +4,13 @@ import { useState } from "react";
 import type { SavedContextSummary } from "@/types/scrape";
 import { AdCreativesFormInner } from "./ad-creatives-form-inner";
 
-export function AdCreativesForm({ savedContexts }: { savedContexts: SavedContextSummary[] }) {
+export function AdCreativesForm({
+  savedContexts,
+  initialContextId,
+}: {
+  savedContexts: SavedContextSummary[];
+  initialContextId?: string;
+}) {
   const [sessionKey, setSessionKey] = useState(0);
 
   return (
@@ -12,6 +18,7 @@ export function AdCreativesForm({ savedContexts }: { savedContexts: SavedContext
       <AdCreativesFormInner
         key={sessionKey}
         savedContexts={savedContexts}
+        initialContextId={initialContextId}
         onChangeDnaRequest={() => setSessionKey((prev) => prev + 1)}
       />
     </div>

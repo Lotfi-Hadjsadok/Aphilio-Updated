@@ -3,6 +3,7 @@ import "server-only";
 import imageToBase64 from "image-to-base64";
 import { lookup as lookupMimeType } from "mime-types";
 import { OpenAIEmbeddings } from "@langchain/openai";
+import { TokenTextSplitter } from "@langchain/textsplitters";
 import { ChatGoogle } from "@langchain/google";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import prisma from "@/lib/prisma";
@@ -69,10 +70,39 @@ export function embeddingArrayToPgVectorLiteral(embedding: number[]): string {
   return `[${embedding.join(",")}]`;
 }
 
+/** text-embedding-3-small hard limit is 8191 tokens; leave a small buffer. */
+const EMBEDDING_MAX_TOKENS = 8000;
+
+let embeddingTruncatorSingleton: TokenTextSplitter | null = null;
+
+function getEmbeddingTruncator(): TokenTextSplitter {
+  if (embeddingTruncatorSingleton) return embeddingTruncatorSingleton;
+  embeddingTruncatorSingleton = new TokenTextSplitter({
+    encodingName: "cl100k_base",
+    chunkSize: EMBEDDING_MAX_TOKENS,
+    chunkOverlap: 0,
+  });
+  return embeddingTruncatorSingleton;
+}
+
+/**
+ * Truncates each text to at most {@link EMBEDDING_MAX_TOKENS} tokens before
+ * calling the embeddings model. This prevents failures on large website sections
+ * that would otherwise exceed the model's 8191-token context limit.
+ * Only the first chunk (head of the text) is kept so the section heading and
+ * opening content — which carry the most semantic signal — are preserved.
+ */
 export async function embedTextsForContextDocuments(texts: string[]): Promise<number[][]> {
   if (texts.length === 0) return [];
+  const truncator = getEmbeddingTruncator();
+  const truncated = await Promise.all(
+    texts.map(async (text) => {
+      const chunks = await truncator.splitText(text);
+      return chunks[0] ?? text.slice(0, 30_000);
+    }),
+  );
   const model = getEmbeddingsModel();
-  return model.embedDocuments(texts);
+  return model.embedDocuments(truncated);
 }
 
 function isSvgUrl(url: string): boolean {

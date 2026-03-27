@@ -24,6 +24,8 @@ import {
   Trash2,
   Loader2,
   Check,
+  Wand2,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AlertDialog } from "@base-ui/react/alert-dialog";
@@ -353,7 +355,7 @@ function BrandPalette({
                             Logo
                           </p>
                           <div
-                            className="flex h-14 w-24 items-center justify-center rounded-xl border-[0.5px] border-border/60 bg-background p-2 shadow-sm"
+                            className="flex h-14 w-24 items-center justify-center rounded-xl border-[0.5px] border-border/60 bg-[oklch(0.94_0_0)] p-2 shadow-sm dark:bg-[oklch(0.25_0_0)]"
                             style={primary ? { borderColor: `${primary}80` } : undefined}
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -477,6 +479,48 @@ function BrandPalette({
 }
 
 
+function UseThisDnaCallout({ contextId, contextName }: { contextId: string; contextName: string }) {
+  return (
+    <div className="rounded-2xl border-[0.5px] border-border/60 bg-muted/15 p-4 ring-[0.5px] ring-foreground/[0.02] sm:p-5">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <Sparkles className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} />
+        <p className="text-[0.58rem] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+          Use this DNA
+        </p>
+      </div>
+      <p className="mb-4 max-w-[52ch] text-sm leading-relaxed text-muted-foreground">
+        Open Chat or Ad creatives with{" "}
+        <span className="font-medium text-foreground">{contextName}</span> already selected as brand
+        context.
+      </p>
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
+        <Link
+          href={`/dashboard/chat?contextId=${contextId}`}
+          className={cn(
+            buttonVariants({ variant: "default", size: "default" }),
+            "group inline-flex items-center justify-center gap-2 rounded-xl",
+          )}
+        >
+          <MessageSquare className="size-4 shrink-0" strokeWidth={1.75} />
+          <span>Open in Chat</span>
+          <ChevronRight className="size-3.5 shrink-0 opacity-60 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+        <Link
+          href={`/dashboard/ad-creatives?contextId=${contextId}`}
+          className={cn(
+            buttonVariants({ variant: "outline", size: "default" }),
+            "group inline-flex items-center justify-center gap-2 rounded-xl",
+          )}
+        >
+          <Wand2 className="size-4 shrink-0" strokeWidth={1.75} />
+          <span>Create Ad Creative</span>
+          <ChevronRight className="size-3.5 shrink-0 opacity-60 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export function ResultExperience({
   result,
   onRescan,
@@ -525,17 +569,17 @@ export function ResultExperience({
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
       {/* Header */}
-      <header className="relative flex shrink-0 flex-col gap-1.5 border-b-[0.5px] border-border/60 bg-card/50 px-4 py-2 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:px-5">
+      <header className="relative flex shrink-0 flex-col gap-1.5 border-b border-border/50 bg-card/30 px-4 py-3 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div
-          className="pointer-events-none absolute inset-x-0 -top-8 h-28 bg-accent-gradient-subtle opacity-15 blur-2xl"
+          className="pointer-events-none absolute inset-x-0 -top-8 h-28 bg-accent-gradient-subtle opacity-10 blur-2xl"
           aria-hidden
         />
-        <div className="flex min-w-0 items-center gap-2.5">
+        <div className="flex min-w-0 items-center gap-3">
           <Link
             href={backHref}
             className={cn(
               buttonVariants({ variant: "outline", size: "icon-sm" }),
-              "shrink-0 rounded-lg",
+              "shrink-0 rounded-xl border-border/60 bg-card/50 shadow-sm",
             )}
           >
             <ArrowLeft className="size-4" />
@@ -582,24 +626,35 @@ export function ResultExperience({
       </header>
 
       {/* Content: scrollable; inner centers the panel when shorter than the viewport */}
-      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain scroll-smooth">
-        <div className="flex min-h-[calc(100dvh-5.25rem)] flex-col items-center justify-center px-3 py-6 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] sm:px-5 sm:py-8 sm:pb-[max(1.75rem,env(safe-area-inset-bottom,0px))] lg:px-8">
+      <div className="relative min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain scroll-smooth">
+        {/* Decorative glow orbs */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+          <div className="glow-orb absolute -left-24 top-16 h-72 w-72 bg-accent-gradient opacity-[0.1]" />
+          <div className="glow-orb absolute -right-16 bottom-24 h-56 w-56 bg-accent-gradient opacity-[0.08]" />
+        </div>
+        <div className="relative flex min-h-[calc(100dvh-5.25rem)] flex-col items-center justify-center px-3 py-6 pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] sm:px-5 sm:py-8 sm:pb-[max(1.75rem,env(safe-area-inset-bottom,0px))] lg:px-8">
           <div className="w-full max-w-5xl">
             {result.branding ? (
               <section className="overflow-hidden rounded-2xl border-[0.5px] border-border/60 bg-card/90 shadow-sm ring-[0.5px] ring-foreground/[0.03] backdrop-blur-sm">
                 <BrandPaletteStrip branding={result.branding} />
-                <div className="p-5 sm:p-6">
+                <div className="space-y-5 p-5 sm:space-y-6 sm:p-6">
+                  <UseThisDnaCallout contextId={result.id} contextName={result.name} />
                   <BrandPalette branding={result.branding} personality={result.personality ?? null} />
                 </div>
               </section>
             ) : (
-              <section className="flex flex-col items-center justify-center gap-3 rounded-2xl border-[0.5px] border-dashed border-border/60 bg-card/80 px-4 py-12 text-center sm:py-14">
-                <Dna className="size-8 text-muted-foreground/40" strokeWidth={1.5} />
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-foreground">No branding found</p>
-                  <p className="text-xs text-muted-foreground">
-                    We couldn’t detect enough branding signals for this URL.
-                  </p>
+              <section className="overflow-hidden rounded-2xl border-[0.5px] border-dashed border-border/60 bg-card/80 shadow-sm ring-[0.5px] ring-foreground/[0.03] backdrop-blur-sm">
+                <div className="space-y-5 p-5 sm:space-y-6 sm:p-6">
+                  <UseThisDnaCallout contextId={result.id} contextName={result.name} />
+                  <div className="flex flex-col items-center justify-center gap-3 py-6 text-center sm:py-8">
+                    <Dna className="size-8 text-muted-foreground/40" strokeWidth={1.5} />
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-foreground">No branding found</p>
+                      <p className="text-xs text-muted-foreground">
+                        We couldn’t detect enough branding signals for this URL.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </section>
             )}

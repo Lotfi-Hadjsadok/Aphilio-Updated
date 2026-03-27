@@ -18,44 +18,49 @@ export default async function LibraryPage() {
   if (!session) redirect("/sign-in");
 
   return (
-    <main className="landing-grid-bg relative min-h-[100dvh] w-full overflow-hidden bg-background px-4 py-10 text-foreground sm:px-8 sm:py-16 lg:py-20">
+    <main className="landing-grid-bg relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden bg-background text-foreground">
+      {/* Decorative glow orbs — same as onboarding */}
       <div className="pointer-events-none absolute inset-0" aria-hidden>
-        <div className="glow-orb absolute -left-32 top-0 h-80 w-80 bg-accent-gradient" />
-        <div className="glow-orb absolute -right-24 bottom-20 h-72 w-72 bg-accent-gradient" />
+        <div className="glow-orb absolute -left-32 top-0 h-96 w-96 bg-accent-gradient opacity-[0.18] sm:h-[28rem] sm:w-[28rem]" />
+        <div className="glow-orb absolute -right-24 bottom-10 h-72 w-72 bg-accent-gradient opacity-[0.14] sm:bottom-20" />
+        <div className="glow-orb absolute left-1/2 top-1/3 h-48 w-48 -translate-x-1/2 bg-accent-gradient opacity-[0.06]" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border/80 to-transparent" />
       </div>
 
-      <div className="relative mx-auto max-w-6xl">
-        <BrandLogoLink />
-
-        {/* Header */}
-        <div className="mt-8 space-y-2 sm:mt-10">
+      <div className="relative mx-auto w-full max-w-6xl px-4 py-6 sm:px-8 sm:py-8">
+        {/* Top bar: logo + back */}
+        <div className="flex items-center justify-between">
+          <BrandLogoLink />
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border/60 bg-card/50 px-4 py-2 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur-sm transition-all hover:border-border hover:bg-card/80 hover:text-foreground"
           >
-            <ArrowLeft className="size-3" />
-            Back to dashboard
+            <ArrowLeft className="size-3.5" />
+            Dashboard
           </Link>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent-gradient-subtle ring-1 ring-border">
-              <Images className="h-5 w-5 text-foreground" strokeWidth={1.75} />
+        {/* Header */}
+        <header className="mt-6 sm:mt-8">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-accent-gradient-subtle shadow-lg ring-1 ring-border/60">
+              <Images className="h-6 w-6 text-foreground" strokeWidth={1.65} />
             </div>
             <div>
-              <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">
+              <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl lg:text-4xl">
                 Creative Library
               </h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground sm:text-base">
                 All your generated ad images, saved automatically.
               </p>
             </div>
           </div>
-        </div>
+        </header>
 
         {/* Divider */}
-        <div className="my-8 h-px bg-border/60 sm:my-10" />
+        <div className="my-6 h-px bg-gradient-to-r from-transparent via-border/70 to-transparent sm:my-8" />
 
-        {/* Library grid — streams in */}
+        {/* Library grid */}
         <Suspense
           fallback={
             <div className="flex items-center justify-center py-24">

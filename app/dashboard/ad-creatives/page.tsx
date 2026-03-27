@@ -10,15 +10,18 @@ export const metadata = {
     "Pick saved DNA, a marketing angle, and sections — AI shapes the creative to your angle and generates the image prompt.",
 };
 
-export default async function AdCreativesPage() {
+type PageProps = { searchParams: Promise<{ contextId?: string }> };
+
+export default async function AdCreativesPage({ searchParams }: PageProps) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/sign-in");
 
+  const { contextId } = await searchParams;
   const savedContexts = await listSavedContexts();
 
   return (
-    <main className="retriever-shell-bg flex h-[100dvh] min-h-0 w-full flex-col overflow-x-hidden overflow-y-hidden text-foreground antialiased">
-      <AdCreativesForm savedContexts={savedContexts} />
+    <main className="landing-grid-bg relative flex h-[100dvh] min-h-0 w-full flex-col overflow-x-hidden overflow-y-hidden bg-background text-foreground antialiased">
+      <AdCreativesForm savedContexts={savedContexts} initialContextId={contextId} />
     </main>
   );
 }
