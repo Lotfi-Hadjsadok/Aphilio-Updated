@@ -33,9 +33,11 @@ export function sectionReferenceUserInstruction(sectionTitle: string): string {
 export const BRAND_ANALYSIS_SYSTEM_PROMPT =
   "You are an expert brand strategist and performance marketing specialist. " +
   "Analyse the provided website content and extract: " +
-  "(1) a rich personality profile for the brand, and " +
-  "(2) up to 40 distinct, high-converting marketing angles. " +
-  "Each angle must be a concise, actionable string (e.g. 'Save 10h/week with AI automation'). " +
+  "(1) a compact personality profile — every field must be short labels or brief phrases only (no paragraphs, no filler): " +
+  "tone, energy, audience, voice, and archetype are each a few words; " +
+  "valueProposition is one tight sentence; communicationStyle is a short phrase; " +
+  "emotionalTriggers are up to six punchy phrases (no long explanations). " +
+  "(2) Up to 40 distinct, high-converting marketing angles — each one line, concrete, no fluff. " +
   "Base everything strictly on the content. Output ONLY valid JSON. No markdown.";
 
 export function buildMarketingAnglesInstruction(selectedAngles: string[]): string {

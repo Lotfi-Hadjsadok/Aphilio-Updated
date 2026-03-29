@@ -10,8 +10,10 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { setLocaleCookieAction } from "@/app/actions/locale";
 import {
   saveOnboardingPreferences,
+  saveOnboardingProgress,
   completeOnboarding,
   findExistingContextByUrl,
   type OnboardingState,
@@ -28,12 +30,42 @@ const TOTAL_STEPS = 4;
 const initialOnboardingState: OnboardingState = {};
 const initialScrapeState: ScrapeState = {};
 
-export function OnboardingFlow({ userName }: { userName: string }) {
+function resolveInitialOnboardingStep(
+  savedStep: number,
+  draftUrl: string,
+): number {
+  if (savedStep >= 2 && !draftUrl.trim()) {
+    return 1;
+  }
+  return savedStep;
+}
+
+export type OnboardingFlowProps = {
+  userName: string;
+  initialOnboardingStep: number;
+  initialDraftUrl: string;
+  initialPreferredLanguage: string;
+};
+
+export function OnboardingFlow({
+  userName,
+  initialOnboardingStep,
+  initialDraftUrl,
+  initialPreferredLanguage,
+}: OnboardingFlowProps) {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [websiteUrl, setWebsiteUrl] = useState("");
-  const [selectedLanguage, setSelectedLanguage] = useState("");
-  const [welcomeDone, setWelcomeDone] = useState(false);
+  const resolvedInitialStep = resolveInitialOnboardingStep(
+    initialOnboardingStep,
+    initialDraftUrl,
+  );
+  const [currentStep, setCurrentStep] = useState(resolvedInitialStep);
+  const [websiteUrl, setWebsiteUrl] = useState(() =>
+    initialDraftUrl.trim() ? initialDraftUrl : "",
+  );
+  const [selectedLanguage, setSelectedLanguage] = useState(
+    () => initialPreferredLanguage.trim() || "en",
+  );
+  const [welcomeDone, setWelcomeDone] = useState(resolvedInitialStep > 0);
   const [fadeIn, setFadeIn] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrapeTriggered = useRef(false);
@@ -47,17 +79,6 @@ export function OnboardingFlow({ userName }: { userName: string }) {
     initialScrapeState,
   );
 
-  useEffect(() => {
-    const timer = setTimeout(() => setWelcomeDone(true), 3200);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (welcomeDone && currentStep === 0) {
-      transitionTo(1);
-    }
-  }, [welcomeDone, currentStep]);
-
   const transitionTo = useCallback((nextStep: number) => {
     setFadeIn(false);
     setTimeout(() => {
@@ -66,26 +87,50 @@ export function OnboardingFlow({ userName }: { userName: string }) {
     }, 300);
   }, []);
 
+  useEffect(() => {
+    if (resolvedInitialStep > 0) return;
+    const timer = setTimeout(() => setWelcomeDone(true), 3200);
+    return () => clearTimeout(timer);
+  }, [resolvedInitialStep]);
+
+  useEffect(() => {
+    if (welcomeDone && currentStep === 0) {
+      void saveOnboardingProgress(1, null);
+      transitionTo(1);
+    }
+  }, [welcomeDone, currentStep, transitionTo]);
+
   const handleUrlSubmit = useCallback(
     (url: string) => {
+      const trimmed = url.trim();
+      void saveOnboardingProgress(2, trimmed || null);
       setWebsiteUrl(url);
       transitionTo(2);
     },
     [transitionTo],
   );
 
-  const handleLanguageConfirm = useCallback(
-    (language: string) => {
+  const handleLanguageSelect = useCallback(
+    async (language: string) => {
       setSelectedLanguage(language);
-      const formData = new FormData();
-      formData.append("language", language);
-      startTransition(() => {
-        langAction(formData);
-      });
-      transitionTo(3);
+      await setLocaleCookieAction(language);
+      router.refresh();
     },
-    [langAction, transitionTo],
+    [router],
   );
+
+  const handleLanguageContinue = useCallback(() => {
+    const formData = new FormData();
+    formData.append("language", selectedLanguage);
+    startTransition(() => {
+      langAction(formData);
+    });
+    void saveOnboardingProgress(
+      3,
+      websiteUrl.trim() ? websiteUrl.trim() : null,
+    );
+    transitionTo(3);
+  }, [langAction, selectedLanguage, transitionTo, websiteUrl]);
 
   useEffect(() => {
     if (currentStep === 3 && websiteUrl && !scrapeTriggered.current) {
@@ -124,7 +169,7 @@ export function OnboardingFlow({ userName }: { userName: string }) {
     <div ref={containerRef} className="relative z-10 flex w-full flex-col items-center justify-center px-4">
       {/* Progress dots */}
       {currentStep > 0 && (
-        <div className="absolute top-6 flex items-center gap-2 sm:top-8">
+        <div className="absolute left-1/2 top-6 flex -translate-x-1/2 items-center gap-2 sm:top-8">
           {Array.from({ length: TOTAL_STEPS - 1 }).map((_, index) => (
             <div
               key={index}
@@ -144,6 +189,7 @@ export function OnboardingFlow({ userName }: { userName: string }) {
       <div
         className={cn(
           "w-full transition-all duration-300",
+          currentStep > 0 && "pt-14 sm:pt-16",
           fadeIn ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
         )}
       >
@@ -152,8 +198,9 @@ export function OnboardingFlow({ userName }: { userName: string }) {
         {currentStep === 2 && (
           <LanguageStep
             selectedLanguage={selectedLanguage}
-            onSelect={handleLanguageConfirm}
-            pending={langPending}
+            onSelectLanguage={handleLanguageSelect}
+            onContinue={handleLanguageContinue}
+            continuePending={langPending}
           />
         )}
         {currentStep === 3 && (

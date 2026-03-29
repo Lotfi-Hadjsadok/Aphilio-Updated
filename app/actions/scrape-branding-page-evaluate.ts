@@ -470,32 +470,34 @@ export async function extractBrandingInBrowserContext(
     return null;
   }
 
-  /** Inline SVG from `a[href="/"]` in header beats generic chrome images; below strong img+logo+SVG. */
-  const scoreHeaderHomeInlineSvg = 280;
+  /** Inline SVG in the header home link is the canonical wordmark; prefer it over any `<img>` candidate. */
+  const scoreHeaderHomeInlineSvg = 500;
+
+  const headerHomeSvgDataUrl = findInlineSvgDataUrlFromHeaderHomeLink();
 
   let bestLogoScore = Number.NEGATIVE_INFINITY;
   let bestLogoResolved: string | null = null;
-  for (const imageElement of collectLogoCandidateImages()) {
-    const resolved = resolvedImgSrc(imageElement);
-    if (!resolved) continue;
-    const score = scoreLogoCandidate(imageElement, resolved);
-    if (score < -500) continue;
-    const beatsByScore = score > bestLogoScore;
-    const tiePreferSvg =
-      score === bestLogoScore &&
-      bestLogoResolved !== null &&
-      isSvgAssetUrl(resolved) &&
-      !isSvgAssetUrl(bestLogoResolved);
-    if (beatsByScore || tiePreferSvg) {
-      bestLogoScore = score;
-      bestLogoResolved = resolved;
-    }
-  }
 
-  const headerHomeSvgDataUrl = findInlineSvgDataUrlFromHeaderHomeLink();
-  if (headerHomeSvgDataUrl && scoreHeaderHomeInlineSvg > bestLogoScore) {
+  if (headerHomeSvgDataUrl) {
     bestLogoScore = scoreHeaderHomeInlineSvg;
     bestLogoResolved = headerHomeSvgDataUrl;
+  } else {
+    for (const imageElement of collectLogoCandidateImages()) {
+      const resolved = resolvedImgSrc(imageElement);
+      if (!resolved) continue;
+      const score = scoreLogoCandidate(imageElement, resolved);
+      if (score < -500) continue;
+      const beatsByScore = score > bestLogoScore;
+      const tiePreferSvg =
+        score === bestLogoScore &&
+        bestLogoResolved !== null &&
+        isSvgAssetUrl(resolved) &&
+        !isSvgAssetUrl(bestLogoResolved);
+      if (beatsByScore || tiePreferSvg) {
+        bestLogoScore = score;
+        bestLogoResolved = resolved;
+      }
+    }
   }
 
   logoUrl = bestLogoResolved;

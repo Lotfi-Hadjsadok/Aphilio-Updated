@@ -1,27 +1,71 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { listSavedContexts } from "@/app/actions/scrape";
+import {
+  getAdStudioResumePayload,
+  listAdCreativeStudioSessionsForUser,
+} from "@/app/actions/ad-creative-studio-sessions";
+import type { LoadAdCreativesDnaState } from "@/types/ad-creatives";
+import { requireActiveSubscriptionOrCheckout } from "@/lib/polar-subscription";
 import { AdCreativesForm } from "./ad-creatives-form";
 
-export const metadata = {
-  title: "Ad creatives",
-  description:
-    "Pick saved DNA, a marketing angle, and sections — AI shapes the creative to your angle and generates the image prompt.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return {
+    title: t("adStudioTitle"),
+    description: t("adStudioDescription"),
+  };
+}
 
-type PageProps = { searchParams: Promise<{ contextId?: string }> };
+type PageProps = { searchParams: Promise<{ contextId?: string; sessionId?: string }> };
 
 export default async function AdCreativesPage({ searchParams }: PageProps) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/sign-in");
 
-  const { contextId } = await searchParams;
-  const savedContexts = await listSavedContexts();
+  await requireActiveSubscriptionOrCheckout({ userId: session.user.id });
+
+  const tDna = await getTranslations("dna");
+  const { contextId, sessionId } = await searchParams;
+  const [savedContexts, initialStudioSessions, locale] = await Promise.all([
+    listSavedContexts(),
+    listAdCreativeStudioSessionsForUser(),
+    getLocale(),
+  ]);
+
+  const resumePayload = sessionId ? await getAdStudioResumePayload(sessionId) : null;
+  const resumeLoadError =
+    sessionId && !resumePayload
+      ? tDna("sessionLoadError")
+      : null;
+
+  const initialLoadState: LoadAdCreativesDnaState | undefined = resumePayload
+    ? {
+        status: "ready",
+        payload: {
+          ...resumePayload.payload,
+          studioSessionId: resumePayload.sessionId,
+        },
+      }
+    : undefined;
+
+  const initialContextIdForPicker = resumePayload?.contextId ?? contextId;
 
   return (
-    <main className="landing-grid-bg relative flex h-[100dvh] min-h-0 w-full flex-col overflow-x-hidden overflow-y-hidden bg-background text-foreground antialiased">
-      <AdCreativesForm savedContexts={savedContexts} initialContextId={contextId} />
+    <main className="landing-grid-bg ad-studio-page-edge-glow relative flex h-full min-h-0 w-full flex-1 flex-col overflow-x-hidden overflow-y-hidden bg-background text-foreground antialiased">
+      <AdCreativesForm
+        key={sessionId ?? `ctx-${initialContextIdForPicker ?? "none"}`}
+        savedContexts={savedContexts}
+        initialStudioSessions={initialStudioSessions}
+        initialContextId={initialContextIdForPicker}
+        initialLoadState={initialLoadState}
+        resumePayload={resumePayload}
+        resumeLoadError={resumeLoadError}
+        currentLocale={locale}
+      />
     </main>
   );
 }

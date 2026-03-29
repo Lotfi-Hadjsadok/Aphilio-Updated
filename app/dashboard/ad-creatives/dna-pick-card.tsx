@@ -1,9 +1,19 @@
 "use client";
 
-import { Check, Clock, Globe } from "lucide-react";
+import { Check } from "lucide-react";
 import type { SavedContextSummary } from "@/types/scrape";
 import { cn } from "@/lib/utils";
-import { FormattedDate, FORMAT_DATE_SHORT } from "@/components/formatted-date";
+import { dnaPickCardTitleAndSubtitle } from "@/lib/ad-studio-brand-label";
+import { adStudioCardGradientWashCn } from "./ad-creatives-constants";
+import { BrandMarkAvatar } from "./brand-mark-avatar";
+
+function cleanHostname(url: string): string {
+  try {
+    return new URL(url.startsWith("http") ? url : `https://${url}`).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
 
 export function DnaPickCard({
   savedContext,
@@ -14,35 +24,56 @@ export function DnaPickCard({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const hostname = cleanHostname(savedContext.baseUrl);
+  const { title: titleText, subtitle: subtitleText } = dnaPickCardTitleAndSubtitle(
+    savedContext.name,
+    hostname,
+  );
+
   return (
     <button
       type="button"
       onClick={onSelect}
       className={cn(
-        "group flex w-full items-center gap-3 rounded-xl border bg-background/60 px-3 py-2.5 text-left transition-colors",
+        "group relative flex w-full overflow-hidden rounded-2xl border px-3.5 py-3 text-left transition-all duration-200",
         selected
-          ? "border-foreground/25 bg-background ring-2 ring-foreground/15"
-          : "border-border/60 hover:bg-background/90",
+          ? "border-border/60 bg-card/50 shadow-md ring-2 ring-white/15"
+          : "border-border/50 bg-card/40 hover:bg-card/70 hover:shadow-sm",
       )}
     >
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted ring-1 ring-border/60">
-        <Globe className="size-3.5 text-muted-foreground" strokeWidth={1.75} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-foreground">{savedContext.name}</span>
-        <span className="mt-0.5 flex items-center gap-1 text-[0.65rem] text-muted-foreground">
-          <Clock className="size-2.5 opacity-70" />
-          <FormattedDate date={savedContext.createdAt} options={FORMAT_DATE_SHORT} />
+      {selected ? <span className={adStudioCardGradientWashCn} aria-hidden /> : null}
+      <span className="relative z-10 flex w-full items-center gap-3">
+        <span
+          className={cn(
+            "flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl p-0.5 ring-1 transition-colors",
+            selected
+              ? "bg-background/80 text-foreground ring-white/20"
+              : "bg-muted/50 text-muted-foreground ring-border/50 group-hover:bg-muted",
+          )}
+        >
+          <BrandMarkAvatar faviconUrl={savedContext.favicon} hostname={savedContext.baseUrl} />
         </span>
-      </span>
-      <span
-        className={cn(
-          "flex size-5 shrink-0 items-center justify-center rounded-full border border-border/70 transition-opacity",
-          selected ? "bg-foreground text-background" : "opacity-0 group-hover:opacity-100",
-        )}
-        aria-hidden
-      >
-        <Check className="size-3" />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-heading text-sm font-semibold text-foreground sm:text-base">
+            {titleText}
+          </span>
+          {subtitleText ? (
+            <span className="mt-0.5 block truncate text-[0.68rem] text-muted-foreground/80">
+              {subtitleText}
+            </span>
+          ) : null}
+        </span>
+        <span
+          className={cn(
+            "flex size-6 shrink-0 items-center justify-center rounded-full transition-all",
+            selected
+              ? "bg-accent-gradient text-white shadow-sm ring-1 ring-white/25"
+              : "border border-border/60 opacity-0 group-hover:opacity-70",
+          )}
+          aria-hidden
+        >
+          <Check className="size-3.5" strokeWidth={2.5} />
+        </span>
       </span>
     </button>
   );

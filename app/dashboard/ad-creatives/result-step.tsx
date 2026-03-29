@@ -1,15 +1,17 @@
 "use client";
 
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, Loader2, Sparkles } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type {
   AdCreativesDnaPayload,
   GenerateAdPromptsState,
   SelectAngleState,
   SelectedTemplate,
+  StudioSlotOutcomePersisted,
 } from "@/types/ad-creatives";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { stepContentCn } from "./ad-creatives-constants";
+import { studioContentCn, studioScrollCn, studioShellCn } from "./ad-creatives-constants";
 import { StepHeader } from "./step-header";
 import { ErrorBanner } from "./error-banner";
 import { GeneratedAdCard } from "./generated-ad-card";
@@ -24,6 +26,9 @@ export function ResultStep({
   selectedSectionIds,
   selectAngleState,
   selectedTemplates,
+  initialSlotOutcomes,
+  journeyFurthestStep,
+  onJourneyStepClick,
 }: {
   payload: AdCreativesDnaPayload;
   generateState: GenerateAdPromptsState & { status: "success" };
@@ -31,57 +36,142 @@ export function ResultStep({
   generatePending: boolean;
   generateError: string | null;
   onBack: () => void;
-  onStartOver: () => void;
   selectedSectionIds: Set<string>;
   selectAngleState: SelectAngleState & { status: "ready" };
   selectedTemplates: SelectedTemplate[];
+  initialSlotOutcomes?: StudioSlotOutcomePersisted[];
+  journeyFurthestStep: number;
+  onJourneyStepClick: (step: number) => void;
 }) {
+  const t = useTranslations("adCreatives.step4");
+  const tCommon = useTranslations("common");
   const sectionIdsValue = [...selectedSectionIds].join(",");
+  const studioSessionId = payload.studioSessionId ?? "";
+
+  const promptsSignature = useMemo(
+    () =>
+      generateState.prompts
+        .map((promptItem) => `${promptItem.templateId}:${promptItem.aspectRatio}:${promptItem.headline}`)
+        .join("|"),
+    [generateState.prompts],
+  );
+
+  const [slotSnapshot, setSlotSnapshot] = useState<StudioSlotOutcomePersisted[]>(() => {
+    const length = generateState.prompts.length;
+    const seed = initialSlotOutcomes ?? [];
+    const row: StudioSlotOutcomePersisted[] = [];
+    for (let index = 0; index < length; index++) {
+      row[index] = seed[index] ?? { status: "pending" };
+    }
+    return row;
+  });
+
+  const previousPromptsSignatureRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (previousPromptsSignatureRef.current === null) {
+      previousPromptsSignatureRef.current = promptsSignature;
+      return;
+    }
+    if (previousPromptsSignatureRef.current === promptsSignature) return;
+    previousPromptsSignatureRef.current = promptsSignature;
+    const length = generateState.prompts.length;
+    setSlotSnapshot(() => {
+      const row: StudioSlotOutcomePersisted[] = [];
+      for (let index = 0; index < length; index++) {
+        row[index] = { status: "pending" };
+      }
+      return row;
+    });
+  }, [promptsSignature, generateState.prompts.length]);
+
+  const handleSlotUpdate = useCallback((slotIndex: number, outcome: StudioSlotOutcomePersisted) => {
+    setSlotSnapshot((prev) => {
+      const next = [...prev];
+      while (next.length <= slotIndex) {
+        next.push({ status: "pending" });
+      }
+      next[slotIndex] = outcome;
+      return next;
+    });
+  }, []);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <form action={generateFormAction} className="shrink-0">
-        <input type="hidden" name="contextId" value={payload.contextId} />
-        <input type="hidden" name="selectedAngles" value={JSON.stringify(selectAngleState.selectedAngles)} />
-        <input type="hidden" name="sectionIds" value={sectionIdsValue} />
-        <input type="hidden" name="selectedTemplates" value={JSON.stringify(selectedTemplates)} />
+    <div className={studioShellCn}>
+      <div className={studioScrollCn}>
+        <div className={studioContentCn}>
+          <div className="space-y-5 pb-12 pt-4 sm:space-y-6 sm:pb-16 sm:pt-5">
+            <form action={generateFormAction} className="space-y-4">
+              <input type="hidden" name="contextId" value={payload.contextId} />
+              <input type="hidden" name="studioSessionId" value={studioSessionId} />
+              <input
+                type="hidden"
+                name="selectedAngles"
+                value={JSON.stringify(selectAngleState.selectedAngles)}
+              />
+              <input type="hidden" name="sectionIds" value={sectionIdsValue} />
+              <input type="hidden" name="selectedTemplates" value={JSON.stringify(selectedTemplates)} />
 
-        <div className={cn(stepContentCn, "pb-0")}>
-          <StepHeader
-            stepNumber={4}
-            stepTitle="Your creatives"
-            stepDescription={`${generateState.prompts.length} prompt${generateState.prompts.length > 1 ? "s" : ""} generated — review and generate each ad image.`}
-          >
-            <div className="flex items-center gap-2">
-              <Button type="button" variant="outline" size="sm" className="rounded-lg" onClick={onBack}>
-                <ChevronLeft className="mr-1 size-3.5" />
-                Edit
-              </Button>
-              <Button type="submit" size="sm" disabled={generatePending} className="rounded-lg">
-                {generatePending ? (
-                  <>
-                    <Loader2 className="mr-1.5 size-3.5 animate-spin" />
-                    Regenerating…
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-1.5 size-3.5" />
-                    Regenerate all
-                  </>
-                )}
-              </Button>
+              <StepHeader
+                stepNumber={4}
+                stepTitle={t("title")}
+                stepDescription={
+                  generateState.prompts.length > 1
+                    ? t("layoutsReadyPlural", { count: generateState.prompts.length })
+                    : t("layoutsReady", { count: generateState.prompts.length })
+                }
+                journeyFurthestStep={journeyFurthestStep}
+                onJourneyStepClick={onJourneyStepClick}
+              >
+                <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 rounded-xl sm:flex-none"
+                    onClick={onBack}
+                  >
+                    <ChevronLeft className="mr-1.5 size-3.5" />
+                    {t("adjustFormats")}
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={generatePending}
+                    size="sm"
+                    className="flex-1 rounded-xl sm:flex-none"
+                    variant="secondary"
+                  >
+                    {generatePending ? (
+                      <>
+                        <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                        {t("refreshing")}
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-1.5 size-3.5" />
+                        {t("rebuildAll")}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </StepHeader>
+
+              {generateError ? <ErrorBanner message={generateError} /> : null}
+            </form>
+
+            <div className="grid w-full min-w-0 grid-cols-1 gap-5 sm:gap-6 xl:grid-cols-2 xl:gap-7">
+              {generateState.prompts.map((prompt, promptIndex) => (
+                <GeneratedAdCard
+                  key={`${promptsSignature}-${promptIndex}`}
+                  prompt={prompt}
+                  contextId={payload.contextId}
+                  studioSessionId={studioSessionId}
+                  slotIndex={promptIndex}
+                  initialSlot={slotSnapshot[promptIndex]}
+                  onSlotUpdate={handleSlotUpdate}
+                />
+              ))}
             </div>
-          </StepHeader>
-
-          {generateError ? <ErrorBanner message={generateError} /> : null}
-        </div>
-      </form>
-
-      <div className="mx-auto min-h-0 w-full max-w-4xl flex-1 overflow-y-auto overscroll-contain px-4 pb-8 pt-4 sm:px-6 [-webkit-overflow-scrolling:touch]">
-        <div className="space-y-4">
-          {generateState.prompts.map((prompt, promptIndex) => (
-            <GeneratedAdCard key={promptIndex} prompt={prompt} contextId={payload.contextId} />
-          ))}
+          </div>
         </div>
       </div>
     </div>

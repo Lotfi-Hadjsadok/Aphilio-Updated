@@ -142,6 +142,11 @@
   * {
     @apply border-border outline-ring/50;
   }
+  @media (prefers-reduced-motion: no-preference) {
+    * {
+      scroll-behavior: smooth;
+    }
+  }
   body {
     @apply bg-background text-foreground font-sans text-[15px] leading-relaxed sm:text-base antialiased;
     font-feature-settings:
@@ -184,6 +189,7 @@
 
 @layer utilities {
   .bg-accent-gradient {
+    background-color: transparent;
     background-image: var(--accent-gradient);
   }
   .bg-accent-gradient-subtle {
@@ -266,6 +272,47 @@
       linear-gradient(90deg, oklch(1 0 0 / 0.045) 1px, transparent 1px),
       radial-gradient(ellipse 80% 55% at 15% 0%, oklch(0.28 0 0 / 0.35), transparent 60%),
       radial-gradient(ellipse 70% 50% at 85% 100%, oklch(0.26 0 0 / 0.3), transparent 58%);
+  }
+
+  /* Ad studio — grid + soft washes aligned with --accent-gradient (orange / purple / pink) */
+  .ad-studio-shell-bg {
+    background-color: var(--background);
+    background-image:
+      linear-gradient(oklch(0.7 0 0 / 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(0.7 0 0 / 0.05) 1px, transparent 1px),
+      radial-gradient(ellipse 76% 56% at 10% 6%, oklch(0.78 0.14 55 / 0.09), transparent 58%),
+      radial-gradient(ellipse 70% 50% at 90% 94%, oklch(0.72 0.12 305 / 0.08), transparent 56%),
+      radial-gradient(ellipse 40% 36% at 78% 8%, oklch(0.74 0.14 350 / 0.06), transparent 55%);
+    background-size: 52px 52px, 52px 52px, 100% 100%, 100% 100%, 100% 100%;
+    background-position: 0 0, 0 0, 0 0, 0 0, 0 0;
+  }
+  .dark .ad-studio-shell-bg {
+    background-image:
+      linear-gradient(oklch(1 0 0 / 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 0.04) 1px, transparent 1px),
+      radial-gradient(ellipse 76% 56% at 10% 6%, oklch(0.55 0.16 55 / 0.16), transparent 58%),
+      radial-gradient(ellipse 70% 50% at 90% 94%, oklch(0.48 0.14 305 / 0.14), transparent 56%),
+      radial-gradient(ellipse 40% 36% at 78% 8%, oklch(0.52 0.14 350 / 0.12), transparent 55%);
+  }
+
+  /* Ad studio page — subtle orange wash (gradient start) */
+  .ad-studio-page-edge-glow::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse 85% 42% at 50% -14%,
+      oklch(0.78 0.14 55 / 0.11),
+      transparent 65%
+    );
+  }
+  .dark .ad-studio-page-edge-glow::before {
+    background: radial-gradient(
+      ellipse 85% 42% at 50% -14%,
+      oklch(0.58 0.15 55 / 0.18),
+      transparent 65%
+    );
   }
 
   /* DNA preview — slightly stronger accent glow */
@@ -416,6 +463,19 @@
     from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }
   }
+  /* DNA preview — playful tool cards */
+  @keyframes dna-tool-bob {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-5px) scale(1.05); }
+  }
+  @keyframes dna-tool-shimmer-border {
+    0%, 100% { opacity: 0.45; }
+    50% { opacity: 0.95; }
+  }
+  @keyframes dna-sparkle-twinkle {
+    0%, 100% { opacity: 0.35; transform: scale(0.85); }
+    50% { opacity: 1; transform: scale(1.15); }
+  }
 
   .animate-float          { animation: float 4s ease-in-out infinite; }
   .animate-pulse-glow     { animation: pulse-glow 2.5s ease-in-out infinite; }
@@ -427,6 +487,15 @@
   .animate-bounce-slow  { animation: bounce-slow 2.5s infinite; }
   .animate-spin-slow    { animation: spin-slow 8s linear infinite; }
   .animate-gradient-shift { animation: gradient-shift 5s ease infinite; background-size: 200% 200%; }
+  .animate-dna-tool-bob {
+    animation: dna-tool-bob 2.4s ease-in-out infinite;
+  }
+  .animate-dna-tool-shimmer {
+    animation: dna-tool-shimmer-border 2.8s ease-in-out infinite;
+  }
+  .animate-dna-sparkle {
+    animation: dna-sparkle-twinkle 1.8s ease-in-out infinite;
+  }
 
   @media (max-width: 767px), (prefers-reduced-motion: reduce) {
     .animate-float,
@@ -435,7 +504,10 @@
     .animate-orbit,
     .animate-scan-line,
     .animate-bounce-slow,
-    .animate-spin-slow {
+    .animate-spin-slow,
+    .animate-dna-tool-bob,
+    .animate-dna-tool-shimmer,
+    .animate-dna-sparkle {
       animation: none;
     }
   }
@@ -541,5 +613,31 @@
   }
   .markdown-preview-dna img {
     @apply my-2 max-w-full rounded-md border border-border;
+  }
+}
+
+/* Thank-you page: confetti — stays readable on dark UI, fades out at bottom. */
+@keyframes thank-you-confetti-fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  6% {
+    opacity: 0.95;
+  }
+  45% {
+    opacity: 0.88;
+  }
+  78% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: translate3d(
+        var(--thank-you-drift, 0px),
+        calc(100dvh + 12vh),
+        0
+      )
+      rotate(var(--thank-you-rot, 240deg));
+    opacity: 0;
   }
 }

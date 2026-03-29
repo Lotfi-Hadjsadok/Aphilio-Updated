@@ -62,6 +62,8 @@ export type SavedContextSummary = {
   id: string;
   baseUrl: string;
   name: string;
+  /** Stored from scrape when available; UI may fall back by hostname when null. */
+  favicon: string | null;
   createdAt: Date;
   subcontextCount: number;
 };

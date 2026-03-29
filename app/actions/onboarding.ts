@@ -1,7 +1,9 @@
 "use server";
 
+import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "@/lib/server-auth";
+import { isValidLocale } from "@/lib/i18n-locales";
 
 export type OnboardingState = {
   error?: string;
@@ -25,6 +27,13 @@ export async function saveOnboardingPreferences(
     },
   });
 
+  const cookieStore = await cookies();
+  cookieStore.set("NEXT_LOCALE", language, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+  });
+
   return { success: true };
 }
 
@@ -34,7 +43,35 @@ export async function completeOnboarding(): Promise<OnboardingState> {
 
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { onboardingCompleted: true },
+    data: {
+      onboardingCompleted: true,
+      onboardingStep: 0,
+      onboardingDraftUrl: null,
+    },
+  });
+
+  return { success: true };
+}
+
+const MAX_ONBOARDING_STEP = 3;
+
+export async function saveOnboardingProgress(
+  step: number,
+  draftUrl: string | null,
+): Promise<OnboardingState> {
+  const session = await getServerSession();
+  if (!session) return { error: "You must be signed in." };
+
+  if (!Number.isInteger(step) || step < 0 || step > MAX_ONBOARDING_STEP) {
+    return { error: "Invalid onboarding step." };
+  }
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: {
+      onboardingStep: step,
+      onboardingDraftUrl: draftUrl,
+    },
   });
 
   return { success: true };

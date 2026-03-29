@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Globe, ArrowRight } from "lucide-react";
 
 export function UrlStep({ onSubmit }: { onSubmit: (url: string) => void }) {
+  const t = useTranslations("onboarding.url");
+  const tCommon = useTranslations("common");
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
 
@@ -13,7 +16,7 @@ export function UrlStep({ onSubmit }: { onSubmit: (url: string) => void }) {
     event.preventDefault();
     const trimmed = url.trim();
     if (!trimmed) {
-      setError("Please enter a website URL.");
+      setError(t("errorRequired"));
       return;
     }
 
@@ -21,7 +24,7 @@ export function UrlStep({ onSubmit }: { onSubmit: (url: string) => void }) {
     try {
       parsed = new URL(trimmed.startsWith("http") ? trimmed : `https://${trimmed}`);
     } catch {
-      setError("Please enter a valid URL.");
+      setError(t("errorInvalid"));
       return;
     }
 
@@ -40,11 +43,10 @@ export function UrlStep({ onSubmit }: { onSubmit: (url: string) => void }) {
         {/* Title */}
         <div className="space-y-3">
           <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
-            What&apos;s your website?
+            {t("title")}
           </h2>
           <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
-            We&apos;ll analyze your site to extract your brand DNA — colors, fonts, logo, and voice —
-            so everything we generate is on-brand.
+            {t("description")}
           </p>
         </div>
 
@@ -59,7 +61,7 @@ export function UrlStep({ onSubmit }: { onSubmit: (url: string) => void }) {
                 setUrl(event.target.value);
                 setError("");
               }}
-              placeholder="https://yoursite.com"
+              placeholder={t("placeholder")}
               className="h-14 border-0 bg-transparent text-base shadow-none placeholder:text-muted-foreground/50 focus-visible:ring-0 sm:text-lg"
               autoFocus
             />
@@ -74,7 +76,7 @@ export function UrlStep({ onSubmit }: { onSubmit: (url: string) => void }) {
             size="lg"
             className="mx-auto h-13 w-full max-w-xs rounded-xl px-8 text-base font-semibold sm:h-14"
           >
-            Continue
+            {tCommon("continue")}
             <ArrowRight className="ml-2 size-4" />
           </Button>
         </form>

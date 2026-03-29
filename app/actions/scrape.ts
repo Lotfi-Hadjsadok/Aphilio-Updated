@@ -4,9 +4,10 @@ import { chromium, type Page } from "playwright";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "@/lib/server-auth";
 import {
+  analyzePersonalityAndAngles,
   embedTextsForContextDocuments,
   embeddingArrayToPgVectorLiteral,
-  analyzePersonalityAndAngles,
+  normalizeBrandingPersonality,
 } from "@/lib/langchain";
 import type {
   BrandingDNA,
@@ -198,8 +199,6 @@ const BROWSER_USER_AGENT =
 const ERR_UNAUTHORIZED = "Unauthorized";
 const ERR_INVALID_URL = "Invalid URL. Please enter a valid website address.";
 const ERR_EMPTY_CONTENT = "Could not retrieve any content from this URL.";
-const ERR_ALREADY_SCRAPED =
-  "This page is already in your library. Only new paths on a site are scraped.";
 const ERR_EMBEDDING_FAILED =
   "Could not generate embeddings for scraped content. Check your OpenAI API key and try again.";
 
@@ -688,6 +687,11 @@ async function extractBranding(page: Page, origin: string): Promise<BrandingDNA>
   };
 }
 
+function isSvgLogoUrl(url: string): boolean {
+  const lower = url.trim().toLowerCase();
+  return lower.includes(".svg") || lower.startsWith("data:image/svg");
+}
+
 export async function isPublicImage(url: string): Promise<boolean> {
   try {
     const normalizedUrl = url.trim().toLowerCase();
@@ -700,6 +704,9 @@ export async function isPublicImage(url: string): Promise<boolean> {
       return false;
     }
 
+    const parsed = new URL(url);
+    if (isPrivateHostname(parsed.hostname)) return false;
+
     const response = await fetch(url, { redirect: "follow" });
     if (response.status !== 200) return false;
     const contentType = (response.headers.get("content-type") || "").toLowerCase();
@@ -711,9 +718,18 @@ export async function isPublicImage(url: string): Promise<boolean> {
   }
 }
 
+const PRIVATE_HOSTNAME_RE =
+  /^(localhost|127\.\d+\.\d+\.\d+|::1|0\.0\.0\.0|169\.254\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|192\.168\.\d+\.\d+)$/i;
+
+function isPrivateHostname(hostname: string): boolean {
+  return PRIVATE_HOSTNAME_RE.test(hostname);
+}
+
 function parseTargetUrl(raw: string): URL | null {
   try {
-    return new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+    const parsed = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+    if (isPrivateHostname(parsed.hostname)) return null;
+    return parsed;
   } catch {
     return null;
   }
@@ -788,18 +804,27 @@ function extractVideoUrlsFromMarkdown(markdown: string, baseHref: string): strin
 
 function brandingFromRecord(record: {
   logo: string | null;
+  favicon: string | null;
   primaryColor: string | null;
   secondaryColor: string | null;
   ogImage: string | null;
   typography: unknown;
 }): BrandingDNA | null {
-  if (!record.logo && !record.primaryColor && !record.secondaryColor && !record.ogImage && !record.typography) return null;
+  if (
+    !record.logo &&
+    !record.favicon &&
+    !record.primaryColor &&
+    !record.secondaryColor &&
+    !record.ogImage &&
+    !record.typography
+  )
+    return null;
   return {
     colors: {
       primary: record.primaryColor ?? null,
       secondary: record.secondaryColor ?? null,
     },
-    favicon: null,
+    favicon: record.favicon ?? null,
     logo: record.logo ?? null,
     ogImage: record.ogImage ?? null,
     typography: Array.isArray(record.typography) ? (record.typography as TypographyEntry[]) : null,
@@ -808,7 +833,7 @@ function brandingFromRecord(record: {
 
 function personalityFromRecord(record: { personality: unknown }): BrandingPersonality | null {
   if (!record.personality || typeof record.personality !== "object") return null;
-  return record.personality as BrandingPersonality;
+  return normalizeBrandingPersonality(record.personality as BrandingPersonality);
 }
 
 function marketingAnglesFromRecord(record: { marketingAngles: unknown }): string[] | null {
@@ -916,7 +941,19 @@ export async function scrapeWebsite(_prevState: ScrapeState, formData: FormData)
     const subExists = await prisma.subContext.findUnique({
       where: { contextId_path: { contextId: existingContext.id, path } },
     });
-    if (subExists) return { error: ERR_ALREADY_SCRAPED };
+    if (subExists) {
+      const contextRecord = await prisma.scrapedContext.findFirst({
+        where: { id: existingContext.id, userId: session.user.id },
+        include: {
+          subcontexts: {
+            orderBy: { path: "asc" },
+            include: { documents: { orderBy: { id: "asc" } } },
+          },
+        },
+      });
+      if (!contextRecord) return { error: "Context not found." };
+      return { result: recordToScrapeResult(contextRecord) };
+    }
   }
 
   const built = await buildScrapedContent(targetUrl);
@@ -928,7 +965,9 @@ export async function scrapeWebsite(_prevState: ScrapeState, formData: FormData)
   const sanitizedBranding = branding
     ? {
         ...branding,
-        logo: (branding.logo && (await isPublicImage(branding.logo))) ? branding.logo : null,
+        logo: branding.logo
+          ? (isSvgLogoUrl(branding.logo) ? branding.logo : ((await isPublicImage(branding.logo)) ? branding.logo : null))
+          : null,
         favicon: (branding.favicon && (await isPublicImage(branding.favicon))) ? branding.favicon : null,
         ogImage: (branding.ogImage && (await isPublicImage(branding.ogImage))) ? branding.ogImage : null,
       }
@@ -964,6 +1003,7 @@ export async function scrapeWebsite(_prevState: ScrapeState, formData: FormData)
           baseUrl,
           name,
           logo: sanitizedBranding?.logo ?? null,
+          favicon: sanitizedBranding?.favicon ?? null,
           primaryColor: sanitizedBranding?.colors.primary ?? null,
           secondaryColor: sanitizedBranding?.colors.secondary ?? null,
           ogImage: sanitizedBranding?.ogImage ?? null,
@@ -1067,6 +1107,7 @@ function recordToScrapeResult(record: {
   name: string;
   createdAt: Date;
   logo: string | null;
+  favicon: string | null;
   primaryColor: string | null;
   secondaryColor: string | null;
   ogImage: string | null;
@@ -1122,6 +1163,7 @@ export async function listSavedContexts(): Promise<SavedContextSummary[]> {
       id: true,
       baseUrl: true,
       name: true,
+      favicon: true,
       createdAt: true,
       _count: { select: { subcontexts: true } },
     },
@@ -1131,6 +1173,7 @@ export async function listSavedContexts(): Promise<SavedContextSummary[]> {
     id: row.id,
     baseUrl: row.baseUrl,
     name: row.name,
+    favicon: row.favicon,
     createdAt: row.createdAt,
     subcontextCount: row._count.subcontexts,
   }));

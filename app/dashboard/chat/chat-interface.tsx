@@ -4,11 +4,13 @@ import {
   Suspense,
   useActionState,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useCallback,
   startTransition,
 } from "react";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import {
   ArrowUp,
@@ -50,6 +52,13 @@ import { WelcomeScreen } from "./components/welcome-screen";
 import { ContextImagesGrid } from "./components/context-images-grid";
 import { ConversationSidebar } from "./components/conversation-sidebar";
 import { UploadedThumb } from "./components/uploaded-thumb";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { LogoutButton } from "@/components/logout-button";
+import { DashboardBackIcon } from "@/components/dashboard-back-link";
+import {
+  dashboardToolHeaderBarClass,
+  dashboardToolHeaderRowClass,
+} from "@/lib/dashboard-tool-layout";
 
 import type { SavedContextSummary } from "@/types/scrape";
 import type {
@@ -65,9 +74,17 @@ type ChatInterfaceProps = {
   savedContexts: SavedContextSummary[];
   initialConversations: ConversationSummary[];
   initialContextId?: string;
+  currentLocale: string;
 };
 
-export function ChatInterface({ savedContexts, initialConversations, initialContextId }: ChatInterfaceProps) {
+export function ChatInterface({
+  savedContexts,
+  initialConversations,
+  initialContextId,
+  currentLocale,
+}: ChatInterfaceProps) {
+  const t = useTranslations("chat");
+  const tCommon = useTranslations("common");
   const [conversations, setConversations] = useState<ConversationSummary[]>(initialConversations);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [localMessages, setLocalMessages] = useState<PersistedMessage[]>([]);
@@ -82,8 +99,25 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
   const [showImagePanel, setShowImagePanel] = useState(false);
   const [textValue, setTextValue] = useState("");
 
+  const messagesScrollRootRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function scrollMessagesViewportToEnd(behavior: ScrollBehavior = "auto") {
+    const root = messagesScrollRootRef.current;
+    const viewport = root?.querySelector(
+      '[data-slot="scroll-area-viewport"]',
+    ) as HTMLElement | null;
+    if (viewport) {
+      const targetTop = Math.max(0, viewport.scrollHeight - viewport.clientHeight);
+      viewport.scrollTo({ top: targetTop, behavior });
+    }
+    messagesEndRef.current?.scrollIntoView({
+      block: "end",
+      inline: "nearest",
+      behavior,
+    });
+  }
 
   const [contextImagesPromise, setContextImagesPromise] =
     useState<Promise<string[]>>(EMPTY_IMAGES_PROMISE);
@@ -105,10 +139,10 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
   );
 
   useEffect(() => {
-    if (loadState.status === "success") {
-      setLocalMessages(loadState.messages);
-    }
-  }, [loadState]);
+    if (loadState.status !== "success") return;
+    if (loadState.conversationId !== activeConversationId) return;
+    setLocalMessages(loadState.messages);
+  }, [loadState, activeConversationId]);
 
   // ── Send message ─────────────────────────────────────────────────────────
   const sendInitialState: SendChatMessageState = { status: "idle" };
@@ -158,7 +192,9 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
     setDeletingId(conversationId);
     const formData = new FormData();
     formData.append("conversationId", conversationId);
-    deleteDispatch(formData);
+    startTransition(() => {
+      deleteDispatch(formData);
+    });
     setConversations((prev) => prev.filter((conversation) => conversation.id !== conversationId));
     if (activeConversationId === conversationId) {
       setActiveConversationId(null);
@@ -167,10 +203,30 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
     setDeletingId(null);
   }
 
-  // ── Scroll to bottom ────────────────────────────────────────────────────
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [localMessages, isSendPending]);
+  // ── Scroll to bottom after paint (history load + new messages; viewport is ScrollArea, not window)
+  useLayoutEffect(() => {
+    if (localMessages.length === 0 && !isSendPending) return;
+
+    const runScroll = () => {
+      scrollMessagesViewportToEnd("auto");
+    };
+
+    runScroll();
+    let innerFrameId = 0;
+    const outerFrameId = requestAnimationFrame(() => {
+      runScroll();
+      innerFrameId = requestAnimationFrame(runScroll);
+    });
+    const settleTimer = window.setTimeout(runScroll, 0);
+    const settleTimer2 = window.setTimeout(runScroll, 100);
+
+    return () => {
+      cancelAnimationFrame(outerFrameId);
+      cancelAnimationFrame(innerFrameId);
+      window.clearTimeout(settleTimer);
+      window.clearTimeout(settleTimer2);
+    };
+  }, [localMessages, isSendPending, activeConversationId]);
 
   // ── Conversation switching ───────────────────────────────────────────────
   function handleSelectConversation(conversationId: string) {
@@ -205,9 +261,13 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
   }, []);
 
   // ── Form submit ──────────────────────────────────────────────────────────
-  function handleFormAction(formData: FormData) {
-    const text = String(formData.get("text") ?? "").trim();
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const text = textValue.trim();
     if (!text || isSendPending) return;
+
+    // Capture FormData before any state mutations so hidden inputs retain their values
+    const formData = new FormData(event.currentTarget);
 
     const optimisticUserMessage: PersistedMessage = {
       id: `optimistic-${Date.now()}`,
@@ -220,11 +280,16 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
       referenceImageUrls: [...selectedContextImageUrls, ...uploadedImages],
       createdAt: new Date().toISOString(),
     };
+
+    // Urgent (non-transition) updates — render immediately
     setLocalMessages((prev) => [...prev, optimisticUserMessage]);
     setTextValue("");
     setUploadedImages([]);
 
-    sendDispatch(formData);
+    // Server action runs as a background transition
+    startTransition(() => {
+      sendDispatch(formData);
+    });
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -255,79 +320,141 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
 
       {/* Main chat area */}
       <div className="retriever-shell-bg flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        {/* Mobile header */}
-        <header className="flex shrink-0 items-center gap-3 border-b border-border/50 bg-card/30 px-4 py-3 shadow-sm backdrop-blur-xl md:hidden">
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
-            aria-label="Open conversations"
+        {/* Desktop header */}
+        <header className={cn(dashboardToolHeaderBarClass, "hidden shadow-sm md:block")}>
+          <div
+            className={cn(
+              dashboardToolHeaderRowClass,
+              "flex-nowrap gap-2 py-2.5 sm:gap-3 sm:py-3",
+            )}
           >
-            <Menu className="size-4" />
-          </button>
-          <div className="flex items-center gap-2">
-            <Image
-              unoptimized
-              src="/aphilio-logo.webp"
-              alt=""
-              width={20}
-              height={20}
-              className="h-5 w-5 object-contain"
-            />
-            <span className="font-heading text-base font-semibold text-foreground">Chat</span>
+            <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+              <DashboardBackIcon
+                ariaLabel={tCommon("backToDashboard")}
+                title={tCommon("back")}
+              />
+              <div className="flex min-w-0 items-center gap-2">
+                <Image
+                  unoptimized
+                  src="/aphilio-logo.webp"
+                  alt=""
+                  width={20}
+                  height={20}
+                  className="h-5 w-5 shrink-0 object-contain"
+                />
+                <span className="font-heading truncate text-base font-semibold text-foreground">
+                  Chat
+                </span>
+              </div>
+            </div>
+            <div className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+              <LanguageSwitcher currentLocale={currentLocale} />
+              <LogoutButton className="h-8 px-2.5 text-xs" />
+              <button
+                type="button"
+                onClick={handleNewChat}
+                className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
+                aria-label={t("newButton")}
+              >
+                <PenSquare className="size-4" />
+              </button>
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={handleNewChat}
-            className="ml-auto rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
-            aria-label="New chat"
+        </header>
+
+        {/* Mobile header */}
+        <header className={cn(dashboardToolHeaderBarClass, "shadow-sm md:hidden")}>
+          <div
+            className={cn(
+              dashboardToolHeaderRowClass,
+              "flex-nowrap gap-2 py-2.5 sm:gap-3 sm:py-3",
+            )}
           >
-            <PenSquare className="size-4" />
-          </button>
+            <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(true)}
+                className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
+                aria-label={tCommon("openConversations")}
+              >
+                <Menu className="size-4" />
+              </button>
+              <DashboardBackIcon
+                ariaLabel={tCommon("backToDashboard")}
+                title={tCommon("back")}
+              />
+              <div className="flex min-w-0 items-center gap-2">
+                <Image
+                  unoptimized
+                  src="/aphilio-logo.webp"
+                  alt=""
+                  width={20}
+                  height={20}
+                  className="h-5 w-5 shrink-0 object-contain"
+                />
+                <span className="font-heading min-w-0 truncate text-base font-semibold text-foreground">
+                  Chat
+                </span>
+              </div>
+            </div>
+            <div className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+              <LanguageSwitcher
+                currentLocale={currentLocale}
+                className="max-w-[min(11rem,46vw)] sm:max-w-[13rem]"
+              />
+              <LogoutButton className="h-8 px-2.5 text-xs" />
+              <button
+                type="button"
+                onClick={handleNewChat}
+                className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
+                aria-label={t("newButton")}
+              >
+                <PenSquare className="size-4" />
+              </button>
+            </div>
+          </div>
         </header>
 
         {/* Messages — only this region scrolls; page stays viewport-locked */}
-        <ScrollArea className="min-h-0 flex-1 overflow-hidden">
-          <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 py-3 sm:px-8 sm:py-4 md:px-10">
-            {isLoadingMessages ? (
-              <div className="flex min-h-0 flex-1 items-center justify-center py-8">
-                <Loader2 className="size-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : localMessages.length === 0 ? (
-              <WelcomeScreen />
-            ) : (
-              <div className="flex flex-col gap-8">
-                {localMessages.map((message) =>
-                  message.role === "user" ? (
-                    <UserBubble key={message.id} message={message} />
-                  ) : message.imageUrl || message.id.startsWith("bot-") ? (
-                    <BotBubble key={message.id} message={message} />
-                  ) : sendState.status === "error" ? (
-                    <ErrorBubble key={message.id} text={sendState.message} />
-                  ) : (
-                    <BotBubble key={message.id} message={message} />
-                  ),
-                )}
-                {isSendPending && <LoadingBotBubble />}
-                {sendState.status === "error" && !isSendPending && (
-                  <ErrorBubble text={sendState.message} />
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            )}
+        <div ref={messagesScrollRootRef} className="min-h-0 flex-1 overflow-hidden">
+          <ScrollArea className="h-full min-h-0 overflow-hidden">
+            <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 py-3 sm:px-8 sm:py-4 md:px-10">
+              {isLoadingMessages ? (
+                <div className="flex min-h-0 flex-1 items-center justify-center py-8">
+                  <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : localMessages.length === 0 ? (
+                <WelcomeScreen />
+              ) : (
+                <div className="flex flex-col gap-8">
+                  {localMessages.map((message) =>
+                    message.role === "user" ? (
+                      <UserBubble key={message.id} message={message} />
+                    ) : (
+                      <BotBubble key={message.id} message={message} />
+                    ),
+                  )}
+                  {isSendPending && <LoadingBotBubble />}
+                  {sendState.status === "error" && !isSendPending && (
+                    <ErrorBubble text={sendState.message} />
+                  )}
+                  <div ref={messagesEndRef} className="h-px w-full shrink-0" aria-hidden />
+                </div>
+              )}
 
-            {sendState.status === "error" && !isSendPending && localMessages.length === 0 && (
-              <div className="mt-4 flex justify-center">
-                <div className="flex items-start gap-2">
-                  <BotAvatar />
-                  <div className="rounded-2xl rounded-tl-sm border border-red-300 bg-red-50 px-5 py-4 text-base text-red-700">
-                    {sendState.message}
+              {sendState.status === "error" && !isSendPending && localMessages.length === 0 && (
+                <div className="mt-4 flex justify-center">
+                  <div className="flex items-start gap-2">
+                    <BotAvatar />
+                    <div className="rounded-2xl rounded-tl-sm border border-red-300 bg-red-50 px-5 py-4 text-base text-red-700">
+                      {sendState.message}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
+              )}
+            </div>
+          </ScrollArea>
+        </div>
 
         {/* Input area */}
         <div className="shrink-0 border-t border-border/50 bg-card/30 shadow-[0_-1px_0_0_oklch(0_0_0_/0.04)] backdrop-blur-xl dark:shadow-[0_-1px_0_0_oklch(1_0_0_/0.06)]">
@@ -376,8 +503,7 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
               <div className="mb-2 rounded-2xl border border-border/80 bg-muted/40 p-3 shadow-inner sm:p-4">
                 <div className="mb-2 flex items-center justify-between">
                   <p className="text-sm font-medium text-muted-foreground">
-                    Pick reference images from{" "}
-                    <span className="text-foreground">{selectedContext?.name}</span>
+                    {t("contextImagesPickTitle", { name: selectedContext?.name ?? "" })}
                   </p>
                   <button
                     type="button"
@@ -391,7 +517,7 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
                   fallback={
                     <div className="flex items-center gap-2 py-3">
                       <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">Loading images…</span>
+                      <span className="text-sm text-muted-foreground">{t("loadingImages")}</span>
                     </div>
                   }
                 >
@@ -404,8 +530,8 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
               </div>
             )}
 
-            {/* Controls row */}
-            <div className="mb-2 flex flex-wrap items-center gap-2 sm:gap-3">
+            {/* Controls row — nowrap + horizontal scroll so long i18n strings do not wrap when Images+ appears */}
+            <div className="mb-2 flex min-h-10 flex-nowrap items-center gap-2 overflow-x-auto overflow-y-hidden overscroll-x-contain pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-3 [&::-webkit-scrollbar]:hidden">
               <Select
                 value={selectedContextId}
                 onValueChange={(value) => {
@@ -414,16 +540,18 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
                 }}
                 disabled={isSendPending}
               >
-                <SelectTrigger className="h-10 w-auto min-w-[11rem] max-w-[16rem] border-border bg-muted/30 text-sm text-foreground shadow-sm">
-                  {selectedContext ? (
-                    <span className="truncate font-medium">{selectedContext.name}</span>
-                  ) : (
-                    <SelectValue placeholder="No context" />
-                  )}
+                <SelectTrigger className="h-10 w-full min-w-[9rem] max-w-[12rem] shrink-0 border-border bg-muted/30 text-sm text-foreground shadow-sm sm:w-[12rem] sm:min-w-[12rem] sm:max-w-[12rem]">
+                  <span className="min-w-0 flex-1 overflow-hidden text-left">
+                    {selectedContext ? (
+                      <span className="block truncate font-medium">{selectedContext.name}</span>
+                    ) : (
+                      <SelectValue placeholder={t("noContext")} />
+                    )}
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">
-                    <span className="text-muted-foreground">No context</span>
+                    <span className="text-muted-foreground">{t("noContext")}</span>
                   </SelectItem>
                   {savedContexts.map((context) => (
                     <SelectItem key={context.id} value={context.id}>
@@ -435,7 +563,7 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
               </Select>
 
               {/* Aspect ratio pills */}
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2">
                 {ASPECT_RATIOS.map((ratio) => (
                   <button
                     key={ratio.value}
@@ -443,7 +571,7 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
                     onClick={() => setAspectRatio(ratio.value)}
                     disabled={isSendPending}
                     className={cn(
-                      "flex h-10 items-center gap-2 rounded-xl border px-3 text-xs font-medium transition-all disabled:opacity-40",
+                      "flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border px-3 text-xs font-medium transition-all disabled:opacity-40",
                       aspectRatio === ratio.value
                         ? "border-transparent bg-accent-gradient text-white shadow-md"
                         : "border-border bg-card/80 text-foreground/80 hover:border-border hover:bg-muted/50 hover:text-foreground",
@@ -451,7 +579,7 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
                   >
                     <div
                       className={cn(
-                        "shrink-0 rounded-sm border",
+                        "shrink-0 border",
                         aspectRatio === ratio.value
                           ? "border-white/80"
                           : "border-muted-foreground/50",
@@ -470,7 +598,7 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
                   onClick={() => setShowImagePanel((prev) => !prev)}
                   disabled={isSendPending}
                   className={cn(
-                    "inline-flex h-10 items-center gap-1.5 rounded-xl border px-3 text-xs font-medium transition-all disabled:opacity-40",
+                    "inline-flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 text-xs font-medium transition-all disabled:opacity-40",
                     showImagePanel || selectedContextImageUrls.length > 0
                       ? "border-foreground bg-foreground text-background shadow-sm"
                       : "border-border bg-card/80 text-foreground/80 hover:border-border hover:bg-muted/50 hover:text-foreground",
@@ -478,10 +606,10 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
                 >
                   <ImagePlus className="size-3" />
                   {selectedContextImageUrls.length > 0
-                    ? `${selectedContextImageUrls.length} image${
-                        selectedContextImageUrls.length !== 1 ? "s" : ""
-                      }`
-                    : "Images"}
+                    ? selectedContextImageUrls.length === 1
+                      ? t("selectedImagesOne", { count: selectedContextImageUrls.length })
+                      : t("selectedImagesOther", { count: selectedContextImageUrls.length })
+                    : t("imagesButton")}
                 </button>
               )}
 
@@ -489,27 +617,27 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isSendPending}
-                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-border bg-card/80 px-3 text-xs text-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-40"
-                title="Upload images from your device"
+                className="inline-flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl border border-border bg-card/80 px-3 text-xs text-foreground/80 transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-40"
+                title={tCommon("uploadImage")}
               >
-                Upload
+                {tCommon("uploadImage")}
               </button>
 
               {/* Image quality — compact segmented control (matches h-10 toolbar) */}
               <div
                 role="radiogroup"
-                aria-label="Image generation quality"
-                className="ml-auto inline-flex h-10 shrink-0 items-stretch rounded-xl border border-border bg-muted/50 p-0.5"
+                aria-label={t("imageQualityAria")}
+                className="ml-auto inline-flex h-10 shrink-0 items-stretch whitespace-nowrap rounded-xl border border-border bg-muted/50 p-0.5"
               >
                 <button
                   type="button"
                   role="radio"
                   aria-checked={imageMode === "fast"}
-                  title="Quicker drafts"
+                  title={t("qualityQuickerDrafts")}
                   disabled={isSendPending}
                   onClick={() => setImageMode("fast")}
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all disabled:opacity-40",
+                    "inline-flex items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all disabled:opacity-40 sm:px-3",
                     imageMode === "fast"
                       ? "bg-card text-foreground shadow-sm ring-1 ring-border/80"
                       : "text-muted-foreground hover:bg-muted/70",
@@ -522,17 +650,17 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
                     )}
                     aria-hidden
                   />
-                  Fast
+                  {tCommon("fast")}
                 </button>
                 <button
                   type="button"
                   role="radio"
                   aria-checked={imageMode === "premium"}
-                  title="Richer detail"
+                  title={t("qualityRicherDetail")}
                   disabled={isSendPending}
                   onClick={() => setImageMode("premium")}
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all disabled:opacity-40",
+                    "inline-flex items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-all disabled:opacity-40 sm:px-3",
                     imageMode === "premium"
                       ? "bg-card text-foreground shadow-sm ring-1 ring-violet-300/60 dark:ring-violet-500/35"
                       : "text-muted-foreground hover:bg-muted/70",
@@ -545,13 +673,13 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
                     )}
                     aria-hidden
                   />
-                  Premium
+                  {tCommon("premium")}
                 </button>
               </div>
             </div>
 
             {/* Text + send */}
-            <form action={handleFormAction}>
+            <form onSubmit={handleSubmit}>
               <input type="hidden" name="conversationId" value={activeConversationId ?? ""} />
               <input type="hidden" name="contextId" value={selectedContextId} />
               <input type="hidden" name="imageMode" value={imageMode} />
@@ -573,7 +701,7 @@ export function ChatInterface({ savedContexts, initialConversations, initialCont
                   value={textValue}
                   onChange={(event) => setTextValue(event.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Describe the image you want…"
+                  placeholder={t("inputPlaceholder")}
                   rows={1}
                   className="max-h-48 min-h-[1.75rem] flex-1 resize-none border-0 bg-transparent py-1 text-base leading-7 text-foreground shadow-none placeholder:text-muted-foreground focus-visible:ring-0 disabled:opacity-60"
                 />

@@ -19,14 +19,32 @@ model User {
 
   /// Whether the user has completed the onboarding flow.
   onboardingCompleted Boolean @default(false)
+  /// Current onboarding wizard step (0 welcome, 1 URL, 2 language, 3 scrape). Reset when completed.
+  onboardingStep      Int     @default(0)
+  /// URL entered during onboarding; used to resume the scrape step after refresh.
+  onboardingDraftUrl  String? @db.Text
   /// Preferred language code (e.g. "en", "ar", "fr").
   preferredLanguage   String?
 
+  /// Polar customer id (UUID) — same as `customers.get` / customer state `id`.
+  polarCustomerId       String? @map("polar_customer_id")
+  /// Cached balance for the Aphilio credits meter (from Polar `active_meters`); refreshed via webhooks and after usage ingest.
+  aphilioCreditsBalance Int     @default(0) @map("aphilio_credits_balance")
+  /// Whether the user currently has at least one active Polar subscription; kept in sync via webhooks.
+  hasActiveSubscription Boolean @default(false) @map("has_active_subscription")
+  /// Last known Polar subscription status (active, trialing, canceled, unpaid, …). Not cleared when a sub ends; null only before first sync.
+  polarSubscriptionStatus            String?   @map("polar_subscription_status")
+  /// End of the current billing period from Polar (`current_period_end`).
+  polarSubscriptionCurrentPeriodEnd  DateTime? @map("polar_subscription_current_period_end")
+  /// When the subscription access ends (`ends_at`), if set; e.g. scheduled cancellation.
+  polarSubscriptionEndsAt            DateTime? @map("polar_subscription_ends_at")
+
   sessions           Session[]
   accounts           Account[]
-  scrapedContexts    ScrapedContext[]
-  generatedCreatives GeneratedCreative[]
-  chatConversations  ChatConversation[]
+  scrapedContexts           ScrapedContext[]
+  generatedCreatives        GeneratedCreative[]
+  chatConversations         ChatConversation[]
+  adCreativeStudioSessions  AdCreativeStudioSession[]
 
   @@unique([email])
   @@map("user")
@@ -88,6 +106,8 @@ model ScrapedContext {
   name      String
 
   logo            String?
+  /// Public favicon URL validated at scrape time (same pipeline as logo).
+  favicon         String?
   primaryColor    String?
   secondaryColor  String?
   ogImage         String?
@@ -203,6 +223,42 @@ model ChatPersistedMessage {
   @@map("chat_persisted_message")
 }
 
+/// One saved run through Ad studio (steps 1–4); supports resume and history search.
+model AdCreativeStudioSession {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  contextId String
+
+  /// Shown in history and used for text search.
+  title            String @default("Ad studio session")
+  contextNameCache String @default("")
+
+  /// Step the user last had open (2 = angles, 3 = formats, 4 = image grid).
+  activeStep   Int @default(2)
+  /// Highest step with completed saved data.
+  furthestStep Int @default(2)
+
+  selectedAngles    Json?
+  /// Snapshot for step 2: similar docs + reference groups (SelectAngleState ready fields).
+  angleStepData     Json?
+  sectionIds        Json?
+  selectedTemplates Json?
+  prompts           Json?
+  /// Array aligned with prompts: pending | success | error per layout slot.
+  slotOutcomes      Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  generatedCreatives GeneratedCreative[]
+
+  @@index([userId, updatedAt(sort: Desc)])
+  @@index([userId, contextId])
+  @@map("ad_creative_studio_session")
+}
+
 /// A generated ad creative image saved to Cloudflare R2.
 model GeneratedCreative {
   id        String   @id @default(cuid())
@@ -211,6 +267,11 @@ model GeneratedCreative {
 
   /// The ScrapedContext (DNA profile) used to generate this creative.
   contextId String
+
+  /// Optional link to the Ad studio session and slot index (partial runs).
+  studioSessionId String?
+  studioSession   AdCreativeStudioSession? @relation(fields: [studioSessionId], references: [id], onDelete: SetNull)
+  slotIndex       Int?
 
   /// Cloudflare R2 object key — used for deletion.
   r2Key     String   @db.Text
@@ -235,6 +296,7 @@ model GeneratedCreative {
 
   createdAt DateTime @default(now())
 
+  @@index([studioSessionId])
   @@map("generated_creative")
 }
 

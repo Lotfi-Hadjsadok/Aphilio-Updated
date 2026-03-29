@@ -2,15 +2,32 @@ import type { ConversationSummary } from "@/types/chat";
 
 const MILLIS_PER_DAY = 86_400_000;
 
-export function groupConversations(conversations: ConversationSummary[]) {
+export const CHAT_CONVERSATION_GROUP_KEYS = [
+  "groupToday",
+  "groupYesterday",
+  "groupThisWeek",
+  "groupOlder",
+] as const;
+
+export type ChatConversationGroupKey =
+  (typeof CHAT_CONVERSATION_GROUP_KEYS)[number];
+
+export type GroupedConversations = {
+  groupKey: ChatConversationGroupKey;
+  items: ConversationSummary[];
+};
+
+export function groupConversations(
+  conversations: ConversationSummary[],
+): GroupedConversations[] {
   const now = Date.now();
   const todayStart = new Date(new Date().setHours(0, 0, 0, 0)).getTime();
 
-  const groups: { label: string; items: ConversationSummary[] }[] = [
-    { label: "Today", items: [] },
-    { label: "Yesterday", items: [] },
-    { label: "This week", items: [] },
-    { label: "Older", items: [] },
+  const groups: GroupedConversations[] = [
+    { groupKey: "groupToday", items: [] },
+    { groupKey: "groupYesterday", items: [] },
+    { groupKey: "groupThisWeek", items: [] },
+    { groupKey: "groupOlder", items: [] },
   ];
 
   for (const conversation of conversations) {

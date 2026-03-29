@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
-const GREETING = "Welcome to Aphilio";
-
 export function WelcomeStep({ userName }: { userName: string }) {
+  const t = useTranslations("onboarding.welcome");
+  const greeting = t("greeting");
+
   const [displayedText, setDisplayedText] = useState("");
   const [showCursor, setShowCursor] = useState(true);
   const [showName, setShowName] = useState(false);
@@ -14,8 +16,8 @@ export function WelcomeStep({ userName }: { userName: string }) {
   useEffect(() => {
     let charIndex = 0;
     const interval = setInterval(() => {
-      if (charIndex <= GREETING.length) {
-        setDisplayedText(GREETING.slice(0, charIndex));
+      if (charIndex <= greeting.length) {
+        setDisplayedText(greeting.slice(0, charIndex));
         charIndex++;
       } else {
         clearInterval(interval);
@@ -26,7 +28,7 @@ export function WelcomeStep({ userName }: { userName: string }) {
     }, 65);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [greeting]);
 
   return (
     <div className="flex min-h-[60dvh] flex-col items-center justify-center">
@@ -68,7 +70,7 @@ export function WelcomeStep({ userName }: { userName: string }) {
             showSubtitle ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0",
           )}
         >
-          Let&apos;s set up your workspace in a few quick steps.
+          {t("subtitle")}
         </p>
 
         {/* Loading dots */}

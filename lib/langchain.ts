@@ -2,6 +2,7 @@ import "server-only";
 
 import imageToBase64 from "image-to-base64";
 import { lookup as lookupMimeType } from "mime-types";
+import sharp from "sharp";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { TokenTextSplitter } from "@langchain/textsplitters";
 import { ChatGoogle } from "@langchain/google";
@@ -175,7 +176,7 @@ export async function findSimilarDocumentsForAngles(
     }
   }
   const angleEmbedding = averaged;
-  if (!angleEmbedding || angleEmbedding.length !== EMBEDDING_MODEL_DIMENSIONS) {
+  if (angleEmbedding.length !== EMBEDDING_MODEL_DIMENSIONS) {
     return { similarDocuments: [], referenceImageUrls: [], referenceImageGroups: [] };
   }
 
@@ -352,6 +353,42 @@ function mimeTypeFromUrlOrPath(urlOrPath: string): string {
 
 type ImageBase64Part = { mimeType: string; base64: string };
 
+function baseImageMimeType(mimeType: string): string {
+  return mimeType.split(";")[0].trim().toLowerCase();
+}
+
+function isSvgImageMimeType(mimeType: string): boolean {
+  const base = baseImageMimeType(mimeType);
+  return base === "image/svg+xml" || base === "image/svg";
+}
+
+/**
+ * Gemini image inputs do not accept `image/svg+xml`; rasterize to PNG for inline data.
+ */
+async function rasterizeSvgPartToPng(part: ImageBase64Part): Promise<ImageBase64Part> {
+  if (!isSvgImageMimeType(part.mimeType)) {
+    return part;
+  }
+  const svgBuffer = Buffer.from(part.base64, "base64");
+  const pngBuffer = await sharp(svgBuffer, { density: 144 })
+    .resize(2048, 2048, { fit: "inside", withoutEnlargement: true })
+    .png()
+    .toBuffer();
+  return { mimeType: "image/png", base64: pngBuffer.toString("base64") };
+}
+
+function decodeDataUrlPercentEncodedPayload(payload: string): string {
+  try {
+    return decodeURIComponent(payload);
+  } catch {
+    try {
+      return decodeURIComponent(payload.replace(/\+/g, " "));
+    } catch {
+      return payload;
+    }
+  }
+}
+
 /**
  * Loads image bytes as raw base64 + MIME type for Gemini `inlineData`.
  */
@@ -364,17 +401,74 @@ async function loadImageAsBase64Part(imageUrl: string): Promise<ImageBase64Part>
     }
     const header = trimmed.slice(5, commaIndex);
     const payload = trimmed.slice(commaIndex + 1);
-    if (!header.toLowerCase().includes(";base64")) {
-      throw new Error("Expected a base64 data URL for inline images.");
-    }
     const mimeMatch = header.match(/^([^;]+)/);
     const mimeType = mimeMatch?.[1]?.trim() || "image/jpeg";
-    return { mimeType, base64: payload };
+    if (header.toLowerCase().includes(";base64")) {
+      return { mimeType, base64: payload };
+    }
+    // URL-encoded data (e.g. inline SVG as data:image/svg+xml;charset=utf-8,...): decode then re-encode as base64
+    const decoded = decodeDataUrlPercentEncodedPayload(payload);
+    return { mimeType, base64: Buffer.from(decoded, "utf8").toString("base64") };
   }
 
   const base64 = await imageToBase64(trimmed);
   const mimeType = mimeTypeFromUrlOrPath(trimmed);
   return { mimeType, base64 };
+}
+
+function stripLeadingBom(text: string): string {
+  return text.replace(/^\uFEFF/, "");
+}
+
+/**
+ * Detects SVG document or fragment (allows BOM, XML declaration, comments before `<svg`).
+ */
+function extractSvgMarkupForModel(markup: string): string | null {
+  const trimmed = stripLeadingBom(markup).trim();
+  const direct = /^\s*(?:<\?xml[^?]*\?>\s*)?(?:<!--[\s\S]*?-->\s*)*<svg\b/i;
+  if (direct.test(trimmed)) {
+    const svgSlice = trimmed.match(/<svg[\s\S]*<\/svg>/i);
+    return svgSlice ? svgSlice[0].trim() : trimmed;
+  }
+  const anywhere = trimmed.match(/<svg[\s\S]*<\/svg>/i);
+  return anywhere ? anywhere[0].trim() : null;
+}
+
+/**
+ * Context logos may be inline SVG markup, a data URL (e.g. header inline SVG), or an image URL.
+ * SVG sources are rasterized to PNG before sending — the image model rejects `image/svg+xml`.
+ */
+async function loadLogoAsBase64Part(logo: string): Promise<ImageBase64Part> {
+  const trimmed = logo.trim();
+  const svgFromMarkup = extractSvgMarkupForModel(trimmed);
+  let part: ImageBase64Part;
+  if (svgFromMarkup) {
+    part = {
+      mimeType: "image/svg+xml",
+      base64: Buffer.from(svgFromMarkup, "utf8").toString("base64"),
+    };
+  } else if (trimmed.startsWith("data:")) {
+    part = await loadImageAsBase64Part(trimmed);
+  } else if (/^https?:\/\//i.test(trimmed)) {
+    const response = await fetch(trimmed, { redirect: "follow" });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch logo URL (${response.status}).`);
+    }
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    const headerMime = (response.headers.get("content-type") || "").split(";")[0].trim();
+    const fromPath = mimeTypeFromUrlOrPath(trimmed);
+    const mimeType = headerMime.startsWith("image/")
+      ? headerMime
+      : fromPath.startsWith("image/")
+        ? fromPath
+        : trimmed.toLowerCase().includes(".svg")
+          ? "image/svg+xml"
+          : "image/png";
+    part = { mimeType, base64: Buffer.from(bytes).toString("base64") };
+  } else {
+    part = await loadImageAsBase64Part(trimmed);
+  }
+  return rasterizeSvgPartToPng(part);
 }
 
 export const IMAGE_MODEL_PREMIUM = "gemini-3-pro-image-preview";
@@ -404,8 +498,7 @@ export async function generateImageFromPrompt(
     }))
     .filter((group) => group.imageUrls.length > 0);
 
-  const validLogoUrl =
-    logoUrl?.trim() && !isSvgUrl(logoUrl.trim()) ? logoUrl.trim() : null;
+  const validLogoUrl = logoUrl?.trim() ? logoUrl.trim() : null;
 
   const groupsWithoutLogoDupes = validLogoUrl
     ? normalizedGroups
@@ -442,7 +535,7 @@ export async function generateImageFromPrompt(
       type: "text",
       text: LOGO_BLOCK_USER_INSTRUCTION,
     });
-    const logoPart = await loadImageAsBase64Part(validLogoUrl);
+    const logoPart = await loadLogoAsBase64Part(validLogoUrl);
     humanContent.push({
       type: "image",
       source_type: "base64",
@@ -526,24 +619,53 @@ const BRAND_ANALYSIS_JSON_SCHEMA = {
     personality: {
       type: "object",
       properties: {
-        tone: { type: "string" },
-        energy: { type: "string" },
-        audience: { type: "string" },
-        voice: { type: "string" },
-        archetype: { type: "string" },
-        valueProposition: { type: "string" },
-        emotionalTriggers: { type: "array", items: { type: "string" } },
-        communicationStyle: { type: "string" },
+        tone: { type: "string", maxLength: 64 },
+        energy: { type: "string", maxLength: 64 },
+        audience: { type: "string", maxLength: 80 },
+        voice: { type: "string", maxLength: 80 },
+        archetype: { type: "string", maxLength: 48 },
+        valueProposition: { type: "string", maxLength: 160 },
+        emotionalTriggers: {
+          type: "array",
+          maxItems: 6,
+          items: { type: "string", maxLength: 80 },
+        },
+        communicationStyle: { type: "string", maxLength: 64 },
       },
       required: ["tone", "energy", "audience", "voice", "archetype", "valueProposition", "emotionalTriggers", "communicationStyle"],
     },
     marketingAngles: {
       type: "array",
-      items: { type: "string" },
+      items: { type: "string", maxLength: 140 },
     },
   },
   required: ["personality", "marketingAngles"],
 } as const;
+
+function clampPersonalityField(value: string | undefined, maxLength: number): string {
+  const trimmed = (value ?? "").trim();
+  if (trimmed.length <= maxLength) return trimmed;
+  return trimmed.slice(0, maxLength).trimEnd();
+}
+
+/** Keeps personality fields short for UI and downstream prompts (legacy rows, verbose models). */
+export function normalizeBrandingPersonality(
+  personality: BrandingPersonality,
+): BrandingPersonality {
+  return {
+    tone: clampPersonalityField(personality.tone, 64),
+    energy: clampPersonalityField(personality.energy, 64),
+    audience: clampPersonalityField(personality.audience, 80),
+    voice: clampPersonalityField(personality.voice, 80),
+    archetype: clampPersonalityField(personality.archetype, 48),
+    valueProposition: clampPersonalityField(personality.valueProposition, 160),
+    communicationStyle: clampPersonalityField(personality.communicationStyle, 64),
+    emotionalTriggers: (personality.emotionalTriggers ?? [])
+      .slice(0, 6)
+      .map((trigger) => clampPersonalityField(trigger, 80))
+      .filter((trigger) => trigger.length > 0),
+  };
+}
 
 /**
  * Makes a single AI call to extract personality specs and marketing angles
@@ -561,7 +683,7 @@ export async function analyzePersonalityAndAngles(
   );
   if (!modelContent) {
     return {
-      personality: {
+      personality: normalizeBrandingPersonality({
         tone: "neutral",
         energy: "moderate",
         audience: "general",
@@ -570,7 +692,7 @@ export async function analyzePersonalityAndAngles(
         valueProposition: "",
         emotionalTriggers: [],
         communicationStyle: "benefit-focused",
-      },
+      }),
       marketingAngles: [],
     };
   }
@@ -581,7 +703,7 @@ export async function analyzePersonalityAndAngles(
   };
 
   return {
-    personality: parsed.personality,
+    personality: normalizeBrandingPersonality(parsed.personality),
     marketingAngles: (parsed.marketingAngles ?? []).slice(0, 40),
   };
 }

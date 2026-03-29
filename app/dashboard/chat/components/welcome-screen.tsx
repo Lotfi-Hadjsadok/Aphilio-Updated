@@ -1,6 +1,11 @@
+"use client";
+
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 export function WelcomeScreen() {
+  const t = useTranslations("chat");
+
   return (
     <div className="flex min-h-full flex-col items-center justify-center gap-3 px-2 py-1 text-center sm:gap-4 md:gap-5">
       <div className="relative shrink-0">
@@ -22,25 +27,19 @@ export function WelcomeScreen() {
       </div>
       <div className="max-w-xl shrink-0 space-y-1 sm:space-y-2">
         <h2 className="font-heading text-balance text-lg font-semibold tracking-tight text-foreground sm:text-xl md:text-2xl">
-          What would you like to create?
+          {t("welcomeTitle")}
         </h2>
         <p className="text-xs leading-snug text-muted-foreground sm:text-sm md:text-base">
-          Pick a context, add references if you like, then describe the image you want.
+          {t("welcomeSubtitle")}
         </p>
       </div>
-      {/* Order: hero → product → campaign → social (left-to-right, top-to-bottom) */}
       <div className="grid w-full max-w-2xl grid-cols-2 gap-1.5 text-left sm:gap-2 md:gap-2.5">
-        {[
-          "Bold hero banner for a fintech app",
-          "Minimalist product shot on white",
-          "Summer sale ad for fashion brand",
-          "Social post celebrating a milestone",
-        ].map((suggestion) => (
+        {(["hero", "product", "summer", "social"] as const).map((key) => (
           <div
-            key={suggestion}
+            key={key}
             className="group relative overflow-hidden rounded-xl border border-border/70 bg-card/80 py-2 pl-3 pr-2 text-[0.7rem] leading-tight text-muted-foreground shadow-sm transition-all duration-300 before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-accent-gradient sm:rounded-2xl sm:py-2.5 sm:pl-3.5 sm:text-xs md:text-sm"
           >
-            {suggestion}
+            {t(`suggestions.${key}`)}
           </div>
         ))}
       </div>

@@ -3,6 +3,7 @@
 import { use } from "react";
 import Image from "next/image";
 import { Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 type ContextImagesGridProps = {
@@ -19,19 +20,20 @@ function orderedUniqueUrls(urls: string[]): string[] {
 }
 
 export function ContextImagesGrid({ promise, selectedUrls, onToggle }: ContextImagesGridProps) {
+  const t = useTranslations("chat");
   const rawImages = use(promise);
   const images = orderedUniqueUrls(rawImages);
 
   if (images.length === 0) {
     return (
-      <p className="px-1 text-sm text-muted-foreground">No images found in this context.</p>
+      <p className="px-1 text-sm text-muted-foreground">{t("contextNoImages")}</p>
     );
   }
 
   return (
     <div
       className="grid w-full grid-cols-[repeat(auto-fill,minmax(3.25rem,1fr))] gap-2 sm:min-w-0 sm:grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))] sm:gap-2.5"
-      aria-label="Reference images from this context, sorted A to Z by URL"
+      aria-label={t("referenceImagesSortedAria")}
     >
       {images.map((url, index) => {
         const selected = selectedUrls.includes(url);
@@ -47,7 +49,14 @@ export function ContextImagesGrid({ promise, selectedUrls, onToggle }: ContextIm
                 : "border-border hover:border-muted-foreground/50",
             )}
             aria-pressed={selected}
-            aria-label={`Reference ${index + 1} of ${images.length}${selected ? ", selected" : ""}`}
+            aria-label={
+              selected
+                ? t("referenceImageAriaSelected", {
+                    position: index + 1,
+                    total: images.length,
+                  })
+                : t("referenceImageAria", { position: index + 1, total: images.length })
+            }
           >
             <Image unoptimized src={url} alt="" fill className="object-cover" sizes="56px" />
             {selected && (

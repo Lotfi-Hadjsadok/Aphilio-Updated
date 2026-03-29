@@ -1,20 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Dna, AlertCircle, CheckCircle2 } from "lucide-react";
 import type { ScrapeResult } from "@/types/scrape";
-
-const LOADING_MESSAGES = [
-  "Opening your website in a browser session…",
-  "Scanning page structure and layout…",
-  "Extracting colors, fonts, and logos…",
-  "Reading content and copy…",
-  "Analyzing brand voice and personality…",
-  "Generating marketing angles…",
-  "Building your brand DNA profile…",
-  "Almost there, finalizing your DNA…",
-];
 
 export function ScrapeStep({
   url,
@@ -27,6 +17,12 @@ export function ScrapeStep({
   error?: string;
   result?: ScrapeResult;
 }) {
+  const t = useTranslations("onboarding.scrape");
+
+  const LOADING_MESSAGES = Array.from({ length: 8 }, (_, index) =>
+    t(`loadingMessage${index}` as `loadingMessage${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7}`),
+  );
+
   const [messageIndex, setMessageIndex] = useState(0);
   const [progressWidth, setProgressWidth] = useState(0);
 
@@ -38,7 +34,7 @@ export function ScrapeStep({
     }, 4500);
 
     return () => clearInterval(messageInterval);
-  }, [pending]);
+  }, [pending, LOADING_MESSAGES.length]);
 
   useEffect(() => {
     if (!pending) {
@@ -96,16 +92,16 @@ export function ScrapeStep({
         <div className="space-y-2">
           <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             {error
-              ? "Something went wrong"
+              ? t("titleError")
               : result
-                ? "DNA extracted!"
-                : "Extracting your DNA"}
+                ? t("titleSuccess")
+                : t("titleLoading")}
           </h2>
           <p className="text-sm text-muted-foreground sm:text-base">
             {error
               ? error
               : result
-                ? `We've captured the brand profile for ${hostname}. Redirecting you now…`
+                ? t("successMessage", { hostname })
                 : hostname}
           </p>
         </div>
@@ -125,7 +121,11 @@ export function ScrapeStep({
               key={messageIndex}
               className="animate-in fade-in slide-in-from-bottom-2 text-sm text-muted-foreground duration-500"
             >
-              {pending ? LOADING_MESSAGES[messageIndex] : result ? "Complete!" : "Starting…"}
+              {pending
+                ? LOADING_MESSAGES[messageIndex]
+                : result
+                  ? t("completeStatus")
+                  : t("startingStatus")}
             </p>
           </div>
         )}

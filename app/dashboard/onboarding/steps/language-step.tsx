@@ -1,56 +1,45 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+import { LOCALE_OPTIONS } from "@/lib/locale-options";
 import { cn } from "@/lib/utils";
-
-const LANGUAGES = [
-  { code: "en", label: "English", flag: "🇺🇸" },
-  { code: "fr", label: "Français", flag: "🇫🇷" },
-  { code: "ar", label: "العربية", flag: "🇩🇿" },
-  { code: "es", label: "Español", flag: "🇪🇸" },
-  { code: "de", label: "Deutsch", flag: "🇩🇪" },
-  { code: "pt", label: "Português", flag: "🇧🇷" },
-  { code: "it", label: "Italiano", flag: "🇮🇹" },
-  { code: "nl", label: "Nederlands", flag: "🇳🇱" },
-  { code: "tr", label: "Türkçe", flag: "🇹🇷" },
-  { code: "ja", label: "日本語", flag: "🇯🇵" },
-  { code: "ko", label: "한국어", flag: "🇰🇷" },
-  { code: "zh", label: "中文", flag: "🇨🇳" },
-  { code: "ru", label: "Русский", flag: "🇷🇺" },
-  { code: "hi", label: "हिन्दी", flag: "🇮🇳" },
-  { code: "pl", label: "Polski", flag: "🇵🇱" },
-  { code: "sv", label: "Svenska", flag: "🇸🇪" },
-] as const;
 
 export function LanguageStep({
   selectedLanguage,
-  onSelect,
-  pending,
+  onSelectLanguage,
+  onContinue,
+  continuePending,
 }: {
   selectedLanguage: string;
-  onSelect: (code: string) => void;
-  pending: boolean;
+  onSelectLanguage: (code: string) => void;
+  onContinue: () => void;
+  continuePending: boolean;
 }) {
+  const t = useTranslations("onboarding.language");
+  const tCommon = useTranslations("common");
+
   return (
     <div className="flex min-h-[60dvh] flex-col items-center justify-center">
       <div className="flex w-full max-w-3xl flex-col items-center gap-8 text-center">
         {/* Title */}
-        <div className="space-y-3">
-          <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
-            Choose your language
+        <div className="space-y-5 sm:space-y-6">
+          <h2 className="font-heading pb-4 text-2xl font-bold leading-tight tracking-tight text-foreground sm:pb-5 sm:text-3xl lg:text-4xl">
+            {t("title")}
           </h2>
           <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
-            We&apos;ll use this language when generating your ad creatives and content.
+            {t("description")}
           </p>
         </div>
 
-        {/* Language grid */}
+        {/* Language grid — tap to preview; Continue saves and advances */}
         <div className="grid w-full max-w-2xl grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:gap-4">
-          {LANGUAGES.map((lang, index) => (
+          {LOCALE_OPTIONS.map((lang, index) => (
             <button
               key={lang.code}
               type="button"
-              disabled={pending}
-              onClick={() => onSelect(lang.code)}
+              disabled={continuePending}
+              onClick={() => onSelectLanguage(lang.code)}
               className={cn(
                 "group relative flex flex-col items-center gap-2.5 rounded-2xl border px-4 py-5 transition-all duration-200 sm:gap-3 sm:px-5 sm:py-6",
                 "hover:border-foreground/20 hover:bg-card/80 hover:shadow-md hover:-translate-y-0.5",
@@ -58,7 +47,7 @@ export function LanguageStep({
                 selectedLanguage === lang.code
                   ? "border-foreground/30 bg-card shadow-md ring-1 ring-foreground/10"
                   : "border-border/60 bg-background/60",
-                pending && "pointer-events-none opacity-50",
+                continuePending && "pointer-events-none opacity-50",
               )}
               style={{
                 animationDelay: `${index * 40}ms`,
@@ -81,6 +70,16 @@ export function LanguageStep({
             </button>
           ))}
         </div>
+
+        <Button
+          type="button"
+          size="lg"
+          className="min-w-[12rem] rounded-xl"
+          disabled={continuePending || !selectedLanguage}
+          onClick={onContinue}
+        >
+          {continuePending ? tCommon("loading") : tCommon("continue")}
+        </Button>
       </div>
     </div>
   );

@@ -1,26 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { SavedContextSummary } from "@/types/scrape";
+import type { LoadAdCreativesDnaState } from "@/types/ad-creatives";
+import type {
+  AdStudioResumePayload,
+  AdStudioSessionListItem,
+} from "@/app/actions/ad-creative-studio-sessions";
 import { AdCreativesFormInner } from "./ad-creatives-form-inner";
 
 export function AdCreativesForm({
   savedContexts,
+  initialStudioSessions,
   initialContextId,
+  initialLoadState,
+  resumePayload,
+  resumeLoadError,
+  currentLocale,
 }: {
   savedContexts: SavedContextSummary[];
+  initialStudioSessions: AdStudioSessionListItem[];
   initialContextId?: string;
+  initialLoadState?: LoadAdCreativesDnaState;
+  resumePayload: AdStudioResumePayload | null;
+  resumeLoadError: string | null;
+  currentLocale: string;
 }) {
-  const [sessionKey, setSessionKey] = useState(0);
+  const router = useRouter();
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <AdCreativesFormInner
-        key={sessionKey}
-        savedContexts={savedContexts}
-        initialContextId={initialContextId}
-        onChangeDnaRequest={() => setSessionKey((prev) => prev + 1)}
-      />
-    </div>
+    <AdCreativesFormInner
+      savedContexts={savedContexts}
+      initialStudioSessions={initialStudioSessions}
+      initialContextId={initialContextId}
+      initialLoadState={initialLoadState}
+      resumePayload={resumePayload}
+      resumeLoadError={resumeLoadError}
+      currentLocale={currentLocale}
+      onChangeDnaRequest={() => {
+        router.replace("/dashboard/ad-creatives");
+      }}
+      onOpenSession={(studioSessionId) => {
+        router.push(`/dashboard/ad-creatives?sessionId=${encodeURIComponent(studioSessionId)}`);
+      }}
+    />
   );
 }

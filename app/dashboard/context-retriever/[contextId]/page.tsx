@@ -1,15 +1,18 @@
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 type PageProps = { params: Promise<{ contextId: string }> };
 
-export async function generateMetadata({ params }: PageProps) {
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) return { title: "DNA" };
-
-  // Keep this redirect route lightweight; the destination page sets the real metadata.
-  return { title: "DNA" };
+  if (!session) {
+    return { title: t("dnaPageTitle") };
+  }
+  return { title: t("dnaPageTitle") };
 }
 
 export default async function SavedContextPage({ params }: PageProps) {

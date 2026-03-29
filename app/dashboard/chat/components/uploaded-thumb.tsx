@@ -1,4 +1,7 @@
+"use client";
+
 import { X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export function UploadedThumb({
   dataUrl,
@@ -7,6 +10,7 @@ export function UploadedThumb({
   dataUrl: string;
   onRemove: () => void;
 }) {
+  const tCommon = useTranslations("common");
   return (
     <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-zinc-300">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -15,7 +19,7 @@ export function UploadedThumb({
         type="button"
         onClick={onRemove}
         className="absolute right-0 top-0 flex h-5 w-5 items-center justify-center rounded-bl-md bg-white/95 text-zinc-600 hover:text-zinc-900"
-        aria-label="Remove image"
+        aria-label={tCommon("removeImage")}
       >
         <X className="size-3" />
       </button>

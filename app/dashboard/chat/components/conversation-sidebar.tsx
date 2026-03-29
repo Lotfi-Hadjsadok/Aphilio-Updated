@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { ArrowLeft, Loader2, PenSquare, Trash2, X } from "lucide-react";
+import { Loader2, PenSquare, Trash2, X } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { dashboardNavPillLinkClassName } from "@/components/dashboard-back-link";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { groupConversations } from "../lib/helpers";
@@ -29,32 +30,15 @@ export function ConversationSidebar({
   isOpen,
   onClose,
 }: ConversationSidebarProps) {
+  const t = useTranslations("chat");
+  const tCommon = useTranslations("common");
   const grouped = groupConversations(conversations);
 
   const content = (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between px-4 pb-4 pt-5">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-1.5 rounded-xl px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
-        >
-          <ArrowLeft className="size-3" />
-          Dashboard
-        </Link>
-        <button
-          type="button"
-          onClick={onNewChat}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-border/60 bg-card/50 px-3 py-1.5 text-sm font-medium text-foreground shadow-sm transition-all hover:border-border hover:bg-muted/50"
-          title="New chat"
-        >
-          <PenSquare className="size-3" />
-          New
-        </button>
-      </div>
-
-      <div className="px-4 pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-accent-gradient-subtle shadow-inner ring-1 ring-border/80">
+      <div className="flex items-center justify-between gap-3 px-4 pb-3 pt-5 max-md:pr-12">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-accent-gradient-subtle shadow-inner ring-1 ring-border/80">
             <Image
               unoptimized
               src="/aphilio-logo.webp"
@@ -64,26 +48,38 @@ export function ConversationSidebar({
               className="h-full w-full object-contain p-0.5"
             />
           </div>
-          <span className="font-heading text-base font-semibold tracking-tight text-foreground">
-            Chat
+          <span className="font-heading min-w-0 truncate text-base font-semibold tracking-tight text-foreground">
+            {t("title")}
           </span>
         </div>
+        <button
+          type="button"
+          onClick={onNewChat}
+          className={cn(
+            dashboardNavPillLinkClassName,
+            "shrink-0 text-foreground hover:text-foreground",
+          )}
+          title={t("newButton")}
+        >
+          <PenSquare className="size-3" />
+          {t("newButton")}
+        </button>
       </div>
 
       <div className="mx-4 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
-      <ScrollArea className="flex-1 py-2">
+        <ScrollArea className="flex-1 py-2">
         {grouped.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm leading-relaxed text-muted-foreground">
-            No conversations yet.
+            {t("noConversations")}
             <br />
-            <span className="text-foreground/80">Start one below.</span>
+            <span className="text-foreground/80">{t("startOne")}</span>
           </p>
         ) : (
           grouped.map((group) => (
-            <div key={group.label} className="mb-3">
+            <div key={group.groupKey} className="mb-3">
               <p className="px-4 pb-1 pt-3 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                {group.label}
+                {t(group.groupKey)}
               </p>
               {group.items.map((conversation) => (
                 <div
@@ -109,7 +105,7 @@ export function ConversationSidebar({
                     onClick={() => onDelete(conversation.id)}
                     disabled={deletingId === conversation.id}
                     className="ml-1 hidden shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive group-hover:flex disabled:opacity-50"
-                    aria-label="Delete conversation"
+                    aria-label={tCommon("deleteConversation")}
                   >
                     {deletingId === conversation.id ? (
                       <Loader2 className="size-3 animate-spin" />

@@ -1,21 +1,39 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronLeft, ChevronDown, ChevronUp, Loader2, Sparkles, Target, Check } from "lucide-react";
-import { AD_TEMPLATE_CATEGORIES, ASPECT_RATIO_OPTIONS } from "@/lib/ad-creatives-templates";
+import { ChevronLeft, Loader2, Sparkles, Check } from "lucide-react";
+import { useTranslations } from "next-intl";
+import {
+  AD_TEMPLATE_CATEGORIES,
+  ASPECT_RATIO_OPTIONS,
+  defaultAspectRatioForTemplate,
+} from "@/lib/ad-creatives-templates";
+import { studioCategoryIcon, studioTemplateIcon } from "./ad-creative-template-icons";
 import type {
   AdAspectRatio,
   AdCreativesDnaPayload,
   SelectAngleState,
   SelectedTemplate,
 } from "@/types/ad-creatives";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { stepContentCn } from "./ad-creatives-constants";
+import {
+  adStudioCategoryShellCn,
+  adStudioPrimaryButtonCn,
+  studioContentCn,
+  studioFooterBarCn,
+  studioScrollCn,
+  studioShellCn,
+} from "./ad-creatives-constants";
+import {
+  studioCategoryIconIdleWrapClass,
+  studioTemplateIconIdleWrapClass,
+} from "./ad-studio-icon-wraps";
 import { StepHeader } from "./step-header";
 import { ErrorBanner } from "./error-banner";
-import { SectionToggleCard } from "./section-toggle-card";
+
+function aspectRatioOptionSlug(value: AdAspectRatio): string {
+  return value.replace(":", "_");
+}
 
 export function ConfigureCreativeStep({
   payload,
@@ -23,25 +41,30 @@ export function ConfigureCreativeStep({
   selectedTemplates,
   setSelectedTemplates,
   selectedSectionIds,
-  toggleSection,
   generateFormAction,
   generatePending,
   generateError,
   onBack,
+  journeyFurthestStep,
+  onJourneyStepClick,
 }: {
   payload: AdCreativesDnaPayload;
   selectAngleState: SelectAngleState & { status: "ready" };
   selectedTemplates: SelectedTemplate[];
   setSelectedTemplates: (templates: SelectedTemplate[]) => void;
   selectedSectionIds: Set<string>;
-  toggleSection: (id: string) => void;
   generateFormAction: (formData: FormData) => void;
   generatePending: boolean;
   generateError: string | null;
   onBack: () => void;
+  journeyFurthestStep: number;
+  onJourneyStepClick: (step: number) => void;
 }) {
-  const [sectionsExpanded, setSectionsExpanded] = useState(false);
-
+  const t = useTranslations("adCreatives");
+  const tCommon = useTranslations("common");
+  const tCategories = useTranslations("adCreatives.categories");
+  const tLayouts = useTranslations("adCreatives.layouts");
+  const tAspectOpts = useTranslations("adCreatives.aspectRatioOptions");
   const sectionIdsValue = [...selectedSectionIds].join(",");
   const selectedTemplatesJson = JSON.stringify(selectedTemplates);
 
@@ -50,14 +73,18 @@ export function ConfigureCreativeStep({
   }
 
   function getRatio(templateId: string): AdAspectRatio {
-    return selectedTemplates.find((template) => template.templateId === templateId)?.aspectRatio ?? "4:5";
+    return (
+      selectedTemplates.find((template) => template.templateId === templateId)?.aspectRatio ??
+      defaultAspectRatioForTemplate(templateId)
+    );
   }
 
   function toggleTemplate(templateId: string, templateLabel: string) {
+    const defaultRatio = defaultAspectRatioForTemplate(templateId);
     setSelectedTemplates(
       isSelected(templateId)
         ? selectedTemplates.filter((template) => template.templateId !== templateId)
-        : [...selectedTemplates, { templateId, templateLabel, aspectRatio: "4:5" }],
+        : [...selectedTemplates, { templateId, templateLabel, aspectRatio: defaultRatio }],
     );
   }
 
@@ -70,196 +97,202 @@ export function ConfigureCreativeStep({
   }
 
   return (
-    <div className={stepContentCn}>
-      <StepHeader
-        stepNumber={3}
-        stepTitle="Choose ad formats"
-        stepDescription="Pick one or more templates — each gets its own aspect ratio and a tailored prompt."
-      >
-        {selectedTemplates.length > 0 ? (
-          <Badge variant="secondary" className="shrink-0">
-            {selectedTemplates.length} selected
-          </Badge>
-        ) : null}
-      </StepHeader>
-
-      <div className="mt-3 shrink-0 rounded-xl border border-border/60 bg-muted/10 px-3 py-2.5">
-        <div className="flex items-center gap-2 mb-1.5">
-          <Target className="size-3.5 shrink-0 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">
-            {selectAngleState.selectedAngles.length === 1 ? "Angle:" : `Angles (${selectAngleState.selectedAngles.length}):`}
-          </span>
-        </div>
-        <ul className="space-y-0.5">
-          {selectAngleState.selectedAngles.map((angle, angleIndex) => (
-            <li key={angleIndex} className="text-sm font-medium text-foreground leading-snug">
-              {selectAngleState.selectedAngles.length > 1 ? (
-                <span className="mr-1.5 text-xs text-muted-foreground">{angleIndex + 1}.</span>
-              ) : null}
-              {angle}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <form action={generateFormAction} className="mt-4 flex min-h-0 flex-1 flex-col">
+    <div className={studioShellCn}>
+      <form action={generateFormAction} className="flex min-h-0 min-w-0 flex-1 flex-col">
         <input type="hidden" name="contextId" value={payload.contextId} />
+        <input type="hidden" name="studioSessionId" value={payload.studioSessionId ?? ""} />
         <input type="hidden" name="selectedAngles" value={JSON.stringify(selectAngleState.selectedAngles)} />
         <input type="hidden" name="sectionIds" value={sectionIdsValue} />
         <input type="hidden" name="selectedTemplates" value={selectedTemplatesJson} />
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4">
-          <div className="space-y-6">
+        <div className={studioScrollCn}>
+          <div className={studioContentCn}>
+              <div className="space-y-3.5 pb-4 pt-4 sm:space-y-4 sm:pb-5 sm:pt-5">
+              <StepHeader
+                stepNumber={3}
+                stepTitle={t("step3.title")}
+                stepDescription={t("step3.description")}
+                journeyFurthestStep={journeyFurthestStep}
+                onJourneyStepClick={onJourneyStepClick}
+              >
+                {selectedTemplates.length > 0 ? (
+                  <span className="gradient-pill h-6 shrink-0 px-2.5 text-[0.65rem] font-bold tracking-wide text-white">
+                    {tCommon("selected", { count: selectedTemplates.length })}
+                  </span>
+                ) : null}
+              </StepHeader>
 
-            {/* ── Template categories ───────────────────────────────────── */}
-            <div className="space-y-5">
-              {AD_TEMPLATE_CATEGORIES.map((category) => (
-                <section key={category.id}>
-                  <p className="mb-2.5 text-[0.65rem] font-bold uppercase tracking-wider text-muted-foreground">
-                    {category.label}
-                  </p>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {category.templates.map((template) => {
-                      const selected = isSelected(template.id);
-                      const currentRatio = getRatio(template.id);
-
-                      return (
-                        <div
-                          key={template.id}
-                          className={cn(
-                            "rounded-xl border transition-all duration-150",
-                            selected
-                              ? "border-foreground/20 bg-foreground/[0.03] shadow-sm"
-                              : "border-border/50 bg-background/40",
-                          )}
-                        >
-                          {/* Template toggle row */}
-                          <button
-                            type="button"
-                            onClick={() => toggleTemplate(template.id, template.label)}
-                            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left"
+              <div className="space-y-4">
+                {AD_TEMPLATE_CATEGORIES.map((category) => {
+                  const CategoryIcon = studioCategoryIcon(category.id);
+                  return (
+                    <section key={category.id} className={cn(adStudioCategoryShellCn, "p-1 sm:p-1.5")}>
+                      <div className="rounded-[0.875rem] bg-background/25 px-3.5 pb-3 pt-2.5 sm:px-4 sm:pb-3.5 sm:pt-3">
+                        <h3 className="mb-3 flex items-center gap-2.5 border-b border-border/35 pb-2.5">
+                          <span
+                            className={cn(
+                              "flex size-8 shrink-0 items-center justify-center rounded-xl transition-colors",
+                              studioCategoryIconIdleWrapClass(category.id),
+                            )}
+                            aria-hidden
                           >
-                            <span
-                              className={cn(
-                                "flex size-4 shrink-0 items-center justify-center rounded border-[1.5px] transition-all",
-                                selected
-                                  ? "border-foreground/60 bg-foreground/10"
-                                  : "border-border/60 bg-transparent",
-                              )}
-                              aria-hidden
-                            >
-                              {selected ? (
-                                <Check className="size-2.5 text-foreground" strokeWidth={3} />
-                              ) : null}
-                            </span>
-                            <span
-                              className={cn(
-                                "text-xs font-medium leading-snug transition-colors",
-                                selected ? "text-foreground" : "text-muted-foreground",
-                              )}
-                            >
-                              {template.label}
-                            </span>
-                          </button>
+                            <CategoryIcon className="size-4" strokeWidth={1.85} />
+                          </span>
+                          <span className="font-heading text-sm font-semibold leading-snug tracking-tight text-foreground">
+                            {tCategories(category.id)}
+                          </span>
+                        </h3>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                        {category.templates.map((template) => {
+                          const selected = isSelected(template.id);
+                          const currentRatio = getRatio(template.id);
+                          const TemplateIcon = studioTemplateIcon(template.id);
 
-                          {/* Aspect ratio row — visible only when selected */}
-                          {selected ? (
-                            <div className="border-t border-border/30 px-3 pb-2.5 pt-2">
-                              <p className="mb-1.5 text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground">
-                                Ratio
-                              </p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {ASPECT_RATIO_OPTIONS.map((option) => (
-                                  <button
-                                    key={option.value}
-                                    type="button"
-                                    onClick={() => setRatio(template.id, option.value)}
+                          return (
+                            <div
+                              key={template.id}
+                              className={cn(
+                                "group overflow-hidden rounded-xl border transition-all duration-200",
+                                selected
+                                  ? "border-primary/35 bg-gradient-to-br from-primary/[0.07] via-background/80 to-background/90 shadow-sm ring-1 ring-primary/15"
+                                  : "border-border/55 bg-background/40 hover:border-primary/20 hover:bg-muted/25 hover:shadow-sm",
+                              )}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => toggleTemplate(template.id, template.label)}
+                                className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left sm:px-4 sm:py-3"
+                              >
+                                <span className="relative shrink-0" aria-hidden>
+                                  <span
                                     className={cn(
-                                      "rounded-lg border px-2 py-1 text-[0.65rem] font-medium transition-all",
-                                      currentRatio === option.value
-                                        ? "border-foreground/25 bg-muted/30 text-foreground ring-1 ring-foreground/15"
-                                        : "border-border/50 text-muted-foreground hover:border-border hover:text-foreground",
+                                      "flex size-8 items-center justify-center rounded-xl transition-all duration-200 ease-out",
+                                      selected
+                                        ? "border-0 bg-accent-gradient text-white shadow-md shadow-orange-500/20 ring-2 ring-white/30 dark:shadow-fuchsia-500/15"
+                                        : studioTemplateIconIdleWrapClass(template.id),
                                     )}
                                   >
-                                    {option.value}
-                                    <span className="ml-1 opacity-60">{option.label}</span>
-                                  </button>
-                                ))}
-                              </div>
+                                    {selected ? (
+                                      <Check className="size-3.5" strokeWidth={2.5} />
+                                    ) : (
+                                      <TemplateIcon className="size-4" strokeWidth={1.85} />
+                                    )}
+                                  </span>
+                                </span>
+                                <span
+                                  className={cn(
+                                    "min-w-0 flex-1 text-sm font-medium leading-snug transition-colors",
+                                    selected ? "text-foreground" : "text-muted-foreground group-hover:text-foreground/90",
+                                  )}
+                                >
+                                  {tLayouts(template.id)}
+                                </span>
+                              </button>
+
+                              {selected ? (
+                                <div className="border-t border-border/40 bg-muted/15 px-3 pb-3 pt-3 sm:px-4">
+                                  <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground">
+                                    {tCommon("aspectRatio")}
+                                  </p>
+                                  <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+                                    {ASPECT_RATIO_OPTIONS.map((option) => {
+                                      const ratioSlug = aspectRatioOptionSlug(option.value);
+                                      const ratioLabel = tAspectOpts(`${ratioSlug}.label`);
+                                      const ratioNote = tAspectOpts(`${ratioSlug}.note`);
+                                      return (
+                                      <button
+                                        key={option.value}
+                                        type="button"
+                                        onClick={() => setRatio(template.id, option.value)}
+                                        title={`${ratioLabel} — ${ratioNote}`}
+                                        aria-label={`${ratioLabel} ${option.value}`}
+                                        className={cn(
+                                          "flex min-w-0 flex-col items-center justify-center rounded-xl border p-1.5 transition-all sm:p-2",
+                                          currentRatio === option.value
+                                            ? "border-primary/45 bg-primary/12 shadow-sm ring-1 ring-primary/25"
+                                            : "border-border/55 bg-background/50 hover:border-border hover:bg-background hover:shadow-sm",
+                                        )}
+                                      >
+                                        <div className="flex h-[2.625rem] w-full items-center justify-center sm:h-12">
+                                          <span
+                                            className={cn(
+                                              "flex max-w-full items-center justify-center rounded-[4px] border-2 font-mono font-bold tabular-nums leading-none",
+                                              currentRatio === option.value
+                                                ? "border-primary/50 bg-primary/15 text-foreground"
+                                                : "border-border/55 bg-muted/40 text-muted-foreground",
+                                            )}
+                                            style={{
+                                              aspectRatio: option.value.replace(":", "/"),
+                                              height: "100%",
+                                              maxWidth: "100%",
+                                            }}
+                                          >
+                                            <span className="px-0.5 text-[0.5rem] tracking-tight sm:text-[0.58rem]">
+                                              {option.value}
+                                            </span>
+                                          </span>
+                                        </div>
+                                      </button>
+                                    );
+                                    })}
+                                  </div>
+                                </div>
+                              ) : null}
                             </div>
-                          ) : null}
+                          );
+                        })}
                         </div>
-                      );
-                    })}
-                  </div>
-                </section>
-              ))}
-            </div>
+                      </div>
+                    </section>
+                  );
+                })}
 
-            {/* ── Source sections (collapsible) ─────────────────────────── */}
-            <div>
-              <button
-                type="button"
-                onClick={() => setSectionsExpanded((prev) => !prev)}
-                className="flex w-full items-center justify-between gap-2 rounded-xl border border-border/50 bg-muted/10 px-3 py-2.5 text-left transition-colors hover:bg-muted/20"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-[0.65rem] font-bold uppercase tracking-wider text-muted-foreground">
-                    Source sections
-                  </span>
-                  <Badge variant="secondary" className="text-[0.6rem]">
-                    {selectedSectionIds.size} of {payload.sectionOptions.length}
-                  </Badge>
-                </div>
-                {sectionsExpanded ? (
-                  <ChevronUp className="size-3.5 shrink-0 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
-                )}
-              </button>
-
-              {sectionsExpanded ? (
-                <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
-                  {payload.sectionOptions.map((option) => (
-                    <SectionToggleCard
-                      key={option.id}
-                      option={option}
-                      selected={selectedSectionIds.has(option.id)}
-                      onToggle={() => toggleSection(option.id)}
-                    />
-                  ))}
-                </div>
-              ) : null}
+                {generateError ? <ErrorBanner message={generateError} /> : null}
+              </div>
             </div>
           </div>
         </div>
 
-        {generateError ? <ErrorBanner message={generateError} /> : null}
-
-        <div className="mt-4 flex shrink-0 items-center justify-between gap-3 border-t border-border/60 pt-4">
-          <Button type="button" variant="outline" size="sm" className="rounded-xl" onClick={onBack}>
-            <ChevronLeft className="mr-1 size-4" />
-            Back
-          </Button>
-          <Button
-            type="submit"
-            disabled={generatePending || selectedTemplates.length === 0 || selectedSectionIds.size === 0}
-            className="rounded-xl"
-          >
-            {generatePending ? (
-              <>
-                <Loader2 className="mr-2 size-4 animate-spin" />
-                Generating prompts…
-              </>
-            ) : (
-              <>
-                <Sparkles className="mr-2 size-4" />
-                {selectedTemplates.length > 0
-                  ? `Generate ${selectedTemplates.length} creative${selectedTemplates.length > 1 ? "s" : ""}`
-                  : "Select a format"}
-              </>
-            )}
-          </Button>
+        <div className={studioFooterBarCn}>
+          <div className={studioContentCn}>
+            <div className="flex items-center justify-between gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-xl"
+                onClick={onBack}
+              >
+                <ChevronLeft className="mr-1 size-3.5" />
+                {tCommon("back")}
+              </Button>
+              <Button
+                type="submit"
+                disabled={generatePending || selectedTemplates.length === 0}
+                className={cn(
+                  "min-w-[8rem] rounded-xl sm:min-w-[12rem]",
+                  adStudioPrimaryButtonCn,
+                )}
+                size="lg"
+              >
+                {generatePending ? (
+                  <>
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                    {tCommon("preparing")}
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 size-4" />
+                    {selectedTemplates.length > 0
+                      ? selectedTemplates.length > 1
+                        ? tCommon("generatePlural", { count: selectedTemplates.length })
+                        : tCommon("generate", { count: selectedTemplates.length })
+                      : tCommon("selectFormat")}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
       </form>
     </div>

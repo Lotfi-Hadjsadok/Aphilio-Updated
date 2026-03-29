@@ -2,10 +2,14 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import Link from "next/link";
-import { ArrowLeft, Images, Loader2 } from "lucide-react";
+import { Images, Loader2 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
+import { DashboardBackPill } from "@/components/dashboard-back-link";
 import { auth } from "@/lib/auth";
 import { BrandLogoLink } from "@/components/brand-logo";
+import { LogoutButton } from "@/components/logout-button";
 import { getLibraryCreatives } from "@/app/actions/library";
+import { requireActiveSubscriptionOrCheckout } from "@/lib/polar-subscription";
 import { LibraryGrid } from "./library-grid";
 
 async function LibraryContent() {
@@ -17,8 +21,13 @@ export default async function LibraryPage() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/sign-in");
 
+  await requireActiveSubscriptionOrCheckout({ userId: session.user.id });
+
+  const t = await getTranslations("library");
+  const tCommon = await getTranslations("common");
+
   return (
-    <main className="landing-grid-bg relative flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden bg-background text-foreground">
+    <main className="landing-grid-bg relative flex h-full min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden bg-background text-foreground">
       {/* Decorative glow orbs — same as onboarding */}
       <div className="pointer-events-none absolute inset-0" aria-hidden>
         <div className="glow-orb absolute -left-32 top-0 h-96 w-96 bg-accent-gradient opacity-[0.18] sm:h-[28rem] sm:w-[28rem]" />
@@ -29,15 +38,12 @@ export default async function LibraryPage() {
 
       <div className="relative mx-auto w-full max-w-6xl px-4 py-6 sm:px-8 sm:py-8">
         {/* Top bar: logo + back */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <BrandLogoLink />
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border/60 bg-card/50 px-4 py-2 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur-sm transition-all hover:border-border hover:bg-card/80 hover:text-foreground"
-          >
-            <ArrowLeft className="size-3.5" />
-            Dashboard
-          </Link>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <DashboardBackPill label={tCommon("dashboard")} />
+            <LogoutButton />
+          </div>
         </div>
 
         {/* Header */}
@@ -48,10 +54,10 @@ export default async function LibraryPage() {
             </div>
             <div>
               <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl lg:text-4xl">
-                Creative Library
+                {t("title")}
               </h1>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground sm:text-base">
-                All your generated ad images, saved automatically.
+                {t("subtitle")}
               </p>
             </div>
           </div>
