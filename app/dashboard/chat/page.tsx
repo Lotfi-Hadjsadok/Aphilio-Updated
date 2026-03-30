@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listSavedContexts } from "@/app/actions/scrape";
 import { listConversations } from "@/app/actions/chat";
-import { requireActiveSubscriptionOrCheckout } from "@/lib/polar-subscription";
+import { requireActiveSubscriptionOrCheckout } from "@/lib/polar/subscription";
 import { ChatInterface } from "./chat-interface";
 
 export async function generateMetadata(): Promise<Metadata> {

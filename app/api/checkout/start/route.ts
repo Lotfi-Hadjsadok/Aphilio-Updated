@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { resolvePolarProductCheckoutUrl } from "@/lib/polar-checkout-redirect";
+import { resolvePolarProductCheckoutUrl } from "@/lib/polar/checkout-redirect";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 

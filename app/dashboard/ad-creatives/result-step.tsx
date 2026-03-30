@@ -44,7 +44,6 @@ export function ResultStep({
   onJourneyStepClick: (step: number) => void;
 }) {
   const t = useTranslations("adCreatives.step4");
-  const tCommon = useTranslations("common");
   const sectionIdsValue = [...selectedSectionIds].join(",");
   const studioSessionId = payload.studioSessionId ?? "";
 

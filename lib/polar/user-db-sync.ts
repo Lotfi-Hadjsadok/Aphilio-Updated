@@ -3,7 +3,8 @@ import type { CustomerStateSubscription } from "@polar-sh/sdk/models/components/
 import type { Subscription } from "@polar-sh/sdk/models/components/subscription.js";
 import type { Prisma } from "@/app/generated/prisma/client";
 import prisma from "@/lib/prisma";
-import { polarClient } from "@/lib/polar-server";
+import { creditAmountToStoredUnits } from "@/lib/polar/ingest-credits";
+import { polarClient } from "@/lib/polar/client";
 
 let cachedAphilioCreditsMeterId: string | null | undefined;
 
@@ -23,8 +24,7 @@ async function resolveAphilioCreditsMeterId(): Promise<string | null> {
       return cachedAphilioCreditsMeterId;
     }
   } catch {
-    cachedAphilioCreditsMeterId = null;
-    return null;
+    // Polar unavailable or invalid benefit id
   }
   cachedAphilioCreditsMeterId = null;
   return null;
@@ -55,12 +55,7 @@ export async function persistPolarCustomerIdForNewUser(user: {
 function primaryActiveSubscription(
   activeSubscriptions: CustomerStateSubscription[],
 ): CustomerStateSubscription | null {
-  if (activeSubscriptions.length === 0) {
-    return null;
-  }
-  if (activeSubscriptions.length === 1) {
-    return activeSubscriptions[0] ?? null;
-  }
+  if (activeSubscriptions.length === 0) return null;
   return activeSubscriptions.reduce((best, candidate) => {
     const bestEnd = best.currentPeriodEnd?.getTime() ?? 0;
     const candidateEnd = candidate.currentPeriodEnd?.getTime() ?? 0;
@@ -75,10 +70,10 @@ function creditsBalanceFromState(
   const meter = state.activeMeters.find(
     (entry) => entry.meterId === meterId,
   );
-  return Math.max(0, Math.floor(meter?.balance ?? 0));
+  return Math.max(0, creditAmountToStoredUnits(meter?.balance ?? 0));
 }
 
-export type SyncPolarCustomerStateContext = {
+type SyncPolarCustomerStateContext = {
   /**
    * Full subscription from a Polar webhook (`onSubscription*`).
    * When customer state has no active subscription row, these fields still carry

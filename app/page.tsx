@@ -13,7 +13,6 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 import { BrandLogoLink } from "@/components/brand-logo";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import { LogoutButton } from "@/components/logout-button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 import { auth } from "@/lib/auth";
@@ -137,7 +136,16 @@ export default async function Home() {
             <LanguageSwitcher currentLocale={locale} />
           </div>
           {session ? (
-            <LogoutButton className="w-fit shrink-0 self-center" />
+            <Link
+              href="/dashboard"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "w-fit shrink-0 self-center gap-1.5 rounded-xl px-5 text-sm font-medium shadow-sm backdrop-blur-sm",
+              )}
+            >
+              {tCommon("dashboard")}
+              <ArrowRight className="size-3.5 opacity-60" aria-hidden />
+            </Link>
           ) : (
             <Link
               href="/sign-in"

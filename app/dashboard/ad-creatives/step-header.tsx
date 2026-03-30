@@ -18,7 +18,7 @@ export function StepHeader({
   onJourneyStepClick?: (stepNumber: number) => void;
 }) {
   return (
-    <div className="flex min-w-0 shrink-0 flex-col gap-2.5">
+    <div className="flex min-w-0 shrink-0 flex-col gap-5 sm:gap-7">
       <CreativeJourneyBar
         currentStep={stepNumber}
         furthestStep={journeyFurthestStep ?? stepNumber}

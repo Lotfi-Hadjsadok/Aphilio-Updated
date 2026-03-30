@@ -4,7 +4,7 @@ import { htmlToText } from "html-to-text";
 import { marked } from "marked";
 import type { ScrapeResult, ScrapedSection } from "@/types/scrape";
 import type { AdCreativesSectionOption } from "@/types/ad-creatives";
-import { DEFAULT_SECTION_TITLE } from "@/lib/ad-creatives-constants";
+import { DEFAULT_SECTION_TITLE } from "@/lib/ad-creatives/constants";
 
 function markdownToPlainText(markdown: string): string {
   const html = marked.parse(markdown, { async: false });

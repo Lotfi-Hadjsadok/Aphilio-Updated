@@ -10,8 +10,12 @@ import {
   IMAGE_MODEL_PREMIUM,
 } from "@/lib/langchain";
 import { uploadImageToR2 } from "@/lib/r2";
-import { getServerUserId } from "@/lib/server-auth";
-import { messageFromUnknownError } from "@/lib/utils";
+import {
+  requireAuth,
+  requireAuthAndSubscription,
+  ERR_UNAUTHORIZED,
+} from "@/lib/auth-guard";
+import { isSvgUrl, messageFromUnknownError } from "@/lib/utils";
 import type {
   ConversationSummary,
   LoadConversationState,
@@ -20,19 +24,6 @@ import type {
 } from "@/types/chat";
 import type { ReferenceImageGroup } from "@/types/ad-creatives";
 import type { BrandingPersonality } from "@/types/scrape";
-
-const ERR_UNAUTHORIZED = "Unauthorized. Please sign in.";
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function isSvgUrl(url: string): boolean {
-  const lower = url.toLowerCase();
-  return (
-    lower.endsWith(".svg") ||
-    lower.includes(".svg?") ||
-    lower.startsWith("data:image/svg")
-  );
-}
 
 function rowToPersistedMessage(row: {
   id: string;
@@ -130,8 +121,9 @@ async function findSimilarTextForQuery(
 
 /** Returns the user's conversations ordered by most recently updated. */
 export async function listConversations(): Promise<ConversationSummary[]> {
-  const userId = await getServerUserId();
-  if (!userId) return [];
+  const guard = await requireAuth();
+  if (!guard.authorized) return [];
+  const { userId } = guard;
 
   const rows = await prisma.chatConversation.findMany({
     where: { userId },
@@ -157,8 +149,9 @@ export async function listConversations(): Promise<ConversationSummary[]> {
 
 /** Fetches all non-SVG image URLs from documents belonging to a context owned by the user. */
 export async function getContextImages(contextId: string): Promise<string[]> {
-  const userId = await getServerUserId();
-  if (!userId || !contextId.trim()) return [];
+  const guard = await requireAuth();
+  if (!guard.authorized || !contextId.trim()) return [];
+  const { userId } = guard;
 
   const ownedContext = await prisma.scrapedContext.findFirst({
     where: { id: contextId, userId },
@@ -187,8 +180,9 @@ export async function loadConversationMessagesAction(
   _previous: LoadConversationState,
   formData: FormData,
 ): Promise<LoadConversationState> {
-  const userId = await getServerUserId();
-  if (!userId) return { status: "error", message: ERR_UNAUTHORIZED };
+  const guard = await requireAuth();
+  if (!guard.authorized) return { status: "error", message: guard.reason };
+  const { userId } = guard;
 
   const conversationId = String(formData.get("conversationId") ?? "").trim();
   if (!conversationId) return { status: "error", message: "Missing conversation ID." };
@@ -211,8 +205,9 @@ export async function sendChatMessageAction(
   _previous: SendChatMessageState,
   formData: FormData,
 ): Promise<SendChatMessageState> {
-  const userId = await getServerUserId();
-  if (!userId) return { status: "error", message: ERR_UNAUTHORIZED };
+  const guard = await requireAuthAndSubscription();
+  if (!guard.authorized) return { status: "error", message: guard.reason };
+  const { userId } = guard;
 
   const text = String(formData.get("text") ?? "").trim();
   const conversationId = String(formData.get("conversationId") ?? "").trim() || null;
@@ -330,7 +325,6 @@ export async function sendChatMessageAction(
       ...uploadedReferenceImageUrls,
     ];
 
-    // Library entry
     await prisma.generatedCreative.create({
       data: {
         userId,
@@ -414,8 +408,9 @@ export async function deleteConversationAction(
   _previous: { status: "idle" | "success" | "error"; message?: string },
   formData: FormData,
 ): Promise<{ status: "idle" | "success" | "error"; message?: string; deletedId?: string }> {
-  const userId = await getServerUserId();
-  if (!userId) return { status: "error", message: ERR_UNAUTHORIZED };
+  const guard = await requireAuth();
+  if (!guard.authorized) return { status: "error", message: guard.reason };
+  const { userId } = guard;
 
   const conversationId = String(formData.get("conversationId") ?? "").trim();
   if (!conversationId) return { status: "error", message: "Missing conversation ID." };

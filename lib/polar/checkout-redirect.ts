@@ -1,5 +1,5 @@
-import { polarClient } from "@/lib/polar-server";
-import { getPolarCheckoutSuccessUrlAbsolute } from "@/lib/polar-checkout-success-url";
+import { polarClient } from "@/lib/polar/client";
+import { getPolarCheckoutSuccessUrlAbsolute } from "@/lib/polar/checkout-success-url";
 import { redirect } from "next/navigation";
 
 const checkoutSlugToProductId: Record<string, string | undefined> = {

@@ -1,5 +1,5 @@
 import type { ReferenceImageGroup, SelectedTemplate } from "@/types/ad-creatives";
-import { LEGACY_FLAT_REFERENCE_SECTION_TITLE } from "@/lib/ad-creatives-constants";
+import { LEGACY_FLAT_REFERENCE_SECTION_TITLE } from "@/lib/ad-creatives/constants";
 
 export function parseJsonStringArray(raw: string): string[] {
   try {
@@ -8,6 +8,34 @@ export function parseJsonStringArray(raw: string): string[] {
   } catch {
     return [];
   }
+}
+
+/** Filters an already-parsed JSON value to a string array (e.g. Prisma JSON columns). */
+export function filterStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((entry): entry is string => typeof entry === "string");
+}
+
+/** Filters an already-parsed JSON value to a SelectedTemplate array. */
+export function filterSelectedTemplates(value: unknown): SelectedTemplate[] {
+  if (!Array.isArray(value)) return [];
+  const out: SelectedTemplate[] = [];
+  for (const entry of value) {
+    if (typeof entry !== "object" || entry === null) continue;
+    const record = entry as Record<string, unknown>;
+    if (
+      typeof record.templateId === "string" &&
+      typeof record.templateLabel === "string" &&
+      typeof record.aspectRatio === "string"
+    ) {
+      out.push({
+        templateId: record.templateId,
+        templateLabel: record.templateLabel,
+        aspectRatio: record.aspectRatio as SelectedTemplate["aspectRatio"],
+      });
+    }
+  }
+  return out;
 }
 
 export function parseCommaSeparatedIds(raw: string): string[] {

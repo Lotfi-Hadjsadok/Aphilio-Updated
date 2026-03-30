@@ -6,7 +6,7 @@ import {
   AD_TEMPLATE_CATEGORIES,
   ASPECT_RATIO_OPTIONS,
   defaultAspectRatioForTemplate,
-} from "@/lib/ad-creatives-templates";
+} from "@/lib/ad-creatives/templates";
 import { studioCategoryIcon, studioTemplateIcon } from "./ad-creative-template-icons";
 import type {
   AdAspectRatio,

@@ -2,10 +2,11 @@
 
 import prisma from "@/lib/prisma";
 import { deleteImageFromR2 } from "@/lib/r2";
-import { getServerUserId } from "@/lib/server-auth";
+import { requireAuth, requireAuthAndSubscription, ERR_UNAUTHORIZED } from "@/lib/auth-guard";
 import { messageFromUnknownError } from "@/lib/utils";
 import { getAdCreativesDnaPayloadForContext } from "@/app/actions/ad-creatives";
-import { parseSlotOutcomesFromJson } from "@/lib/ad-creative-studio-persist";
+import { parseSlotOutcomesFromJson } from "@/lib/ad-creatives/studio-persist";
+import { filterStringArray, filterSelectedTemplates } from "@/lib/ad-creatives/form-data";
 import type {
   AdCreativesDnaPayload,
   GeneratedAdPrompt,
@@ -15,8 +16,6 @@ import type {
   SimilarDocument,
   StudioSlotOutcomePersisted,
 } from "@/types/ad-creatives";
-
-const ERR_UNAUTHORIZED = "Unauthorized";
 
 export type AdStudioSessionListItem = {
   id: string;
@@ -54,32 +53,6 @@ export type DeleteAdStudioSessionState =
   | { status: "error"; message: string }
   | { status: "success"; deletedSessionId: string };
 
-function parseJsonStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((entry): entry is string => typeof entry === "string");
-}
-
-function parseSelectedTemplates(value: unknown): SelectedTemplate[] {
-  if (!Array.isArray(value)) return [];
-  const out: SelectedTemplate[] = [];
-  for (const entry of value) {
-    if (typeof entry !== "object" || entry === null) continue;
-    const record = entry as Record<string, unknown>;
-    if (
-      typeof record.templateId === "string" &&
-      typeof record.templateLabel === "string" &&
-      typeof record.aspectRatio === "string"
-    ) {
-      out.push({
-        templateId: record.templateId,
-        templateLabel: record.templateLabel,
-        aspectRatio: record.aspectRatio as SelectedTemplate["aspectRatio"],
-      });
-    }
-  }
-  return out;
-}
-
 function parseGeneratedPrompts(value: unknown): GeneratedAdPrompt[] | null {
   if (!Array.isArray(value)) return null;
   const out: GeneratedAdPrompt[] = [];
@@ -98,7 +71,7 @@ function parseGeneratedPrompts(value: unknown): GeneratedAdPrompt[] | null {
       typeof record.fontStyle === "string" &&
       typeof record.filledPrompt === "string"
     ) {
-      const refUrls = parseJsonStringArray(record.referenceImageUrls);
+      const refUrls = filterStringArray(record.referenceImageUrls);
       const groups: ReferenceImageGroup[] = [];
       if (Array.isArray(record.referenceImageGroups)) {
         for (const groupEntry of record.referenceImageGroups) {
@@ -154,7 +127,7 @@ function parseAngleStepReady(
       });
     }
   }
-  const referenceImageUrls = parseJsonStringArray(record.referenceImageUrls);
+  const referenceImageUrls = filterStringArray(record.referenceImageUrls);
   const referenceImageGroups: ReferenceImageGroup[] = [];
   const groupsRaw = record.referenceImageGroups;
   if (Array.isArray(groupsRaw)) {
@@ -177,8 +150,9 @@ function parseAngleStepReady(
 }
 
 export async function getAdStudioResumePayload(sessionId: string): Promise<AdStudioResumePayload | null> {
-  const userId = await getServerUserId();
-  if (!userId) return null;
+  const guard = await requireAuthAndSubscription();
+  if (!guard.authorized) return null;
+  const { userId } = guard;
 
   const row = await prisma.adCreativeStudioSession.findFirst({
     where: { id: sessionId, userId },
@@ -188,7 +162,7 @@ export async function getAdStudioResumePayload(sessionId: string): Promise<AdStu
   const dna = await getAdCreativesDnaPayloadForContext(row.contextId);
   if (!dna.ok) return null;
 
-  const selectedAngles = parseJsonStringArray(row.selectedAngles);
+  const selectedAngles = filterStringArray(row.selectedAngles);
   const angleData = row.angleStepData;
   let selectAngleState: SelectAngleState =
     row.furthestStep >= 3 && selectedAngles.length > 0
@@ -205,8 +179,8 @@ export async function getAdStudioResumePayload(sessionId: string): Promise<AdStu
     };
   }
 
-  const sectionIds = parseJsonStringArray(row.sectionIds);
-  const selectedTemplates = parseSelectedTemplates(row.selectedTemplates);
+  const sectionIds = filterStringArray(row.sectionIds);
+  const selectedTemplates = filterSelectedTemplates(row.selectedTemplates);
   const prompts = parseGeneratedPrompts(row.prompts);
   let slotOutcomes = parseSlotOutcomesFromJson(row.slotOutcomes);
   if (prompts && prompts.length > 0) {
@@ -254,8 +228,9 @@ export async function getAdStudioResumePayload(sessionId: string): Promise<AdStu
 export async function listAdCreativeStudioSessionsForUser(
   query: string = "",
 ): Promise<AdStudioSessionListItem[]> {
-  const userId = await getServerUserId();
-  if (!userId) return [];
+  const guard = await requireAuthAndSubscription();
+  if (!guard.authorized) return [];
+  const { userId } = guard;
 
   const trimmed = query.trim();
 
@@ -299,8 +274,8 @@ export async function listAdCreativeStudioSessionsAction(
   _previous: ListAdStudioSessionsState,
   formData: FormData,
 ): Promise<ListAdStudioSessionsState> {
-  const userId = await getServerUserId();
-  if (!userId) return { status: "error", message: ERR_UNAUTHORIZED };
+  const guard = await requireAuthAndSubscription();
+  if (!guard.authorized) return { status: "error", message: guard.reason };
 
   const query = String(formData.get("query") ?? "").trim();
   const items = await listAdCreativeStudioSessionsForUser(query);
@@ -311,8 +286,9 @@ export async function updateAdStudioSessionActiveStepAction(
   _previous: { status: "idle" | "error"; message?: string },
   formData: FormData,
 ): Promise<{ status: "idle" | "error"; message?: string }> {
-  const userId = await getServerUserId();
-  if (!userId) return { status: "error", message: ERR_UNAUTHORIZED };
+  const guard = await requireAuthAndSubscription();
+  if (!guard.authorized) return { status: "error", message: guard.reason };
+  const { userId } = guard;
 
   const sessionId = String(formData.get("studioSessionId") ?? "").trim();
   const stepRaw = Number(formData.get("activeStep") ?? 2);
@@ -331,8 +307,9 @@ export async function deleteAdCreativeStudioSessionAction(
   _previous: DeleteAdStudioSessionState,
   formData: FormData,
 ): Promise<DeleteAdStudioSessionState> {
-  const userId = await getServerUserId();
-  if (!userId) return { status: "error", message: ERR_UNAUTHORIZED };
+  const guard = await requireAuthAndSubscription();
+  if (!guard.authorized) return { status: "error", message: guard.reason };
+  const { userId } = guard;
 
   const sessionId = String(formData.get("studioSessionId") ?? "").trim();
   if (!sessionId) return { status: "error", message: "Missing session." };

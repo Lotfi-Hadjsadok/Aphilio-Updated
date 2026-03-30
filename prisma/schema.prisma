@@ -28,8 +28,9 @@ model User {
 
   /// Polar customer id (UUID) — same as `customers.get` / customer state `id`.
   polarCustomerId       String? @map("polar_customer_id")
-  /// Cached balance for the Aphilio credits meter (from Polar `active_meters`); refreshed via webhooks and after usage ingest.
-  aphilioCreditsBalance Int     @default(0) @map("aphilio_credits_balance")
+  /// Cached balance for the Aphilio credits meter stored as integer units (Polar balance × 100).
+  /// e.g. 78.5 credits → 7850. Divide by 100 to get the display value.
+  aphilioCreditsBalance Int @default(0) @map("aphilio_credits_balance")
   /// Whether the user currently has at least one active Polar subscription; kept in sync via webhooks.
   hasActiveSubscription Boolean @default(false) @map("has_active_subscription")
   /// Last known Polar subscription status (active, trialing, canceled, unpaid, …). Not cleared when a sub ends; null only before first sync.

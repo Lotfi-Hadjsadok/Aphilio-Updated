@@ -9,7 +9,7 @@ import { auth } from "@/lib/auth";
 import { BrandLogoLink } from "@/components/brand-logo";
 import { LogoutButton } from "@/components/logout-button";
 import { getLibraryCreatives } from "@/app/actions/library";
-import { requireActiveSubscriptionOrCheckout } from "@/lib/polar-subscription";
+import { requireActiveSubscriptionOrCheckout } from "@/lib/polar/subscription";
 import { LibraryGrid } from "./library-grid";
 
 async function LibraryContent() {

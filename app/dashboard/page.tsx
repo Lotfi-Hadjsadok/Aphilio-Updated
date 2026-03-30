@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 import prisma from "@/lib/prisma";
 import { LocaleSync } from "@/components/locale-sync";
 import { LogoutButton } from "@/components/logout-button";
-import { getUserSubscriptionStatus } from "@/lib/polar-subscription";
+import { getUserSubscriptionStatus } from "@/lib/polar/subscription";
 
 type ToolCardProps = {
   href: string;

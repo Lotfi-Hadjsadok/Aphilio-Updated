@@ -1,7 +1,7 @@
 import type { BrandingDNA, BrandingPersonality } from "@/types/scrape";
-import type { AdAspectRatio } from "@/lib/ad-creatives-templates";
+import type { AdAspectRatio } from "@/lib/ad-creatives/templates";
 
-export type { AdAspectRatio } from "@/lib/ad-creatives-templates";
+export type { AdAspectRatio } from "@/lib/ad-creatives/templates";
 
 export type AdCreativesSectionOption = {
   id: string;
@@ -74,18 +74,6 @@ export type GeneratedAdPrompt = {
   filledPrompt: string;
   referenceImageUrls: string[];
   referenceImageGroups: ReferenceImageGroup[];
-};
-
-export type GenerateAdPromptsInput = {
-  brandName: string;
-  baseUrl: string;
-  branding: BrandingDNA | null;
-  personality: BrandingPersonality | null;
-  selectedSections: { heading: string | null; markdown: string }[];
-  selectedAngles: string[];
-  templateId: string;
-  templateLabel: string;
-  aspectRatio: AdAspectRatio;
 };
 
 export type GenerateAdPromptsState =

@@ -12,7 +12,7 @@ import type {
   AdStudioSessionListItem,
   DeleteAdStudioSessionState,
 } from "@/app/actions/ad-creative-studio-sessions";
-import { shortBrandLabelForUi } from "@/lib/ad-studio-brand-label";
+import { shortBrandLabelForUi } from "@/lib/ad-creatives/brand-label";
 import { groupStudioSessionsByRecency } from "./lib/group-studio-sessions";
 import { StudioSessionUpdatedLabel } from "./studio-session-updated-label";
 import { DeleteStudioSessionDialog } from "./delete-studio-session-dialog";

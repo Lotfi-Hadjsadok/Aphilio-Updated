@@ -5,14 +5,19 @@ import { isValidLocale } from "@/lib/i18n-locales";
 import { getServerSession } from "@/lib/server-auth";
 import prisma from "@/lib/prisma";
 
-export async function setLocaleCookieAction(language: string): Promise<void> {
-  if (!isValidLocale(language)) return;
+/** Shared helper: persists locale to the `NEXT_LOCALE` cookie. */
+export async function persistLocaleCookie(language: string): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.set("NEXT_LOCALE", language, {
     path: "/",
     maxAge: 60 * 60 * 24 * 365,
     sameSite: "lax",
   });
+}
+
+export async function setLocaleCookieAction(language: string): Promise<void> {
+  if (!isValidLocale(language)) return;
+  await persistLocaleCookie(language);
 }
 
 export type UpdatePreferredLanguageState = { ok?: boolean; error?: string };
@@ -32,12 +37,7 @@ export async function updatePreferredLanguageAction(
     data: { preferredLanguage: language },
   });
 
-  const cookieStore = await cookies();
-  cookieStore.set("NEXT_LOCALE", language, {
-    path: "/",
-    maxAge: 60 * 60 * 24 * 365,
-    sameSite: "lax",
-  });
+  await persistLocaleCookie(language);
 
   return { ok: true };
 }

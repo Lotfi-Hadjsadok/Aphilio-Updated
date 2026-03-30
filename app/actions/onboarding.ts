@@ -1,9 +1,8 @@
 "use server";
 
-import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import { getServerSession } from "@/lib/server-auth";
-import { isValidLocale } from "@/lib/i18n-locales";
+import { persistLocaleCookie } from "@/app/actions/locale";
 
 export type OnboardingState = {
   error?: string;
@@ -22,17 +21,10 @@ export async function saveOnboardingPreferences(
 
   await prisma.user.update({
     where: { id: session.user.id },
-    data: {
-      preferredLanguage: language,
-    },
+    data: { preferredLanguage: language },
   });
 
-  const cookieStore = await cookies();
-  cookieStore.set("NEXT_LOCALE", language, {
-    path: "/",
-    maxAge: 60 * 60 * 24 * 365,
-    sameSite: "lax",
-  });
+  await persistLocaleCookie(language);
 
   return { success: true };
 }

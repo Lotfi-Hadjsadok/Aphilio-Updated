@@ -3,7 +3,7 @@
 import { Check } from "lucide-react";
 import type { SavedContextSummary } from "@/types/scrape";
 import { cn } from "@/lib/utils";
-import { dnaPickCardTitleAndSubtitle } from "@/lib/ad-studio-brand-label";
+import { dnaPickCardTitleAndSubtitle } from "@/lib/ad-creatives/brand-label";
 import { adStudioCardGradientWashCn } from "./ad-creatives-constants";
 import { BrandMarkAvatar } from "./brand-mark-avatar";
 

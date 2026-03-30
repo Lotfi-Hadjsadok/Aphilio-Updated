@@ -5,7 +5,7 @@ import {
   buildSelectedSectionsForModel,
   flattenAdCreativesSectionOptions,
   resolveScrapedSectionById,
-} from "@/lib/ad-creatives-context";
+} from "@/lib/ad-creatives/context";
 import {
   flattenReferenceImageUrls,
   generateAllAdPromptsFromTemplates,
@@ -21,8 +21,18 @@ import {
   parseReferenceImageGroups,
   parseSelectedTemplates,
   referenceImageGroupsFromLegacyFlatUrls,
-} from "@/lib/ad-creatives-form-data";
-import { getServerUserId } from "@/lib/server-auth";
+} from "@/lib/ad-creatives/form-data";
+import {
+  requireAuth,
+  requireAuthAndSubscription,
+  ERR_UNAUTHORIZED,
+} from "@/lib/auth-guard";
+import {
+  creditCostForMode,
+  deductCreditsOptimisticallyLocally,
+  enqueuePolarCreditUsageIngest,
+  revertOptimisticCreditsDeduction,
+} from "@/lib/polar/ingest-credits";
 import { messageFromUnknownError } from "@/lib/utils";
 import { uploadImageToR2 } from "@/lib/r2";
 import type { Prisma } from "@/app/generated/prisma/client";
@@ -31,7 +41,7 @@ import {
   defaultSlotOutcomesForPrompts,
   mergeSlotOutcomesForNewPrompts,
   parseSlotOutcomesFromJson,
-} from "@/lib/ad-creative-studio-persist";
+} from "@/lib/ad-creatives/studio-persist";
 import type {
   AdCreativesDnaPayload,
   AdImageGenerationMode,
@@ -42,8 +52,6 @@ import type {
   SelectAngleState,
   StudioSlotOutcomePersisted,
 } from "@/types/ad-creatives";
-
-const ERR_UNAUTHORIZED = "Unauthorized";
 
 export async function getAdCreativesDnaPayloadForContext(
   contextId: string,
@@ -78,8 +86,9 @@ export async function loadDnaForAdCreativesAction(
   _previous: LoadAdCreativesDnaState,
   formData: FormData,
 ): Promise<LoadAdCreativesDnaState> {
-  const userId = await getServerUserId();
-  if (!userId) return { status: "error", message: ERR_UNAUTHORIZED };
+  const guard = await requireAuthAndSubscription();
+  if (!guard.authorized) return { status: "error", message: guard.reason };
+  const { userId } = guard;
 
   const contextId = String(formData.get("contextId") ?? "").trim();
   if (!contextId) return { status: "error", message: "Choose a brand to continue." };
@@ -116,8 +125,9 @@ export async function selectAngleWithSimilaritiesAction(
   _previous: SelectAngleState,
   formData: FormData,
 ): Promise<SelectAngleState> {
-  const userId = await getServerUserId();
-  if (!userId) return { status: "error", message: ERR_UNAUTHORIZED };
+  const guard = await requireAuthAndSubscription();
+  if (!guard.authorized) return { status: "error", message: guard.reason };
+  const { userId } = guard;
 
   const contextId = String(formData.get("contextId") ?? "").trim();
   const selectedAngles = parseJsonStringArray(String(formData.get("selectedAngles") ?? "[]"));
@@ -177,8 +187,9 @@ export async function generateAdPromptsAction(
   _previous: GenerateAdPromptsState,
   formData: FormData,
 ): Promise<GenerateAdPromptsState> {
-  const userId = await getServerUserId();
-  if (!userId) return { status: "error", message: ERR_UNAUTHORIZED };
+  const guard = await requireAuthAndSubscription();
+  if (!guard.authorized) return { status: "error", message: guard.reason };
+  const { userId } = guard;
 
   const contextId = String(formData.get("contextId") ?? "").trim();
   const selectedAngles = parseJsonStringArray(String(formData.get("selectedAngles") ?? "[]"));
@@ -267,8 +278,9 @@ export async function generateImageFromPromptAction(
   _previous: GenerateImageState,
   formData: FormData,
 ): Promise<GenerateImageState> {
-  const userId = await getServerUserId();
-  if (!userId) return { status: "error", message: ERR_UNAUTHORIZED };
+  const guard = await requireAuthAndSubscription();
+  if (!guard.authorized) return { status: "error", message: guard.reason };
+  const { userId } = guard;
 
   const filledPrompt = String(formData.get("filledPrompt") ?? "").trim();
   const contextId = String(formData.get("contextId") ?? "").trim();
@@ -284,7 +296,7 @@ export async function generateImageFromPromptAction(
     referenceImageGroupsParse.length > 0
       ? referenceImageGroupsParse
       : referenceImageGroupsFromLegacyFlatUrls(referenceImageUrls);
-  const rawMode = String(formData.get("imageModel") ?? "premium") as AdImageGenerationMode;
+  const rawMode = String(formData.get("imageModel") ?? "fast") as AdImageGenerationMode;
   const imageModel = rawMode === "fast" ? IMAGE_MODEL_FAST : IMAGE_MODEL_PREMIUM;
   const studioSessionId = String(formData.get("studioSessionId") ?? "").trim();
   const slotIndexParsed = Number(formData.get("slotIndex") ?? -1);
@@ -292,6 +304,9 @@ export async function generateImageFromPromptAction(
 
   if (!filledPrompt) return { status: "error", message: "Something went wrong. Please try again." };
   if (!contextId) return { status: "error", message: "No context ID provided." };
+
+  const creditCost = creditCostForMode(rawMode);
+  await deductCreditsOptimisticallyLocally(userId, creditCost);
 
   try {
     let generatedImageUrl: string;
@@ -311,8 +326,6 @@ export async function generateImageFromPromptAction(
       finalReferenceImageUrls = result.referenceImageUrls;
     }
 
-    // Upload to Cloudflare R2 and persist metadata in the database.
-    // Generation is considered successful only after persistence succeeds.
     const r2Key = `creatives/${userId}/${contextId}/${Date.now()}.webp`;
     const uploaded = await uploadImageToR2({ sourceUrl: generatedImageUrl, key: r2Key });
 
@@ -353,6 +366,8 @@ export async function generateImageFromPromptAction(
       }
     }
 
+    enqueuePolarCreditUsageIngest(userId, creditCost);
+
     return {
       status: "success",
       imageUrl: uploaded.publicUrl,
@@ -360,6 +375,8 @@ export async function generateImageFromPromptAction(
       creativeId: creative.id,
     };
   } catch (error) {
+    await revertOptimisticCreditsDeduction(userId, creditCost);
+
     const errorMessage = messageFromUnknownError(
       error,
       "Image generation or saving failed. Please try again.",

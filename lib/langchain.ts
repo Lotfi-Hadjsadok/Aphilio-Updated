@@ -8,7 +8,8 @@ import { TokenTextSplitter } from "@langchain/textsplitters";
 import { ChatGoogle } from "@langchain/google";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import prisma from "@/lib/prisma";
-import { DEFAULT_SECTION_TITLE } from "@/lib/ad-creatives-constants";
+import { isSvgUrl } from "@/lib/utils";
+import { DEFAULT_SECTION_TITLE } from "@/lib/ad-creatives/constants";
 import {
   BRAND_ANALYSIS_SYSTEM_PROMPT,
   buildBatchAdPromptsSystemPrompt,
@@ -17,7 +18,7 @@ import {
   IMAGE_MODEL_SYSTEM_PROMPT_BASE,
   LOGO_BLOCK_USER_INSTRUCTION,
   sectionReferenceUserInstruction,
-} from "@/lib/ad-creatives-prompts";
+} from "@/lib/ad-creatives/prompts";
 import type { BrandingPersonality, BrandingDNA } from "@/types/scrape";
 import type {
   AdAspectRatio,
@@ -25,8 +26,6 @@ import type {
   ReferenceImageGroup,
   SimilarDocument,
 } from "@/types/ad-creatives";
-
-export type { GeneratedAdPrompt } from "@/types/ad-creatives";
 
 let embeddingsSingleton: OpenAIEmbeddings | null = null;
 
@@ -106,19 +105,10 @@ export async function embedTextsForContextDocuments(texts: string[]): Promise<nu
   return model.embedDocuments(truncated);
 }
 
-function isSvgUrl(url: string): boolean {
-  const lowered = url.toLowerCase();
-  return (
-    lowered.endsWith(".svg") ||
-    lowered.includes(".svg?") ||
-    lowered.startsWith("data:image/svg")
-  );
-}
-
 /**
  * Builds ordered reference groups from similarity-ranked documents, capping total images.
  */
-export function buildReferenceImageGroupsFromSimilarDocuments(
+function buildReferenceImageGroupsFromSimilarDocuments(
   similarDocuments: SimilarDocument[],
 ): ReferenceImageGroup[] {
   const groups: ReferenceImageGroup[] = [];
@@ -228,7 +218,7 @@ export async function findSimilarDocumentsForAngles(
  * Returns reference images grouped by context document / section, ordered by embedding
  * similarity to the creative prompt. Caps total images at {@link MAX_REFERENCE_IMAGES}.
  */
-export async function referenceImageGroupsFromPromptSemantics(
+async function referenceImageGroupsFromPromptSemantics(
   prompt: string,
   contextId: string,
 ): Promise<ReferenceImageGroup[]> {
@@ -301,14 +291,6 @@ export async function referenceImageGroupsFromPromptSemantics(
   }
 
   return groups;
-}
-
-export async function referenceImageUrlsFromPromptSemantics(
-  prompt: string,
-  contextId: string,
-): Promise<string[]> {
-  const groups = await referenceImageGroupsFromPromptSemantics(prompt, contextId);
-  return flattenReferenceImageUrls(groups);
 }
 
 async function getLogoUrlForContext(contextId: string): Promise<string | null> {

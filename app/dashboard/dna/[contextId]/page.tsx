@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { loadSavedContext } from "@/app/actions/scrape";
 import { ResultExperience } from "@/app/dashboard/context-retriever/context-result-view";
-import { getUserSubscriptionStatus } from "@/lib/polar-subscription";
+import { getUserSubscriptionStatus } from "@/lib/polar/subscription";
 
 type PageProps = { params: Promise<{ contextId: string }> };
 

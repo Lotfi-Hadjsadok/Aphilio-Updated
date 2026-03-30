@@ -9,16 +9,14 @@ import {
   webhooks,
 } from "@polar-sh/better-auth";
 import prisma from "@/lib/prisma";
-import { polarClient } from "@/lib/polar-server";
-import { POLAR_CHECKOUT_SUCCESS_PATH } from "@/lib/polar-checkout-success-url";
+import { polarClient } from "@/lib/polar/client";
+import { POLAR_CHECKOUT_SUCCESS_PATH } from "@/lib/polar/checkout-success-url";
 import {
   persistPolarCustomerIdForNewUser,
   syncLocalUserByPolarCustomerId,
   syncLocalUserFromPolarCustomerState,
   syncLocalUserFromSubscription,
-} from "@/lib/polar-user-db-sync";
-
-export { polarClient } from "@/lib/polar-server";
+} from "@/lib/polar/user-db-sync";
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,

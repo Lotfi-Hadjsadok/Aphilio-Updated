@@ -9,7 +9,7 @@ import {
   listAdCreativeStudioSessionsForUser,
 } from "@/app/actions/ad-creative-studio-sessions";
 import type { LoadAdCreativesDnaState } from "@/types/ad-creatives";
-import { requireActiveSubscriptionOrCheckout } from "@/lib/polar-subscription";
+import { requireActiveSubscriptionOrCheckout } from "@/lib/polar/subscription";
 import { AdCreativesForm } from "./ad-creatives-form";
 
 export async function generateMetadata(): Promise<Metadata> {

@@ -124,6 +124,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={dir}
+      data-scroll-behavior="smooth"
       className={`${inter.variable} ${cairo.variable} ${baloo2.variable} ${fuzzyBubbles.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
