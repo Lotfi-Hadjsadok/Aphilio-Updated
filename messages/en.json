@@ -52,7 +52,9 @@
     "dnaPageTitle": "Brand DNA",
     "dnaPageDescription": "DNA extracts branding from the website you paste. Colors, typography, logos, and voice from that page.",
     "dnaPreviewPageTitle": "{name} · DNA",
-    "dnaPreviewPageDescription": "Branding profile for {name}, saved from {baseUrl}."
+    "dnaPreviewPageDescription": "Branding profile for {name}, saved from {baseUrl}.",
+    "signInTitle": "Sign in",
+    "signInDescription": "Sign in with Google to access your Aphilio workspace and extract brand DNA from any URL."
   },
   "thankYou": {
     "metaTitle": "Thank you",

@@ -27,7 +27,7 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSHPASS: ${{ secrets.SSH_PASSWORD }}
           SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
-          APP_DIR: ${{ secrets.APP_DIR || '~/aphilio' }}
+          APP_DIR: ${{ secrets.APP_DIR || '/root/aphilio' }}
           GIT_PAT: ${{ secrets.GIT_PAT }}
           GIT_REPOSITORY: ${{ github.repository }}
         run: |

@@ -36,7 +36,7 @@
     "removeImage": "إزالة الصورة",
     "interfaceLanguage": "لغة الواجهة",
     "logout": "Log out",
-    "signIn": "Sign in"
+    "signIn": "تسجيل الدخول"
   },
   "signIn": {
     "backToHome": "العودة إلى الرئيسية",
@@ -454,7 +454,9 @@
     "dnaPageTitle": "ADN العلامة",
     "dnaPageDescription": "يستخرج ADN هوية الموقع الذي تلصق رابطه. ألوان ذلك الصفحة وخطوطه وشعاراته وصوته.",
     "dnaPreviewPageTitle": "{name} · ADN",
-    "dnaPreviewPageDescription": "ملف العلامة لـ {name}، محفوظ من {baseUrl}."
+    "dnaPreviewPageDescription": "ملف العلامة لـ {name}، محفوظ من {baseUrl}.",
+    "signInTitle": "تسجيل الدخول",
+    "signInDescription": "سجّل الدخول عبر Google للوصول إلى مساحة Aphilio واستخراج حمض نووي العلامة من أي رابط."
   },
   "landing": {
     "skipToContent": "تخطي إلى المحتوى",

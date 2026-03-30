@@ -36,7 +36,7 @@
     "removeImage": "删除图像",
     "interfaceLanguage": "界面语言",
     "logout": "Log out",
-    "signIn": "Sign in"
+    "signIn": "登录"
   },
   "signIn": {
     "backToHome": "返回首页",
@@ -454,7 +454,9 @@
     "dnaPageTitle": "品牌 DNA",
     "dnaPageDescription": "DNA 从您粘贴网址的网站提取品牌形象。该页面的颜色、字体、标志与语调。",
     "dnaPreviewPageTitle": "{name}·DNA",
-    "dnaPreviewPageDescription": "{name} 的品牌档案，来源 {baseUrl}。"
+    "dnaPreviewPageDescription": "{name} 的品牌档案，来源 {baseUrl}。",
+    "signInTitle": "登录",
+    "signInDescription": "使用 Google 登录以访问 Aphilio 工作区并从任意网址提取品牌 DNA。"
   },
   "landing": {
     "skipToContent": "跳到主要内容",

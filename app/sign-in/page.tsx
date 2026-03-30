@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Dna, Wand2, MessageSquare } from "lucide-react";
 import { SignInGoogleButton } from "@/app/sign-in/sign-in-google-button";
 import { BrandLogoLink } from "@/components/brand-logo";
 import { LanguageSwitcher } from "@/components/language-switcher";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("metadata");
+  return {
+    title: t("signInTitle"),
+    description: t("signInDescription"),
+  };
+}
 
 export default async function SignInPage() {
   const locale = await getLocale();

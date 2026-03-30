@@ -36,7 +36,7 @@
     "removeImage": "Удалить изображение",
     "interfaceLanguage": "Язык интерфейса",
     "logout": "Log out",
-    "signIn": "Sign in"
+    "signIn": "Войти"
   },
   "signIn": {
     "backToHome": "На главную",
@@ -454,7 +454,9 @@
     "dnaPageTitle": "ДНК бренда",
     "dnaPageDescription": "DNA извлекает брендинг с сайта, URL которого вы вставляете. Цвета, типографика, логотипы и голос с этой страницы.",
     "dnaPreviewPageTitle": "{name} · ДНК",
-    "dnaPreviewPageDescription": "Профиль бренда для {name}, сохранённый с {baseUrl}."
+    "dnaPreviewPageDescription": "Профиль бренда для {name}, сохранённый с {baseUrl}.",
+    "signInTitle": "Вход",
+    "signInDescription": "Войдите через Google, чтобы открыть рабочее пространство Aphilio и извлекать ДНК бренда с любого URL."
   },
   "landing": {
     "skipToContent": "Перейти к содержимому",

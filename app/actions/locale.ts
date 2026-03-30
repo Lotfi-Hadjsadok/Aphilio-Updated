@@ -26,16 +26,16 @@ export async function updatePreferredLanguageAction(
   _prevState: UpdatePreferredLanguageState,
   formData: FormData,
 ): Promise<UpdatePreferredLanguageState> {
-  const session = await getServerSession();
-  if (!session) return { error: "Not signed in." };
-
   const language = String(formData.get("language") ?? "");
   if (!isValidLocale(language)) return { error: "Invalid language." };
 
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: { preferredLanguage: language },
-  });
+  const session = await getServerSession();
+  if (session) {
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { preferredLanguage: language },
+    });
+  }
 
   await persistLocaleCookie(language);
 

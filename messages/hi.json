@@ -36,7 +36,7 @@
     "removeImage": "छवि हटाएँ",
     "interfaceLanguage": "इंटरफ़ेस भाषा",
     "logout": "Log out",
-    "signIn": "Sign in"
+    "signIn": "साइन इन करें"
   },
   "signIn": {
     "backToHome": "होम पर वापस",
@@ -454,7 +454,9 @@
     "dnaPageTitle": "ब्रांड DNA",
     "dnaPageDescription": "DNA उस साइट से ब्रांडिंग निकालता है जिसका URL आप चिपकाते हैं। उस पृष्ठ के रंग, टाइपोग्राफी, लोगो और आवाज़।",
     "dnaPreviewPageTitle": "{name} · डीएनए",
-    "dnaPreviewPageDescription": "{name} के लिए ब्रांड प्रोफ़ाइल, {baseUrl} से सहेजी गई।"
+    "dnaPreviewPageDescription": "{name} के लिए ब्रांड प्रोफ़ाइल, {baseUrl} से सहेजी गई।",
+    "signInTitle": "साइन इन करें",
+    "signInDescription": "अपने Aphilio वर्कस्पेस तक पहुँचने और किसी भी URL से ब्रांड DNA निकालने के लिए Google से साइन इन करें।"
   },
   "landing": {
     "skipToContent": "सामग्री पर जाएँ",

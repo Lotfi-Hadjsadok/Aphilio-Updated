@@ -36,7 +36,7 @@
     "removeImage": "画像を削除",
     "interfaceLanguage": "表示言語",
     "logout": "Log out",
-    "signIn": "Sign in"
+    "signIn": "ログイン"
   },
   "signIn": {
     "backToHome": "ホームに戻る",
@@ -454,7 +454,9 @@
     "dnaPageTitle": "ブランドDNA",
     "dnaPageDescription": "DNAは貼り付けたURLのサイトからブランディングを抽出します。そのページの色、タイポ、ロゴ、トーン。",
     "dnaPreviewPageTitle": "{name} · DNA",
-    "dnaPreviewPageDescription": "{name} のブランドプロフィール。{baseUrl} から保存。"
+    "dnaPreviewPageDescription": "{name} のブランドプロフィール。{baseUrl} から保存。",
+    "signInTitle": "ログイン",
+    "signInDescription": "GoogleでサインインしてAphilioワークスペースにアクセスし、任意のURLからブランドDNAを抽出します。"
   },
   "landing": {
     "skipToContent": "コンテンツへスキップ",

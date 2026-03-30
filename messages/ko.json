@@ -36,7 +36,7 @@
     "removeImage": "이미지 삭제",
     "interfaceLanguage": "인터페이스 언어",
     "logout": "Log out",
-    "signIn": "Sign in"
+    "signIn": "로그인"
   },
   "signIn": {
     "backToHome": "홈으로 돌아가기",
@@ -454,7 +454,9 @@
     "dnaPageTitle": "브랜드 DNA",
     "dnaPageDescription": "DNA는 붙여넣은 URL의 사이트에서 브랜딩을 추출합니다. 해당 페이지의 색상, 타이포그래피, 로고, 톤.",
     "dnaPreviewPageTitle": "{name} · DNA",
-    "dnaPreviewPageDescription": "{name}의 브랜드 프로필, {baseUrl}에서 저장됨."
+    "dnaPreviewPageDescription": "{name}의 브랜드 프로필, {baseUrl}에서 저장됨.",
+    "signInTitle": "로그인",
+    "signInDescription": "Google로 로그인하여 Aphilio 작업 공간에 액세스하고 모든 URL에서 브랜드 DNA를 추출하세요."
   },
   "landing": {
     "skipToContent": "본문으로 건너뛰기",

@@ -36,7 +36,7 @@
     "removeImage": "Ta bort bild",
     "interfaceLanguage": "Gränssnittsspråk",
     "logout": "Log out",
-    "signIn": "Sign in"
+    "signIn": "Logga in"
   },
   "signIn": {
     "backToHome": "Tillbaka till startsidan",
@@ -454,7 +454,9 @@
     "dnaPageTitle": "Varumärkes-DNA",
     "dnaPageDescription": "DNA hämtar varumärket från webbplatsen vars URL du klistrar in. Färger, typografi, logotyper och röst från den sidan.",
     "dnaPreviewPageTitle": "{name} · DNA",
-    "dnaPreviewPageDescription": "Varumärkesprofil för {name}, sparad från {baseUrl}."
+    "dnaPreviewPageDescription": "Varumärkesprofil för {name}, sparad från {baseUrl}.",
+    "signInTitle": "Logga in",
+    "signInDescription": "Logga in med Google för att komma åt din Aphilio-arbetsyta och extrahera varumärkes-DNA från vilken URL som helst."
   },
   "landing": {
     "skipToContent": "Hoppa till innehåll",

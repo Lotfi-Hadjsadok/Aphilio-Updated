@@ -36,7 +36,7 @@
     "removeImage": "Remover imagem",
     "interfaceLanguage": "Idioma da interface",
     "logout": "Log out",
-    "signIn": "Sign in"
+    "signIn": "Entrar"
   },
   "signIn": {
     "backToHome": "Voltar ao início",
@@ -454,7 +454,9 @@
     "dnaPageTitle": "ADN da marca",
     "dnaPageDescription": "O ADN extrai a marca do site cujo URL cola. Cores, tipografia, logótipos e voz dessa página.",
     "dnaPreviewPageTitle": "{name} · ADN",
-    "dnaPreviewPageDescription": "Perfil de marca de {name}, guardado a partir de {baseUrl}."
+    "dnaPreviewPageDescription": "Perfil de marca de {name}, guardado a partir de {baseUrl}.",
+    "signInTitle": "Entrar",
+    "signInDescription": "Entre com o Google para acessar seu workspace Aphilio e extrair o DNA da marca de qualquer URL."
   },
   "landing": {
     "skipToContent": "Ir para o conteúdo",

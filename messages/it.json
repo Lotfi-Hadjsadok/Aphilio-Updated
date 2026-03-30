@@ -36,7 +36,7 @@
     "removeImage": "Rimuovi l'immagine",
     "interfaceLanguage": "Lingua dell'interfaccia",
     "logout": "Log out",
-    "signIn": "Sign in"
+    "signIn": "Accedi"
   },
   "signIn": {
     "backToHome": "Torna alla home",
@@ -454,7 +454,9 @@
     "dnaPageTitle": "DNA del marchio",
     "dnaPageDescription": "Il DNA estrae il branding dal sito il cui URL incolli. Colori, tipografia, loghi e voce di quella pagina.",
     "dnaPreviewPageTitle": "{name} · DNA",
-    "dnaPreviewPageDescription": "Profilo di marca per {name}, salvato da {baseUrl}."
+    "dnaPreviewPageDescription": "Profilo di marca per {name}, salvato da {baseUrl}.",
+    "signInTitle": "Accedi",
+    "signInDescription": "Accedi con Google per accedere al tuo workspace Aphilio ed estrarre il DNA del brand da qualsiasi URL."
   },
   "landing": {
     "skipToContent": "Vai al contenuto",

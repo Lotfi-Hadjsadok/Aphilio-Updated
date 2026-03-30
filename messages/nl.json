@@ -36,7 +36,7 @@
     "removeImage": "Afbeelding verwijderen",
     "interfaceLanguage": "Interfacetaal",
     "logout": "Log out",
-    "signIn": "Sign in"
+    "signIn": "Inloggen"
   },
   "signIn": {
     "backToHome": "Terug naar home",
@@ -454,7 +454,9 @@
     "dnaPageTitle": "Merk-DNA",
     "dnaPageDescription": "DNA haalt branding van de site waarvan u de URL plakt. Kleuren, typografie, logo's en stem van die pagina.",
     "dnaPreviewPageTitle": "{name} · DNA",
-    "dnaPreviewPageDescription": "Merkprofiel voor {name}, opgeslagen vanaf {baseUrl}."
+    "dnaPreviewPageDescription": "Merkprofiel voor {name}, opgeslagen vanaf {baseUrl}.",
+    "signInTitle": "Inloggen",
+    "signInDescription": "Log in met Google om je Aphilio-werkruimte te openen en merk-DNA van elke URL te extraheren."
   },
   "landing": {
     "skipToContent": "Naar inhoud springen",

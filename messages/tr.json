@@ -36,7 +36,7 @@
     "removeImage": "Resmi kaldır",
     "interfaceLanguage": "Arayüz dili",
     "logout": "Log out",
-    "signIn": "Sign in"
+    "signIn": "Giriş yap"
   },
   "signIn": {
     "backToHome": "Ana sayfaya dön",
@@ -454,7 +454,9 @@
     "dnaPageTitle": "Marka DNA",
     "dnaPageDescription": "DNA, yapıştırdığınız URL'deki siteden marka öğelerini çıkarır. O sayfanın renkleri, tipografisi, logoları ve tonu.",
     "dnaPreviewPageTitle": "{name} · DNA",
-    "dnaPreviewPageDescription": "{name} için marka profili, {baseUrl} kaynağından kaydedildi."
+    "dnaPreviewPageDescription": "{name} için marka profili, {baseUrl} kaynağından kaydedildi.",
+    "signInTitle": "Giriş yap",
+    "signInDescription": "Aphilio çalışma alanınıza erişmek ve herhangi bir URL’den marka DNA’sı çıkarmak için Google ile giriş yapın."
   },
   "landing": {
     "skipToContent": "İçeriğe geç",

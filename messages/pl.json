@@ -36,7 +36,7 @@
     "removeImage": "Usuń obraz",
     "interfaceLanguage": "Język interfejsu",
     "logout": "Log out",
-    "signIn": "Sign in"
+    "signIn": "Zaloguj się"
   },
   "signIn": {
     "backToHome": "Wróć do strony głównej",
@@ -454,7 +454,9 @@
     "dnaPageTitle": "DNA marki",
     "dnaPageDescription": "DNA pobiera branding ze strony, której URL wklejasz. Kolory, typografia, loga i głos z tej strony.",
     "dnaPreviewPageTitle": "{name} · DNA",
-    "dnaPreviewPageDescription": "Profil marki dla {name}, zapisany z {baseUrl}."
+    "dnaPreviewPageDescription": "Profil marki dla {name}, zapisany z {baseUrl}.",
+    "signInTitle": "Zaloguj się",
+    "signInDescription": "Zaloguj się przez Google, aby wejść do przestrzeni Aphilio i wyekstrahować DNA marki z dowolnego adresu URL."
   },
   "landing": {
     "skipToContent": "Przejdź do treści",
