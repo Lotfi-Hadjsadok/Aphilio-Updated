@@ -6,15 +6,7 @@ import {
   flattenAdCreativesSectionOptions,
   resolveScrapedSectionById,
 } from "@/lib/ad-creatives/context";
-import {
-  flattenReferenceImageUrls,
-  generateAllAdPromptsFromTemplates,
-  generateImageFromPromptForContext,
-  generateImageWithKnownReferences,
-  findSimilarDocumentsForAngles,
-  IMAGE_MODEL_PREMIUM,
-  IMAGE_MODEL_FAST,
-} from "@/lib/langchain";
+import { generateAllAdPromptsFromTemplates, findSimilarDocumentsForAngles } from "@/lib/langchain";
 import {
   parseCommaSeparatedIds,
   parseJsonStringArray,
@@ -27,16 +19,10 @@ import {
   requireAuthAndSubscription,
   ERR_UNAUTHORIZED,
 } from "@/lib/auth-guard";
-import {
-  creditCostForMode,
-  enqueuePolarCreditUsageIngest,
-  reserveCreditsAtGenerationStart,
-  revertOptimisticCreditsDeduction,
-} from "@/lib/polar/ingest-credits";
 import { messageFromUnknownError } from "@/lib/utils";
-import { uploadImageToR2 } from "@/lib/r2";
 import type { Prisma } from "@/app/generated/prisma/client";
 import prisma from "@/lib/prisma";
+import { runGenerateImageFromFormData } from "@/lib/ad-creatives/generate-image-from-form-data";
 import {
   defaultSlotOutcomesForPrompts,
   mergeSlotOutcomesForNewPrompts,
@@ -44,7 +30,6 @@ import {
 } from "@/lib/ad-creatives/studio-persist";
 import type {
   AdCreativesDnaPayload,
-  AdImageGenerationMode,
   GeneratedAdPrompt,
   GenerateAdPromptsState,
   GenerateImageState,
@@ -280,132 +265,5 @@ export async function generateImageFromPromptAction(
 ): Promise<GenerateImageState> {
   const guard = await requireAuthAndSubscription();
   if (!guard.authorized) return { status: "error", message: guard.reason };
-  const { userId } = guard;
-
-  const filledPrompt = String(formData.get("filledPrompt") ?? "").trim();
-  const contextId = String(formData.get("contextId") ?? "").trim();
-  const headline = String(formData.get("headline") ?? "").trim();
-  const subheadline = String(formData.get("subheadline") ?? "").trim() || undefined;
-  const templateLabel = String(formData.get("templateLabel") ?? "").trim();
-  const aspectRatio = String(formData.get("aspectRatio") ?? "").trim();
-  const referenceImageUrls = parseJsonStringArray(String(formData.get("referenceImageUrls") ?? "[]"));
-  const referenceImageGroupsParse = parseReferenceImageGroups(
-    String(formData.get("referenceImageGroups") ?? "[]"),
-  );
-  const referenceImageGroups =
-    referenceImageGroupsParse.length > 0
-      ? referenceImageGroupsParse
-      : referenceImageGroupsFromLegacyFlatUrls(referenceImageUrls);
-  const rawMode = String(formData.get("imageModel") ?? "fast") as AdImageGenerationMode;
-  const imageModel = rawMode === "fast" ? IMAGE_MODEL_FAST : IMAGE_MODEL_PREMIUM;
-  const studioSessionId = String(formData.get("studioSessionId") ?? "").trim();
-  const slotIndexParsed = Number(formData.get("slotIndex") ?? -1);
-  const slotIndex = Number.isFinite(slotIndexParsed) ? Math.floor(slotIndexParsed) : -1;
-
-  if (!filledPrompt) return { status: "error", message: "Something went wrong. Please try again." };
-  if (!contextId) return { status: "error", message: "No context ID provided." };
-
-  const creditCost = creditCostForMode(rawMode);
-  const reserved = await reserveCreditsAtGenerationStart(userId, creditCost);
-  if (!reserved.ok) {
-    return { status: "error", message: reserved.message };
-  }
-
-  try {
-    let generatedImageUrl: string;
-    let finalReferenceImageUrls: string[];
-
-    if (referenceImageGroups.length > 0) {
-      generatedImageUrl = await generateImageWithKnownReferences(
-        filledPrompt,
-        contextId,
-        referenceImageGroups,
-        imageModel,
-      );
-      finalReferenceImageUrls = flattenReferenceImageUrls(referenceImageGroups);
-    } else {
-      const result = await generateImageFromPromptForContext(filledPrompt, contextId, imageModel);
-      generatedImageUrl = result.imageUrl;
-      finalReferenceImageUrls = result.referenceImageUrls;
-    }
-
-    const r2Key = `creatives/${userId}/${contextId}/${Date.now()}.webp`;
-    const uploaded = await uploadImageToR2({ sourceUrl: generatedImageUrl, key: r2Key });
-
-    const creative = await prisma.generatedCreative.create({
-      data: {
-        userId,
-        contextId,
-        r2Key,
-        imageUrl: uploaded.publicUrl,
-        templateLabel: templateLabel || "Ad creative",
-        aspectRatio: aspectRatio || "1:1",
-        headline: headline || "Generated ad",
-        subheadline,
-        prompt: filledPrompt,
-        studioSessionId: studioSessionId.length > 0 ? studioSessionId : null,
-        slotIndex: studioSessionId.length > 0 && slotIndex >= 0 ? slotIndex : null,
-      },
-    });
-
-    if (studioSessionId.length > 0 && slotIndex >= 0) {
-      const sessionRow = await prisma.adCreativeStudioSession.findFirst({
-        where: { id: studioSessionId, userId },
-      });
-      if (sessionRow) {
-        const outcomes = parseSlotOutcomesFromJson(sessionRow.slotOutcomes);
-        while (outcomes.length <= slotIndex) {
-          outcomes.push({ status: "pending" });
-        }
-        outcomes[slotIndex] = {
-          status: "success",
-          creativeId: creative.id,
-          imageUrl: uploaded.publicUrl,
-        };
-        await prisma.adCreativeStudioSession.update({
-          where: { id: studioSessionId },
-          data: { slotOutcomes: outcomes as unknown as Prisma.InputJsonValue },
-        });
-      }
-    }
-
-    enqueuePolarCreditUsageIngest(userId, creditCost);
-
-    return {
-      status: "success",
-      imageUrl: uploaded.publicUrl,
-      referenceImageUrls: finalReferenceImageUrls,
-      creativeId: creative.id,
-    };
-  } catch (error) {
-    await revertOptimisticCreditsDeduction(userId, creditCost);
-
-    const errorMessage = messageFromUnknownError(
-      error,
-      "Image generation or saving failed. Please try again.",
-    );
-    if (studioSessionId.length > 0 && slotIndex >= 0) {
-      const sessionRow = await prisma.adCreativeStudioSession.findFirst({
-        where: { id: studioSessionId, userId },
-      });
-      if (sessionRow) {
-        const outcomes = parseSlotOutcomesFromJson(sessionRow.slotOutcomes);
-        while (outcomes.length <= slotIndex) {
-          outcomes.push({ status: "pending" });
-        }
-        outcomes[slotIndex] = {
-          status: "error",
-          errorMessage,
-        };
-        await prisma.adCreativeStudioSession.update({
-          where: { id: studioSessionId },
-          data: { slotOutcomes: outcomes as unknown as Prisma.InputJsonValue },
-        });
-      }
-    }
-    return {
-      status: "error",
-      message: errorMessage,
-    };
-  }
+  return runGenerateImageFromFormData(guard.userId, formData);
 }

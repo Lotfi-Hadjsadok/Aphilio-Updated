@@ -7,6 +7,8 @@ import { Calendar, Download, Loader2, Maximize2, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { deleteCreativeAction } from "@/app/actions/library";
+import { APHILIO_GA_EVENTS } from "@/lib/analytics/events";
+import { trackGaEvent } from "@/lib/analytics/track-client";
 import type { DeleteCreativeState, LibraryCreative } from "@/app/actions/library";
 
 const initialDeleteState: DeleteCreativeState = { status: "idle" };
@@ -47,6 +49,11 @@ export function CreativeCard({ creative }: { creative: LibraryCreative }) {
             rel="noopener noreferrer"
             className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 text-white backdrop-blur-sm transition-colors hover:bg-white/35"
             aria-label={tLibrary("downloadImageAria")}
+            onClick={() => {
+              trackGaEvent(APHILIO_GA_EVENTS.libraryCreativeDownloadClick, {
+                template_label: creative.templateLabel,
+              });
+            }}
           >
             <Download className="size-3.5" />
           </a>
@@ -54,6 +61,9 @@ export function CreativeCard({ creative }: { creative: LibraryCreative }) {
           <form
             action={deleteFormAction}
             onSubmit={() => {
+              trackGaEvent(APHILIO_GA_EVENTS.libraryCreativeDeleted, {
+                template_label: creative.templateLabel,
+              });
               setTimeout(() => setDeleted(true), 600);
             }}
           >

@@ -13,10 +13,12 @@ import {
 import { getLocale, getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 import { BrandLogoLink } from "@/components/brand-logo";
+import { CheckoutTrackedLink } from "@/components/analytics/checkout-tracked-link";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 import { auth } from "@/lib/auth";
+import { getSiteOrigin } from "@/lib/site-url";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -71,10 +73,17 @@ const previewSwatches = [
 ] as const;
 
 export default async function Home() {
+  const siteOrigin = getSiteOrigin();
   const locale = await getLocale();
   const session = await auth.api.getSession({
     headers: await headers(),
   });
+
+  const structuredData = {
+    ...jsonLd,
+    url: `${siteOrigin}/`,
+    image: `${siteOrigin}/main.jpg`,
+  };
   const tCommon = await getTranslations("common");
   const t = await getTranslations("landing");
   const year = new Date().getFullYear();
@@ -139,7 +148,7 @@ export default async function Home() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       <div className="landing-grid-bg relative flex min-h-[100dvh] flex-col overflow-hidden bg-background text-foreground">
         <div className="pointer-events-none absolute inset-0" aria-hidden>
@@ -464,7 +473,8 @@ export default async function Home() {
                 </ul>
 
                 <div className="relative mt-8">
-                  <Link
+                  <CheckoutTrackedLink
+                    planSlug="monthly"
                     href="/api/checkout/start?slug=monthly"
                     className={cn(
                       buttonVariants({ variant: "outline", size: "default" }),
@@ -472,7 +482,7 @@ export default async function Home() {
                     )}
                   >
                     {t("pricingMonthlyCta")}
-                  </Link>
+                  </CheckoutTrackedLink>
                 </div>
               </div>
 
@@ -530,7 +540,8 @@ export default async function Home() {
                 </ul>
 
                 <div className="relative mt-8">
-                  <Link
+                  <CheckoutTrackedLink
+                    planSlug="yearly"
                     href="/api/checkout/start?slug=yearly"
                     className={cn(
                       buttonVariants({ variant: "default", size: "default" }),
@@ -538,7 +549,7 @@ export default async function Home() {
                     )}
                   >
                     {t("pricingYearlyCta")}
-                  </Link>
+                  </CheckoutTrackedLink>
                 </div>
               </div>
             </div>

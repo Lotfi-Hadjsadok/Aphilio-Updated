@@ -1,6 +1,8 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import { APHILIO_GA_EVENTS } from "@/lib/analytics/events";
+import { trackGaEvent } from "@/lib/analytics/track-client";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { scrapeWebsite, deleteSavedContext } from "@/app/actions/scrape";
@@ -36,6 +38,28 @@ export function ScrapeFormInner({ savedContexts }: { savedContexts: SavedContext
   const [submittedUrl, setSubmittedUrl] = useState("");
 
   const [navigatedToResult, setNavigatedToResult] = useState(false);
+  const scrapePendingPreviousRef = useRef(false);
+
+  useEffect(() => {
+    if (deleteState.deletedContextId) {
+      trackGaEvent(APHILIO_GA_EVENTS.brandDnaDelete, { surface: "dna_tool" });
+    }
+  }, [deleteState.deletedContextId]);
+
+  useEffect(() => {
+    if (scrapePending && !scrapePendingPreviousRef.current) {
+      trackGaEvent(APHILIO_GA_EVENTS.brandDnaScrapeStart, { surface: "dna_tool" });
+    }
+    if (!scrapePending && scrapePendingPreviousRef.current) {
+      if (result?.id) {
+        trackGaEvent(APHILIO_GA_EVENTS.brandDnaScrapeComplete, { surface: "dna_tool" });
+      } else if (error) {
+        trackGaEvent(APHILIO_GA_EVENTS.brandDnaScrapeError, { surface: "dna_tool" });
+      }
+    }
+    scrapePendingPreviousRef.current = scrapePending;
+  }, [scrapePending, result?.id, error]);
+
   useEffect(() => {
     if (!result?.id || navigatedToResult) return;
     setNavigatedToResult(true);

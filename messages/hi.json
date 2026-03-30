@@ -256,7 +256,8 @@
       "layoutsReadyPlural": "{count} लेआउट तैयार — गुणवत्ता चुनें फिर प्रत्येक कार्ड बनाएं।",
       "adjustFormats": "फ़ॉर्मेट समायोजित करें",
       "rebuildAll": "सभी पुनर्निर्माण करें",
-      "refreshing": "ताज़ा हो रहा है…"
+      "refreshing": "ताज़ा हो रहा है…",
+      "credits": "क्रेडिट"
     },
     "journeyAria": "विज्ञापन वर्कफ़्लो की प्रगति",
     "journeyStep1Label": "ब्रांड",
@@ -293,7 +294,8 @@
       "generating": "उत्पन्न हो रहा है...",
       "generatingHintPremium": "प्रीमियम गुणवत्ता - इसमें एक क्षण लगता है",
       "generatingHintFast": "तेज़ मोड - इसमें एक क्षण लगता है",
-      "generateImage": "छवि उत्पन्न करें"
+      "generateImage": "छवि उत्पन्न करें",
+      "regenerateImage": "छवि फिर से बनाएं"
     },
     "categories": {
       "pain-emotion": "दर्द और भावना",
@@ -524,7 +526,7 @@
     "pricingProF1": "असीमित ब्रांड DNA निष्कर्षण",
     "pricingProF2": "विज्ञापन स्टूडियो — सभी फ़ॉर्मेट और लेआउट",
     "pricingProF3": "छवि जेनरेशन के साथ ब्रांड-जागरूक AI चैट",
-    "pricingProF4": "असीमित सहेजी छवियों वाली क्रिएटिव लाइब्रेरी",
+    "pricingProF4": "सहेजी गई छवियों वाली क्रिएटिव लाइब्रेरी",
     "pricingProF5": "प्राथमिकता सहायता",
     "pricingProF6": "नई सुविधाओं की शीघ्र पहुँच",
     "pricingProBadge": "सर्वोत्तम मूल्य",

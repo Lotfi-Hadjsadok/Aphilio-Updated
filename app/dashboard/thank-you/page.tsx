@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth";
 import { BrandLogoLink } from "@/components/brand-logo";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
+import { ThankYouAnalytics } from "./thank-you-analytics";
 import { ThankYouConfetti } from "./thank-you-confetti";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -27,6 +28,7 @@ export default async function ThankYouPage() {
 
   return (
     <main className="landing-grid-bg relative flex h-full min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden bg-background text-foreground">
+      <ThankYouAnalytics />
       <ThankYouConfetti />
 
       <div

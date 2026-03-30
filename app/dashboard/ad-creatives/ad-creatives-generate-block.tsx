@@ -20,6 +20,9 @@ import type {
   SelectAngleState,
   SelectedTemplate,
 } from "@/types/ad-creatives";
+import { APHILIO_GA_EVENTS } from "@/lib/analytics/events";
+import { trackGaEvent } from "@/lib/analytics/track-client";
+import { usePendingEdge } from "./use-pending-edge";
 import { AngleSelectionStep } from "./angle-selection-step";
 import { ConfigureCreativeStep } from "./configure-creative-step";
 import { ResultStep } from "./result-step";
@@ -43,10 +46,12 @@ export function AdCreativesGenerateBlock({
   payload,
   resume,
   onChangeDna,
+  initialCreditsBalanceStored,
 }: {
   payload: AdCreativesDnaPayload;
   resume: AdStudioResumePayload | null;
   onChangeDna: () => void;
+  initialCreditsBalanceStored: number;
 }) {
   const initialSelectAngle: SelectAngleState =
     resume?.selectAngleState.status === "ready" ? resume.selectAngleState : initialSelectAngleState;
@@ -142,6 +147,33 @@ export function AdCreativesGenerateBlock({
     if (generateState.status === "success") setCurrentStep(4);
   }, [generateState]);
 
+  usePendingEdge(
+    selectAnglePending,
+    () => trackGaEvent(APHILIO_GA_EVENTS.adStudioAnglesSubmitStart, { picked_angle_count: pickedAngles.length }),
+    () => {
+      if (selectAngleState.status === "ready") {
+        trackGaEvent(APHILIO_GA_EVENTS.adStudioAnglesSelected, {
+          angle_count: selectAngleState.selectedAngles.length,
+          similar_doc_count: selectAngleState.similarDocuments.length,
+        });
+      } else if (selectAngleState.status === "error") {
+        trackGaEvent(APHILIO_GA_EVENTS.adStudioAnglesError, {});
+      }
+    },
+  );
+
+  usePendingEdge(
+    generatePending,
+    () => trackGaEvent(APHILIO_GA_EVENTS.adStudioPromptsSubmitStart, {}),
+    () => {
+      if (generateState.status === "success") {
+        trackGaEvent(APHILIO_GA_EVENTS.adStudioPromptsGenerated, { prompt_count: generateState.prompts.length });
+      } else if (generateState.status === "error") {
+        trackGaEvent(APHILIO_GA_EVENTS.adStudioPromptsError, {});
+      }
+    },
+  );
+
   const selectAngleError = selectAngleState.status === "error" ? selectAngleState.message : null;
   const generateError = generateState.status === "error" ? generateState.message : null;
 
@@ -201,6 +233,7 @@ export function AdCreativesGenerateBlock({
           selectAngleState={selectAngleState}
           selectedTemplates={selectedTemplates}
           initialSlotOutcomes={resume?.slotOutcomes}
+          initialCreditsBalanceStored={initialCreditsBalanceStored}
           journeyFurthestStep={furthestStep}
           onJourneyStepClick={handleJourneyStepClick}
         />

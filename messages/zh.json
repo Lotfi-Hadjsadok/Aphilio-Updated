@@ -256,7 +256,8 @@
       "layoutsReadyPlural": "{count} 个布局就绪——选择质量后生成每张卡片。",
       "adjustFormats": "调整格式",
       "rebuildAll": "全部重建",
-      "refreshing": "刷新中…"
+      "refreshing": "刷新中…",
+      "credits": "积分"
     },
     "journeyAria": "广告创意流程进度",
     "journeyStep1Label": "品牌",
@@ -293,7 +294,8 @@
       "generating": "生成…",
       "generatingHintPremium": "优质品质——这需要一些时间",
       "generatingHintFast": "快速模式——这需要一些时间",
-      "generateImage": "生成图像"
+      "generateImage": "生成图像",
+      "regenerateImage": "重新生成图像"
     },
     "categories": {
       "pain-emotion": "痛苦与情感",
@@ -524,7 +526,7 @@
     "pricingProF1": "无限次品牌 DNA 提取",
     "pricingProF2": "广告工作室 — 全部版式与布局",
     "pricingProF3": "具备品牌意识且支持生图的 AI 对话",
-    "pricingProF4": "创意库，保存图片不限量",
+    "pricingProF4": "创意库与已保存图片",
     "pricingProF5": "优先支持",
     "pricingProF6": "抢先体验新功能",
     "pricingProBadge": "最划算",

@@ -256,7 +256,8 @@
       "layoutsReadyPlural": "{count} düzen hazır — kaliteyi seçin ve her kartı oluşturun.",
       "adjustFormats": "Formatları ayarla",
       "rebuildAll": "Tümünü yeniden oluştur",
-      "refreshing": "Yenileniyor…"
+      "refreshing": "Yenileniyor…",
+      "credits": "kredi"
     },
     "journeyAria": "Reklam akışı ilerlemesi",
     "journeyStep1Label": "Marka",
@@ -293,7 +294,8 @@
       "generating": "Oluşturuluyor…",
       "generatingHintPremium": "Üstün kalite — bu biraz zaman alır",
       "generatingHintFast": "Hızlı mod — bu biraz zaman alır",
-      "generateImage": "Resim oluştur"
+      "generateImage": "Resim oluştur",
+      "regenerateImage": "Resmi yeniden oluştur"
     },
     "categories": {
       "pain-emotion": "Acı ve Duygu",
@@ -524,7 +526,7 @@
     "pricingProF1": "Sınırsız marka DNA çıkarma",
     "pricingProF2": "Reklam stüdyosu — tüm formatlar ve düzenler",
     "pricingProF3": "Görsel üretimli marka bilincine sahip yapay zekâ sohbeti",
-    "pricingProF4": "Sınırsız kayıtlı görselle yaratıcı kütüphane",
+    "pricingProF4": "Kayıtlı görsellerle yaratıcı kütüphane",
     "pricingProF5": "Öncelikli destek",
     "pricingProF6": "Yeni özelliklere erken erişim",
     "pricingProBadge": "En iyi değer",

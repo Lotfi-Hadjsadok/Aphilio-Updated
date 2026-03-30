@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { CheckoutTrackedLink } from "@/components/analytics/checkout-tracked-link";
 import { useTranslations } from "next-intl";
 import { ArrowUpRight, CalendarClock, Sparkles } from "lucide-react";
 
@@ -114,7 +115,8 @@ export function SubscriptionSettingsPanel({
             <CardDescription>{t("subscriptionUpgradeDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="relative grid gap-4 p-4 sm:grid-cols-2 sm:p-6">
-            <Link
+            <CheckoutTrackedLink
+              planSlug="monthly"
               href="/api/checkout/start?slug=monthly"
               className={cn(
                 "feature-card-muted group relative flex flex-col justify-between overflow-hidden rounded-2xl border p-5 transition-all",
@@ -137,8 +139,9 @@ export function SubscriptionSettingsPanel({
                 {t("subscriptionUpgradeButton")}
                 <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </span>
-            </Link>
-            <Link
+            </CheckoutTrackedLink>
+            <CheckoutTrackedLink
+              planSlug="yearly"
               href="/api/checkout/start?slug=yearly"
               className={cn(
                 "feature-card-muted group relative flex flex-col justify-between overflow-hidden rounded-2xl border p-5 transition-all",
@@ -161,7 +164,7 @@ export function SubscriptionSettingsPanel({
                 {t("subscriptionUpgradeButton")}
                 <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </span>
-            </Link>
+            </CheckoutTrackedLink>
           </CardContent>
         </Card>
       </div>

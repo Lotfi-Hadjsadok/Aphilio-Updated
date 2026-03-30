@@ -256,7 +256,8 @@
       "layoutsReadyPlural": "레이아웃 {count}개 준비 완료 — 품질 선택 후 각 카드를 생성하세요.",
       "adjustFormats": "형식 조정",
       "rebuildAll": "모두 다시 빌드",
-      "refreshing": "새로 고침 중…"
+      "refreshing": "새로 고침 중…",
+      "credits": "크레딧"
     },
     "journeyAria": "광고 소재 워크플로 진행 상황",
     "journeyStep1Label": "브랜드",
@@ -293,7 +294,8 @@
       "generating": "생성 중…",
       "generatingHintPremium": "프리미엄 품질 - 시간이 좀 걸립니다",
       "generatingHintFast": "빠른 모드 - 시간이 좀 걸립니다",
-      "generateImage": "이미지 생성"
+      "generateImage": "이미지 생성",
+      "regenerateImage": "이미지 다시 생성"
     },
     "categories": {
       "pain-emotion": "고통과 감정",
@@ -524,7 +526,7 @@
     "pricingProF1": "무제한 브랜드 DNA 추출",
     "pricingProF2": "광고 스튜디오 — 모든 형식과 레이아웃",
     "pricingProF3": "이미지 생성이 있는 브랜드 인식 AI 채팅",
-    "pricingProF4": "저장 이미지 무제한 크리에이티브 라이브러리",
+    "pricingProF4": "저장 이미지가 있는 크리에이티브 라이브러리",
     "pricingProF5": "우선 지원",
     "pricingProF6": "신기능 조기 액세스",
     "pricingProBadge": "최고의 가치",

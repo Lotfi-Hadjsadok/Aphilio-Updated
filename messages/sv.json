@@ -256,7 +256,8 @@
       "layoutsReadyPlural": "{count} layouter redo — välj kvalitet och generera varje kort.",
       "adjustFormats": "Justera format",
       "rebuildAll": "Återskapa allt",
-      "refreshing": "Uppdaterar…"
+      "refreshing": "Uppdaterar…",
+      "credits": "krediter"
     },
     "journeyAria": "Framsteg i arbetsflödet för annonser",
     "journeyStep1Label": "Varumärke",
@@ -293,7 +294,8 @@
       "generating": "Alstrande…",
       "generatingHintPremium": "Premiumkvalitet – det här tar ett ögonblick",
       "generatingHintFast": "Snabbläge — det här tar en stund",
-      "generateImage": "Skapa bild"
+      "generateImage": "Skapa bild",
+      "regenerateImage": "Generera om bilden"
     },
     "categories": {
       "pain-emotion": "Smärta & Känslor",
@@ -524,7 +526,7 @@
     "pricingProF1": "Obegränsade extraktioner av varumärkes-DNA",
     "pricingProF2": "Annonsstudio – alla format och layouter",
     "pricingProF3": "AI-chatt med varumärkeskännedom och bildgenerering",
-    "pricingProF4": "Kreativt bibliotek med obegränsat sparade bilder",
+    "pricingProF4": "Kreativt bibliotek med sparade bilder",
     "pricingProF5": "Prioriterad support",
     "pricingProF6": "Tidig tillgång till nya funktioner",
     "pricingProBadge": "Bästa värdet",

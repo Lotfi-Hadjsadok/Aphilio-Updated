@@ -256,7 +256,8 @@
       "layoutsReadyPlural": "{count} layout pronti — seleziona la qualità e genera ogni scheda.",
       "adjustFormats": "Regola formati",
       "rebuildAll": "Ricostruisci tutto",
-      "refreshing": "Aggiornamento…"
+      "refreshing": "Aggiornamento…",
+      "credits": "crediti"
     },
     "journeyAria": "Avanzamento del flusso creativo",
     "journeyStep1Label": "Marchio",
@@ -293,7 +294,8 @@
       "generating": "Generazione…",
       "generatingHintPremium": "Qualità premium: ci vuole un attimo",
       "generatingHintFast": "Modalità veloce: l'operazione richiede un momento",
-      "generateImage": "Genera immagine"
+      "generateImage": "Genera immagine",
+      "regenerateImage": "Rigenera immagine"
     },
     "categories": {
       "pain-emotion": "Dolore ed emozione",
@@ -524,7 +526,7 @@
     "pricingProF1": "Estrazioni DNA del brand illimitate",
     "pricingProF2": "Ad Creative Studio — tutti i formati e layout",
     "pricingProF3": "Chat IA consapevole del brand con generazione immagini",
-    "pricingProF4": "Libreria creativa con immagini salvate illimitate",
+    "pricingProF4": "Libreria creativa con immagini salvate",
     "pricingProF5": "Supporto prioritario",
     "pricingProF6": "Accesso anticipato alle nuove funzioni",
     "pricingProBadge": "Miglior valore",

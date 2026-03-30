@@ -256,7 +256,8 @@
       "layoutsReadyPlural": "{count} diseños listos — selecciona la calidad y genera cada tarjeta.",
       "adjustFormats": "Ajustar formatos",
       "rebuildAll": "Reconstruir todo",
-      "refreshing": "Actualizando…"
+      "refreshing": "Actualizando…",
+      "credits": "créditos"
     },
     "journeyAria": "Progreso del flujo de creatividades",
     "journeyStep1Label": "Marca",
@@ -293,7 +294,8 @@
       "generating": "Generando…",
       "generatingHintPremium": "Calidad premium: esto lleva un momento",
       "generatingHintFast": "Modo rápido: esto lleva un momento",
-      "generateImage": "Generar imagen"
+      "generateImage": "Generar imagen",
+      "regenerateImage": "Regenerar imagen"
     },
     "categories": {
       "pain-emotion": "Dolor y emoción",
@@ -524,7 +526,7 @@
     "pricingProF1": "Extracciones de ADN de marca ilimitadas",
     "pricingProF2": "Estudio publicitario: todos los formatos y diseños",
     "pricingProF3": "Chat con IA consciente de la marca con generación de imágenes",
-    "pricingProF4": "Biblioteca creativa con imágenes guardadas ilimitadas",
+    "pricingProF4": "Biblioteca creativa con imágenes guardadas",
     "pricingProF5": "Soporte prioritario",
     "pricingProF6": "Acceso anticipado a nuevas funciones",
     "pricingProBadge": "Mejor valor",

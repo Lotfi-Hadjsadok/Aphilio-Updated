@@ -22,18 +22,7 @@ export const INSUFFICIENT_CREDITS_MESSAGE =
 export const SPENDING_CAP_REACHED_MESSAGE =
   "This generation would exceed your spending limit beyond your balance. Raise the cap in Settings or add credits.";
 
-/**
- * Atomically reserves credits at generation start: decrements local balance only if allowed by
- * balance, overage flag, and optional max overage cap. Call {@link enqueuePolarCreditUsageIngest}
- * only after success; {@link revertOptimisticCreditsDeduction} on failure.
- */
-export async function reserveCreditsAtGenerationStart(
-  userId: string,
-  creditAmount: number,
-): Promise<{ ok: true } | { ok: false; message: string }> {
-  const costUnits = creditAmountToStoredUnits(creditAmount);
-  const updated = await prisma.$executeRawUnsafe(
-    `UPDATE "user"
+const CREDIT_RESERVATION_UPDATE_SQL = `UPDATE "user"
      SET aphilio_credits_balance = aphilio_credits_balance - $1
      WHERE id = $2
        AND (
@@ -47,20 +36,74 @@ export async function reserveCreditsAtGenerationStart(
            AND max_credit_overage_stored_units IS NOT NULL
            AND aphilio_credits_balance + max_credit_overage_stored_units >= $1
          )
-       )`,
+       )`;
+
+type SqlExecutor = {
+  $executeRawUnsafe: (query: string, ...values: unknown[]) => Promise<unknown>;
+};
+
+export async function executeCreditReservationUpdate(
+  executor: SqlExecutor,
+  costUnits: number,
+  userId: string,
+): Promise<number> {
+  const updated = await executor.$executeRawUnsafe(
+    CREDIT_RESERVATION_UPDATE_SQL,
     costUnits,
     userId,
   );
-  const affected =
-    typeof updated === "bigint" ? Number(updated) : Number(updated);
-  if (affected > 0) {
-    return { ok: true };
-  }
+  return Number(updated);
+}
 
+type CreditCheckRow = {
+  aphilioCreditsBalance: number;
+  allowCreditOverage: boolean;
+  maxCreditOverageStoredUnits: number | null;
+};
+
+function resolveFailureMessageFromRow(row: CreditCheckRow, costUnits: number): string {
+  if (!row.allowCreditOverage) {
+    return INSUFFICIENT_CREDITS_MESSAGE;
+  }
+  if (
+    row.maxCreditOverageStoredUnits !== null &&
+    row.aphilioCreditsBalance + row.maxCreditOverageStoredUnits < costUnits
+  ) {
+    return SPENDING_CAP_REACHED_MESSAGE;
+  }
+  return INSUFFICIENT_CREDITS_MESSAGE;
+}
+
+async function creditReservationFailureMessage(
+  userId: string,
+  costUnits: number,
+): Promise<string> {
   const userRow = await prisma.user.findUnique({
     where: { id: userId },
     select: {
-      id: true,
+      aphilioCreditsBalance: true,
+      allowCreditOverage: true,
+      maxCreditOverageStoredUnits: true,
+    },
+  });
+  if (!userRow) {
+    return "Account not found.";
+  }
+  return resolveFailureMessageFromRow(userRow, costUnits);
+}
+
+/**
+ * Read-only check before expensive work. Does not change balance; pair with
+ * {@link reserveCreditsOnTransaction} after success (same rules as the UPDATE).
+ */
+export async function assertSufficientCreditsForGeneration(
+  userId: string,
+  creditAmount: number,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const costUnits = creditAmountToStoredUnits(creditAmount);
+  const userRow = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
       aphilioCreditsBalance: true,
       allowCreditOverage: true,
       maxCreditOverageStoredUnits: true,
@@ -70,17 +113,63 @@ export async function reserveCreditsAtGenerationStart(
     return { ok: false, message: "Account not found." };
   }
 
-  if (!userRow.allowCreditOverage) {
-    return { ok: false, message: INSUFFICIENT_CREDITS_MESSAGE };
+  const balance = userRow.aphilioCreditsBalance;
+  const qualifies =
+    (!userRow.allowCreditOverage && balance >= costUnits) ||
+    (userRow.allowCreditOverage && userRow.maxCreditOverageStoredUnits === null) ||
+    (userRow.allowCreditOverage &&
+      userRow.maxCreditOverageStoredUnits !== null &&
+      balance + userRow.maxCreditOverageStoredUnits >= costUnits);
+
+  if (qualifies) {
+    return { ok: true };
   }
-  if (userRow.maxCreditOverageStoredUnits !== null) {
-    const headroom =
-      userRow.aphilioCreditsBalance + userRow.maxCreditOverageStoredUnits;
-    if (headroom < costUnits) {
-      return { ok: false, message: SPENDING_CAP_REACHED_MESSAGE };
-    }
+
+  return { ok: false, message: resolveFailureMessageFromRow(userRow, costUnits) };
+}
+
+/**
+ * Atomically reserves credits inside an interactive transaction (after billable work succeeds).
+ */
+export async function reserveCreditsOnTransaction(
+  transaction: SqlExecutor,
+  userId: string,
+  creditAmount: number,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const costUnits = creditAmountToStoredUnits(creditAmount);
+  const affected = await executeCreditReservationUpdate(
+    transaction,
+    costUnits,
+    userId,
+  );
+  if (affected > 0) {
+    return { ok: true };
   }
-  return { ok: false, message: INSUFFICIENT_CREDITS_MESSAGE };
+  const message = await creditReservationFailureMessage(userId, costUnits);
+  return { ok: false, message };
+}
+
+/**
+ * Atomically reserves credits at generation start: decrements local balance only if allowed by
+ * balance, overage flag, and optional max overage cap. Call {@link enqueuePolarCreditUsageIngest}
+ * only after success; {@link revertOptimisticCreditsDeduction} on failure.
+ */
+export async function reserveCreditsAtGenerationStart(
+  userId: string,
+  creditAmount: number,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const costUnits = creditAmountToStoredUnits(creditAmount);
+  const affected = await executeCreditReservationUpdate(
+    prisma,
+    costUnits,
+    userId,
+  );
+  if (affected > 0) {
+    return { ok: true };
+  }
+
+  const message = await creditReservationFailureMessage(userId, costUnits);
+  return { ok: false, message };
 }
 
 /**

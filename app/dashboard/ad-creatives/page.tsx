@@ -10,6 +10,7 @@ import {
 } from "@/app/actions/ad-creative-studio-sessions";
 import type { LoadAdCreativesDnaState } from "@/types/ad-creatives";
 import { requireActiveSubscriptionOrCheckout } from "@/lib/polar/subscription";
+import prisma from "@/lib/prisma";
 import { AdCreativesForm } from "./ad-creatives-form";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -30,10 +31,14 @@ export default async function AdCreativesPage({ searchParams }: PageProps) {
 
   const tDna = await getTranslations("dna");
   const { contextId, sessionId } = await searchParams;
-  const [savedContexts, initialStudioSessions, locale] = await Promise.all([
+  const [savedContexts, initialStudioSessions, locale, userRow] = await Promise.all([
     listSavedContexts(),
     listAdCreativeStudioSessionsForUser(),
     getLocale(),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { aphilioCreditsBalance: true },
+    }),
   ]);
 
   const resumePayload = sessionId ? await getAdStudioResumePayload(sessionId) : null;
@@ -65,6 +70,7 @@ export default async function AdCreativesPage({ searchParams }: PageProps) {
         resumePayload={resumePayload}
         resumeLoadError={resumeLoadError}
         currentLocale={locale}
+        initialCreditsBalanceStored={userRow?.aphilioCreditsBalance ?? 0}
       />
     </main>
   );

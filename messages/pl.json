@@ -256,7 +256,8 @@
       "layoutsReadyPlural": "{count} układy gotowe — wybierz jakość, a następnie wygeneruj każdą kartę.",
       "adjustFormats": "Dostosuj formaty",
       "rebuildAll": "Przebuduj wszystko",
-      "refreshing": "Odświeżanie…"
+      "refreshing": "Odświeżanie…",
+      "credits": "kredytów"
     },
     "journeyAria": "Postęp przepływu reklam",
     "journeyStep1Label": "Marka",
@@ -293,7 +294,8 @@
       "generating": "Generowanie…",
       "generatingHintPremium": "Jakość premium — to zajmuje chwilę",
       "generatingHintFast": "Tryb szybki — zajmuje to chwilę",
-      "generateImage": "Wygeneruj obraz"
+      "generateImage": "Wygeneruj obraz",
+      "regenerateImage": "Wygeneruj obraz ponownie"
     },
     "categories": {
       "pain-emotion": "Ból i emocje",
@@ -524,7 +526,7 @@
     "pricingProF1": "Nielimitowane ekstrakcje DNA marki",
     "pricingProF2": "Studio reklam — wszystkie formaty i układy",
     "pricingProF3": "Czat AI świadomy marki z generowaniem obrazów",
-    "pricingProF4": "Biblioteka kreacji z nieograniczoną liczbą zapisanych obrazów",
+    "pricingProF4": "Biblioteka kreacji z zapisanymi obrazami",
     "pricingProF5": "Priorytetowe wsparcie",
     "pricingProF6": "Wczesny dostęp do nowych funkcji",
     "pricingProBadge": "Najlepsza wartość",

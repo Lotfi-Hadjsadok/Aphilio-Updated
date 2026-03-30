@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import Link from "next/link";
 import { ChevronRight, Lock, Sparkles } from "lucide-react";
+import { CheckoutTrackedAnchor } from "@/components/analytics/checkout-tracked-anchor";
 import { cn } from "@/lib/utils";
 
 export function ToolActionCard({
@@ -75,7 +76,8 @@ export function LockedToolActionCard({
   unlockAriaLabel: string;
 }) {
   return (
-    <a
+    <CheckoutTrackedAnchor
+      planSlug={checkoutSlug}
       href={`/api/checkout/start?slug=${checkoutSlug}`}
       className={cn(
         "dashboard-tool-card group/dna-tool relative flex flex-1 items-center gap-3 overflow-hidden rounded-xl px-4 py-3.5",
@@ -168,6 +170,6 @@ export function LockedToolActionCard({
           </span>
         </div>
       </div>
-    </a>
+    </CheckoutTrackedAnchor>
   );
 }

@@ -40,6 +40,7 @@ export function AdCreativesFormInner({
   resumePayload,
   resumeLoadError,
   currentLocale,
+  initialCreditsBalanceStored,
   onChangeDnaRequest,
   onOpenSession,
 }: {
@@ -50,6 +51,7 @@ export function AdCreativesFormInner({
   resumePayload: AdStudioResumePayload | null;
   resumeLoadError: string | null;
   currentLocale: string;
+  initialCreditsBalanceStored: number;
   onChangeDnaRequest: () => void;
   onOpenSession: (studioSessionId: string) => void;
 }) {
@@ -253,6 +255,7 @@ export function AdCreativesFormInner({
               resumePayload={effectiveResumePayload}
               onReturnToBrandPicker={handleReturnToBrandPicker}
               onFlowChrome={reportFlowChrome}
+              initialCreditsBalanceStored={initialCreditsBalanceStored}
             />
           )}
         </div>

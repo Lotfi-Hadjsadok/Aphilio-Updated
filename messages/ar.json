@@ -256,7 +256,8 @@
       "layoutsReadyPlural": "{count} تخطيطات جاهزة — اختر الجودة ثم أنشئ كل بطاقة.",
       "adjustFormats": "ضبط التنسيقات",
       "rebuildAll": "إعادة بناء الكل",
-      "refreshing": "جاري التحديث…"
+      "refreshing": "جاري التحديث…",
+      "credits": "رصيد"
     },
     "journeyAria": "تقدّم مسار الإعلانات الإبداعية",
     "journeyStep1Label": "العلامة",
@@ -293,7 +294,8 @@
       "generating": "جارٍ الإنشاء…",
       "generatingHintPremium": "جودة ممتازة - يستغرق هذا بعض الوقت",
       "generatingHintFast": "الوضع السريع – يستغرق هذا بعض الوقت",
-      "generateImage": "توليد الصورة"
+      "generateImage": "توليد الصورة",
+      "regenerateImage": "إعادة توليد الصورة"
     },
     "categories": {
       "pain-emotion": "الألم والعاطفة",
@@ -524,7 +526,7 @@
     "pricingProF1": "استخراجات حمض نووي علامة غير محدودة",
     "pricingProF2": "استوديو الإعلانات — كل الصيغ والتخطيطات",
     "pricingProF3": "دردشة ذكاء اصطناعي واعية للعلامة مع توليد صور",
-    "pricingProF4": "مكتبة إبداعات بصور محفوظة غير محدودة",
+    "pricingProF4": "مكتبة إبداعات بصور محفوظة",
     "pricingProF5": "دعم ذو أولوية",
     "pricingProF6": "وصول مبكر للميزات الجديدة",
     "pricingProBadge": "أفضل قيمة",

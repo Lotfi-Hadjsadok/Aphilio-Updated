@@ -61,6 +61,8 @@ import {
   dashboardToolHeaderPrimaryClass,
   dashboardToolHeaderRowClass,
 } from "@/lib/dashboard-tool-layout";
+import { APHILIO_GA_EVENTS } from "@/lib/analytics/events";
+import { trackGaEvent } from "@/lib/analytics/track-client";
 
 import type { SavedContextSummary } from "@/types/scrape";
 import type {
@@ -104,6 +106,7 @@ export function ChatInterface({
   const messagesScrollRootRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const sendWasPendingRef = useRef(false);
 
   function scrollMessagesViewportToEnd(behavior: ScrollBehavior = "auto") {
     const root = messagesScrollRootRef.current;
@@ -154,6 +157,39 @@ export function ChatInterface({
   );
 
   useEffect(() => {
+    if (isSendPending) {
+      sendWasPendingRef.current = true;
+      return;
+    }
+    if (sendWasPendingRef.current) {
+      sendWasPendingRef.current = false;
+      if (sendState.status === "success") {
+        trackGaEvent(APHILIO_GA_EVENTS.chatGenerationComplete, {
+          image_mode: imageMode,
+          aspect_ratio: aspectRatio,
+          has_context: Boolean(selectedContextId),
+          is_new_conversation: sendState.isNewConversation,
+          context_image_count: selectedContextImageUrls.length,
+          uploaded_image_count: uploadedImages.length,
+        });
+      } else if (sendState.status === "error") {
+        trackGaEvent(APHILIO_GA_EVENTS.chatGenerationError, {
+          image_mode: imageMode,
+          aspect_ratio: aspectRatio,
+        });
+      }
+    }
+  }, [
+    isSendPending,
+    sendState,
+    imageMode,
+    aspectRatio,
+    selectedContextId,
+    selectedContextImageUrls.length,
+    uploadedImages.length,
+  ]);
+
+  useEffect(() => {
     if (isSendPending) return;
     if (sendState.status === "success") {
       setLocalMessages((prev) => {
@@ -194,6 +230,7 @@ export function ChatInterface({
     setDeletingId(conversationId);
     const formData = new FormData();
     formData.append("conversationId", conversationId);
+    trackGaEvent(APHILIO_GA_EVENTS.chatConversationDeleted, {});
     startTransition(() => {
       deleteDispatch(formData);
     });
@@ -270,6 +307,14 @@ export function ChatInterface({
 
     // Capture FormData before any state mutations so hidden inputs retain their values
     const formData = new FormData(event.currentTarget);
+
+    trackGaEvent(APHILIO_GA_EVENTS.chatGenerationStart, {
+      image_mode: imageMode,
+      aspect_ratio: aspectRatio,
+      has_context: Boolean(selectedContextId),
+      context_image_count: selectedContextImageUrls.length,
+      uploaded_image_count: uploadedImages.length,
+    });
 
     const optimisticUserMessage: PersistedMessage = {
       id: `optimistic-${Date.now()}`,

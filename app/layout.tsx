@@ -9,8 +9,15 @@ import {
 import { getLocale, getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { isRtlLocale, type Locale } from "@/lib/i18n-locales";
+import { getSiteOrigin } from "@/lib/site-url";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  GoogleAnalyticsPageViews,
+  GoogleAnalyticsScripts,
+} from "@/components/analytics/google-analytics";
 import "./globals.css";
+
+const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
 const inter = Inter({
   variable: "--font-inter",
@@ -44,6 +51,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(`${getSiteOrigin()}/`),
   title: {
     default: "Aphilio: Brand DNA Extraction & On-Brand Ad Creative Generator",
     template: "%s | Aphilio",
@@ -64,8 +72,9 @@ export const metadata: Metadata = {
   authors: [{ name: "Aphilio" }],
   creator: "Aphilio",
   icons: {
-    icon: "/aphilio-logo.webp",
-    apple: "/aphilio-logo.webp",
+    icon: [{ url: "/aphilio-logo.webp", type: "image/webp", sizes: "1024x1024" }],
+    apple: [{ url: "/aphilio-logo.webp", type: "image/webp", sizes: "1024x1024" }],
+    shortcut: "/aphilio-logo.webp",
   },
   openGraph: {
     title: "Aphilio: Turn Any URL Into On-Brand Ad Creatives",
@@ -74,12 +83,14 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "Aphilio",
     locale: "en_US",
+    url: "/",
     images: [
       {
-        url: "/aphilio-logo.webp",
-        width: 1200,
-        height: 630,
-        alt: "Aphilio: Brand DNA Extraction & Ad Creative Generator",
+        url: "/main.jpg",
+        width: 2752,
+        height: 1536,
+        alt: "Aphilio: Brand DNA extraction and on-brand AI ad creative generation",
+        type: "image/jpeg",
       },
     ],
   },
@@ -88,7 +99,7 @@ export const metadata: Metadata = {
     title: "Aphilio: Turn Any URL Into On-Brand Ad Creatives",
     description:
       "Extract brand DNA from any URL. Generate on-brand ads with AI. Free to start.",
-    images: ["/aphilio-logo.webp"],
+    images: ["/main.jpg"],
     creator: "@aphilio",
   },
   robots: {
@@ -131,6 +142,12 @@ export default async function RootLayout({
       className={`${inter.variable} ${cairo.variable} ${baloo2.variable} ${fuzzyBubbles.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
+        {gaMeasurementId ? (
+          <>
+            <GoogleAnalyticsScripts measurementId={gaMeasurementId} />
+            <GoogleAnalyticsPageViews />
+          </>
+        ) : null}
         <NextIntlClientProvider locale={locale} messages={messages}>
           <TooltipProvider>{children}</TooltipProvider>
         </NextIntlClientProvider>

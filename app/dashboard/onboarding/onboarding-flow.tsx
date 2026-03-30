@@ -20,6 +20,8 @@ import {
 } from "@/app/actions/onboarding";
 import { scrapeWebsite } from "@/app/actions/scrape";
 import type { ScrapeState } from "@/types/scrape";
+import { APHILIO_GA_EVENTS } from "@/lib/analytics/events";
+import { trackGaEvent } from "@/lib/analytics/track-client";
 import { WelcomeStep } from "./steps/welcome-step";
 import { UrlStep } from "./steps/url-step";
 import { LanguageStep } from "./steps/language-step";
@@ -69,6 +71,7 @@ export function OnboardingFlow({
   const [fadeIn, setFadeIn] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrapeTriggered = useRef(false);
+  const scrapePendingPreviousRef = useRef(false);
 
   const [, langAction, langPending] = useActionState(
     saveOnboardingPreferences,
@@ -145,6 +148,24 @@ export function OnboardingFlow({
 
   const scrapeResultId = scrapeState.result?.id;
   const scrapeError = scrapeState.error;
+
+  useEffect(() => {
+    trackGaEvent(APHILIO_GA_EVENTS.onboardingStepView, { step: currentStep });
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (scrapePending && !scrapePendingPreviousRef.current) {
+      trackGaEvent(APHILIO_GA_EVENTS.brandDnaScrapeStart, { surface: "onboarding" });
+    }
+    if (!scrapePending && scrapePendingPreviousRef.current) {
+      if (scrapeResultId) {
+        trackGaEvent(APHILIO_GA_EVENTS.onboardingScrapeComplete, {});
+      } else if (scrapeError) {
+        trackGaEvent(APHILIO_GA_EVENTS.onboardingScrapeError, {});
+      }
+    }
+    scrapePendingPreviousRef.current = scrapePending;
+  }, [scrapePending, scrapeResultId, scrapeError]);
 
   useEffect(() => {
     if (scrapeResultId) {

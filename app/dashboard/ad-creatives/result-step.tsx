@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, Loader2, Sparkles } from "lucide-react";
+import { ChevronLeft, Coins, Loader2, Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type {
   AdCreativesDnaPayload,
@@ -27,6 +27,7 @@ export function ResultStep({
   selectAngleState,
   selectedTemplates,
   initialSlotOutcomes,
+  initialCreditsBalanceStored,
   journeyFurthestStep,
   onJourneyStepClick,
 }: {
@@ -40,12 +41,28 @@ export function ResultStep({
   selectAngleState: SelectAngleState & { status: "ready" };
   selectedTemplates: SelectedTemplate[];
   initialSlotOutcomes?: StudioSlotOutcomePersisted[];
+  initialCreditsBalanceStored: number;
   journeyFurthestStep: number;
   onJourneyStepClick: (step: number) => void;
 }) {
   const t = useTranslations("adCreatives.step4");
   const sectionIdsValue = [...selectedSectionIds].join(",");
   const studioSessionId = payload.studioSessionId ?? "";
+
+  const [balanceAdjustmentStoredUnits, setBalanceAdjustmentStoredUnits] = useState(0);
+  const displayCredits = (initialCreditsBalanceStored + balanceAdjustmentStoredUnits) / 100;
+  const displayCreditsFormatted = displayCredits.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+
+  const handleCreditPending = useCallback((storedUnits: number) => {
+    setBalanceAdjustmentStoredUnits((prev) => prev - storedUnits);
+  }, []);
+
+  const handleCreditReverted = useCallback((storedUnits: number) => {
+    setBalanceAdjustmentStoredUnits((prev) => prev + storedUnits);
+  }, []);
 
   const promptsSignature = useMemo(
     () =>
@@ -122,6 +139,10 @@ export function ResultStep({
                 onJourneyStepClick={onJourneyStepClick}
               >
                 <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                  <div className="flex items-center gap-1.5 rounded-full border border-border/50 bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground">
+                    <Coins className="size-3 shrink-0" aria-hidden />
+                    <span className="tabular-nums">{displayCreditsFormatted} {t("credits")}</span>
+                  </div>
                   <Button
                     type="button"
                     variant="outline"
@@ -167,6 +188,8 @@ export function ResultStep({
                   slotIndex={promptIndex}
                   initialSlot={slotSnapshot[promptIndex]}
                   onSlotUpdate={handleSlotUpdate}
+                  onCreditPending={handleCreditPending}
+                  onCreditReverted={handleCreditReverted}
                 />
               ))}
             </div>

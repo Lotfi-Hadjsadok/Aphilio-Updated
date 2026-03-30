@@ -256,7 +256,8 @@
       "layoutsReadyPlural": "{count}件のレイアウト準備完了 — クオリティを選択してカードを生成してください。",
       "adjustFormats": "フォーマットを調整",
       "rebuildAll": "すべて再構築",
-      "refreshing": "更新中…"
+      "refreshing": "更新中…",
+      "credits": "クレジット"
     },
     "journeyAria": "広告クリエイティブの進捗",
     "journeyStep1Label": "ブランド",
@@ -293,7 +294,8 @@
       "generating": "生成中…",
       "generatingHintPremium": "プレミアム品質 — これには少し時間がかかります",
       "generatingHintFast": "高速モード — これには少し時間がかかります",
-      "generateImage": "画像の生成"
+      "generateImage": "画像の生成",
+      "regenerateImage": "画像を再生成"
     },
     "categories": {
       "pain-emotion": "痛みと感情",
@@ -524,7 +526,7 @@
     "pricingProF1": "無制限のブランドDNA抽出",
     "pricingProF2": "広告スタジオ — すべてのフォーマットとレイアウト",
     "pricingProF3": "画像生成付きブランド対応AIチャット",
-    "pricingProF4": "保存画像無制限のクリエイティブライブラリ",
+    "pricingProF4": "保存画像のクリエイティブライブラリ",
     "pricingProF5": "優先サポート",
     "pricingProF6": "新機能への早期アクセス",
     "pricingProBadge": "お得",

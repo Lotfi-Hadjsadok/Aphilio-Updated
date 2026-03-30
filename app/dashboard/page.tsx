@@ -24,6 +24,7 @@ import prisma from "@/lib/prisma";
 import { LocaleSync } from "@/components/locale-sync";
 import { LogoutButton } from "@/components/logout-button";
 import { getUserSubscriptionStatus } from "@/lib/polar/subscription";
+import { CheckoutTrackedAnchor } from "@/components/analytics/checkout-tracked-anchor";
 
 type ToolCardProps = {
   href: string;
@@ -100,7 +101,8 @@ function LockedToolCard({
   unlockAriaLabel,
 }: LockedToolCardProps) {
   return (
-    <a
+    <CheckoutTrackedAnchor
+      planSlug={checkoutSlug}
       href={`/api/checkout/start?slug=${checkoutSlug}`}
       className={cn("group block h-full", dashboardNavFocusRingClass)}
       aria-label={unlockAriaLabel}
@@ -141,7 +143,7 @@ function LockedToolCard({
           </div>
         </div>
       </div>
-    </a>
+    </CheckoutTrackedAnchor>
   );
 }
 
@@ -212,7 +214,8 @@ export default async function DashboardPage() {
                   <Settings className="size-4" strokeWidth={1.75} />
                   {t("dashboard.settings")}
                 </Link>
-                <a
+                <CheckoutTrackedAnchor
+                  planSlug="monthly"
                   href="/api/checkout/start?slug=monthly"
                   className={cn(
                     dashboardNavPillLinkClassName,
@@ -223,7 +226,7 @@ export default async function DashboardPage() {
                   <Lock className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden />
                   <Images className="size-4 opacity-70" strokeWidth={1.75} aria-hidden />
                   {t("dashboard.library")}
-                </a>
+                </CheckoutTrackedAnchor>
               </>
             )}
             <LogoutButton />

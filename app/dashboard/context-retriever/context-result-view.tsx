@@ -26,6 +26,8 @@ import { IdentityTile } from "./identity-tile";
 import { VoiceTile } from "./voice-tile";
 import { MarketingAnglesTile } from "./marketing-angles-tile";
 import { ToolsTile } from "./tools-tile";
+import { APHILIO_GA_EVENTS } from "@/lib/analytics/events";
+import { trackGaEvent } from "@/lib/analytics/track-client";
 import { DeleteDnaButton } from "./delete-dna-button";
 import { LogoutButton } from "@/components/logout-button";
 
@@ -54,8 +56,13 @@ export function ResultExperience({
   );
 
   useEffect(() => {
-    if (deleteState.deletedContextId) router.push(backHref);
-  }, [deleteState.deletedContextId, router, backHref]);
+    if (deleteState.deletedContextId) {
+      trackGaEvent(APHILIO_GA_EVENTS.brandDnaDelete, {
+        surface: fromLibrary ? "library_context_detail" : "dna_result_view",
+      });
+      router.push(backHref);
+    }
+  }, [deleteState.deletedContextId, router, backHref, fromLibrary]);
 
   const primary = result.branding
     ? resolveBrandColors(result.branding).primary

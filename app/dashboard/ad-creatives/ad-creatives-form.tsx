@@ -17,6 +17,7 @@ export function AdCreativesForm({
   resumePayload,
   resumeLoadError,
   currentLocale,
+  initialCreditsBalanceStored,
 }: {
   savedContexts: SavedContextSummary[];
   initialStudioSessions: AdStudioSessionListItem[];
@@ -25,6 +26,7 @@ export function AdCreativesForm({
   resumePayload: AdStudioResumePayload | null;
   resumeLoadError: string | null;
   currentLocale: string;
+  initialCreditsBalanceStored: number;
 }) {
   const router = useRouter();
 
@@ -37,6 +39,7 @@ export function AdCreativesForm({
       resumePayload={resumePayload}
       resumeLoadError={resumeLoadError}
       currentLocale={currentLocale}
+      initialCreditsBalanceStored={initialCreditsBalanceStored}
       onChangeDnaRequest={() => {
         router.replace("/dashboard/ad-creatives");
       }}

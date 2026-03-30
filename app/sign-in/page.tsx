@@ -10,6 +10,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: t("signInTitle"),
     description: t("signInDescription"),
+    alternates: {
+      canonical: "/sign-in",
+    },
   };
 }
 
@@ -41,6 +44,7 @@ export default async function SignInPage() {
         <div className="mx-auto flex w-full max-w-sm flex-col gap-6">
           <div className="gradient-border-2 w-full shadow-lg shadow-black/5 dark:shadow-black/25">
             <div className="gradient-border-2-bg flex flex-col items-center gap-5 rounded-[calc(var(--radius)-1px)] px-6 py-8 sm:px-8 sm:py-9">
+              <BrandLogoLink priority size="signIn" className="justify-center" />
 
               {/* Heading block */}
               <div className="flex flex-col items-center gap-2 text-center">

@@ -1,6 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { APHILIO_GA_EVENTS } from "@/lib/analytics/events";
+import { trackGaEvent } from "@/lib/analytics/track-client";
 import { authClient } from "@/lib/auth-client";
 
 export function SignInGoogleButton({ label }: { label: string }) {
@@ -10,12 +12,13 @@ export function SignInGoogleButton({ label }: { label: string }) {
       variant="outline"
       size="lg"
       className="h-12 w-full gap-2.5 rounded-xl border-border/80 bg-background/80 text-sm font-medium shadow-sm backdrop-blur-sm transition-colors hover:bg-muted/60"
-      onClick={() =>
+      onClick={() => {
+        trackGaEvent(APHILIO_GA_EVENTS.loginStart, { method: "google" });
         void authClient.signIn.social({
           provider: "google",
           callbackURL: "/dashboard",
-        })
-      }
+        });
+      }}
     >
       <svg className="size-4 shrink-0" aria-hidden viewBox="0 0 24 24">
         <path

@@ -256,7 +256,8 @@
       "layoutsReadyPlural": "{count} indelingen gereed — selecteer kwaliteit en genereer elke kaart.",
       "adjustFormats": "Formaten aanpassen",
       "rebuildAll": "Alles opnieuw bouwen",
-      "refreshing": "Vernieuwen…"
+      "refreshing": "Vernieuwen…",
+      "credits": "credits"
     },
     "journeyAria": "Voortgang van de advertentie-workflow",
     "journeyStep1Label": "Merk",
@@ -293,7 +294,8 @@
       "generating": "Genereren…",
       "generatingHintPremium": "Premiumkwaliteit — dit duurt even",
       "generatingHintFast": "Snelle modus — dit duurt even",
-      "generateImage": "Afbeelding genereren"
+      "generateImage": "Afbeelding genereren",
+      "regenerateImage": "Afbeelding opnieuw genereren"
     },
     "categories": {
       "pain-emotion": "Pijn & Emotie",
@@ -524,7 +526,7 @@
     "pricingProF1": "Onbeperkte merk-DNA-extracties",
     "pricingProF2": "Ad Creative Studio — alle formaten en lay-outs",
     "pricingProF3": "Merkbewuste AI-chat met beeldgeneratie",
-    "pricingProF4": "Creatieve bibliotheek met onbeperkt opgeslagen afbeeldingen",
+    "pricingProF4": "Creatieve bibliotheek met opgeslagen afbeeldingen",
     "pricingProF5": "Prioriteitsondersteuning",
     "pricingProF6": "Vroege toegang tot nieuwe functies",
     "pricingProBadge": "Beste waarde",

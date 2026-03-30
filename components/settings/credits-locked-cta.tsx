@@ -1,5 +1,7 @@
-import Link from "next/link";
+"use client";
+
 import { CreditCard, Lock } from "lucide-react";
+import { CheckoutTrackedLink } from "@/components/analytics/checkout-tracked-link";
 
 import {
   Card,
@@ -45,12 +47,13 @@ export function CreditsLockedCta({ title, description, buttonLabel }: CreditsLoc
         </div>
       </CardHeader>
       <CardContent className="relative p-4 sm:p-6">
-        <Link
+        <CheckoutTrackedLink
+          planSlug="monthly"
           href="/api/checkout/start?slug=monthly"
           className={cn(buttonVariants({ variant: "default", size: "lg" }), "w-full sm:w-auto")}
         >
           {buttonLabel}
-        </Link>
+        </CheckoutTrackedLink>
       </CardContent>
     </Card>
   );
