@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
+  Check,
   CheckCircle2,
-  Dna,
   Globe,
-  MessageSquare,
-  Wand2,
+  LayoutGrid,
+  ScanSearch,
+  ShieldCheck,
   Zap,
 } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -21,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Aphilio: Brand DNA Extraction & On-Brand Ad Creative Generator",
     description:
-      "Extract your brand DNA from any URL (colors, fonts, logos, and voice), then generate on-brand ad creatives in multiple formats with AI. Free to start.",
+      "Extract your brand DNA from any URL (colors, fonts, logos, and voice), then generate on-brand ad creatives in multiple formats with AI.",
     alternates: {
       canonical: "/",
     },
@@ -36,11 +37,21 @@ const jsonLd = {
     "Brand intelligence platform that extracts brand DNA from any URL and generates on-brand ad creatives, images, and copy with AI.",
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
-  offers: {
-    "@type": "Offer",
-    price: "0",
-    priceCurrency: "USD",
-  },
+  offers: [
+    {
+      "@type": "Offer",
+      price: "39",
+      priceCurrency: "USD",
+      name: "Monthly",
+    },
+    {
+      "@type": "Offer",
+      price: "240",
+      priceCurrency: "USD",
+      name: "Yearly",
+      description: "Billed annually ($20 per month effective)",
+    },
+  ],
   featureList: [
     "Brand DNA extraction from any URL",
     "AI-powered ad creative generation",
@@ -84,31 +95,45 @@ export default async function Home() {
       title: t("step3Title"),
       description: t("step3Description"),
     },
-  ] as const;
+  ];
 
   const trustItems = [
     { icon: Globe, label: t("trustBrowser") },
     { icon: Zap, label: t("trustDna") },
     { icon: CheckCircle2, label: t("trustWorkspace") },
-  ] as const;
+  ];
 
-  const featureItems = [
+  const whyItems = [
     {
-      icon: Dna,
-      title: t("featureSourceTitle"),
-      description: t("featureSourceDescription"),
+      icon: Globe,
+      title: t("whyItem1Title"),
+      description: t("whyItem1Desc"),
     },
     {
-      icon: Wand2,
-      title: t("featureShipTitle"),
-      description: t("featureShipDescription"),
+      icon: ScanSearch,
+      title: t("whyItem2Title"),
+      description: t("whyItem2Desc"),
     },
     {
-      icon: MessageSquare,
-      title: t("featureAccountTitle"),
-      description: t("featureAccountDescription"),
+      icon: ShieldCheck,
+      title: t("whyItem3Title"),
+      description: t("whyItem3Desc"),
     },
-  ] as const;
+    {
+      icon: LayoutGrid,
+      title: t("whyItem4Title"),
+      description: t("whyItem4Desc"),
+    },
+  ];
+
+  const proFeatures = [
+    t("pricingProF1"),
+    t("pricingProF2"),
+    t("pricingProF3"),
+    t("pricingProF4"),
+    t("pricingProF5"),
+    t("pricingProF6"),
+  ];
 
   return (
     <>
@@ -130,10 +155,17 @@ export default async function Home() {
           {t("skipToContent")}
         </a>
 
+        {/* Header */}
         <header className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-3 px-5 py-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:px-8 sm:py-6">
           <BrandLogoLink priority className="shrink-0" />
-          <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center sm:mx-4">
+          <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center gap-6 sm:mx-4">
             <LanguageSwitcher currentLocale={locale} />
+            <Link
+              href="#pricing"
+              className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:block"
+            >
+              {t("navPricing")}
+            </Link>
           </div>
           {session ? (
             <Link
@@ -192,7 +224,7 @@ export default async function Home() {
                 <ArrowRight className="ml-1.5 size-4" aria-hidden />
               </Link>
               <Link
-                href="#how-it-works"
+                href="#pricing"
                 className={cn(
                   buttonVariants({ variant: "ghost", size: "lg" }),
                   "h-12 rounded-xl text-sm text-muted-foreground hover:text-foreground sm:text-base",
@@ -327,25 +359,25 @@ export default async function Home() {
             </div>
           </section>
 
-          {/* Features */}
+          {/* Why Aphilio */}
           <section
             className="mx-auto mt-16 w-full max-w-5xl sm:mt-20 lg:mt-24"
-            aria-labelledby="features-title"
+            aria-labelledby="why-title"
           >
             <div className="mb-8 space-y-2 text-center sm:mb-10">
               <p className="text-[0.6rem] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-                {t("featuresEyebrow")}
+                {t("whyEyebrow")}
               </p>
               <h2
-                id="features-title"
+                id="why-title"
                 className="font-heading text-xl font-semibold tracking-tight sm:text-2xl"
               >
-                {t("featuresTitle")}
+                {t("whyTitle")}
               </h2>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3 sm:gap-5">
-              {featureItems.map(({ icon: FeatureIcon, title, description }) => (
+            <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
+              {whyItems.map(({ icon: WhyIcon, title, description }) => (
                 <div
                   key={title}
                   className="feature-card-muted group relative overflow-hidden rounded-2xl border p-5 sm:p-6"
@@ -355,7 +387,7 @@ export default async function Home() {
                     aria-hidden
                   />
                   <div className="flex size-10 items-center justify-center rounded-xl border border-border/60 bg-background/80 shadow-sm">
-                    <FeatureIcon className="size-5 text-foreground/70" aria-hidden />
+                    <WhyIcon className="size-5 text-foreground/70" aria-hidden />
                   </div>
                   <h3 className="font-heading mt-4 text-base font-semibold tracking-tight">
                     {title}
@@ -365,6 +397,150 @@ export default async function Home() {
                   </p>
                 </div>
               ))}
+            </div>
+          </section>
+
+          {/* Pricing */}
+          <section
+            id="pricing"
+            className="mx-auto mt-16 w-full max-w-5xl scroll-mt-24 sm:mt-20 lg:mt-28"
+            aria-labelledby="pricing-title"
+          >
+            <div className="mb-8 space-y-2 text-center sm:mb-10">
+              <p className="text-[0.6rem] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+                {t("pricingEyebrow")}
+              </p>
+              <h2
+                id="pricing-title"
+                className="font-heading text-xl font-semibold tracking-tight sm:text-2xl"
+              >
+                {t("pricingTitle")}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {t("pricingSubtitle")}
+              </p>
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              {/* Monthly */}
+              <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-card/80 p-6 shadow-sm ring-1 ring-foreground/[0.03] backdrop-blur-sm sm:p-7">
+                <div
+                  className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-accent-gradient opacity-[0.06] blur-3xl transition-opacity duration-300 group-hover:opacity-[0.1]"
+                  aria-hidden
+                />
+                <div className="relative">
+                  <h3 className="font-heading text-lg font-semibold tracking-tight">
+                    {t("pricingMonthlyTitle")}
+                  </h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                    {t("pricingMonthlyTagline")}
+                  </p>
+                  <div className="mt-5 flex items-baseline gap-1.5">
+                    <span className="font-heading text-4xl font-bold tracking-tight">
+                      {t("pricingProMonthlyPrice")}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {t("pricingProPeriod")}
+                    </span>
+                  </div>
+                  <p className="mt-1.5 text-xs text-muted-foreground/80">
+                    {t("pricingMonthlyBillingNote")}
+                  </p>
+                </div>
+
+                <ul className="relative mt-6 flex-1 space-y-3">
+                  {proFeatures.map((feature) => (
+                    <li
+                      key={feature}
+                      className="flex items-start gap-2.5 text-sm text-foreground/80"
+                    >
+                      <Check
+                        className="mt-0.5 size-4 shrink-0 text-foreground/70"
+                        aria-hidden
+                      />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="relative mt-8">
+                  <Link
+                    href="/api/checkout/start?slug=monthly"
+                    className={cn(
+                      buttonVariants({ variant: "outline", size: "default" }),
+                      "w-full rounded-xl font-semibold",
+                    )}
+                  >
+                    {t("pricingMonthlyCta")}
+                  </Link>
+                </div>
+              </div>
+
+              {/* Yearly */}
+              <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-foreground/[0.12] bg-card/90 p-6 shadow-lg ring-1 ring-foreground/[0.06] backdrop-blur-sm sm:p-7">
+                <div
+                  className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-accent-gradient opacity-[0.12] blur-3xl transition-opacity duration-300 group-hover:opacity-[0.18]"
+                  aria-hidden
+                />
+
+                <div className="relative flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-heading text-lg font-semibold tracking-tight">
+                      {t("pricingYearlyTitle")}
+                    </h3>
+                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                      {t("pricingYearlyTagline")}
+                    </p>
+                  </div>
+                  <span className="gradient-pill shrink-0 text-[0.6rem] tracking-[0.13em]">
+                    {t("pricingProBadge")}
+                  </span>
+                </div>
+
+                <div className="relative mt-5">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="font-heading text-4xl font-bold tracking-tight">
+                      {t("pricingProYearlyPrice")}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {t("pricingProPeriod")}
+                    </span>
+                  </div>
+                  <p className="mt-1.5 text-xs text-muted-foreground/80">
+                    {t("pricingYearlyBillingNote")}
+                  </p>
+                  <p className="mt-2 text-xs font-semibold text-gradient">
+                    {t("pricingProSaveLabel")}
+                  </p>
+                </div>
+
+                <ul className="relative mt-6 flex-1 space-y-3">
+                  {proFeatures.map((feature) => (
+                    <li
+                      key={feature}
+                      className="flex items-start gap-2.5 text-sm text-foreground/80"
+                    >
+                      <Check
+                        className="mt-0.5 size-4 shrink-0 text-foreground/70"
+                        aria-hidden
+                      />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="relative mt-8">
+                  <Link
+                    href="/api/checkout/start?slug=yearly"
+                    className={cn(
+                      buttonVariants({ variant: "default", size: "default" }),
+                      "w-full rounded-xl font-semibold",
+                    )}
+                  >
+                    {t("pricingYearlyCta")}
+                  </Link>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -401,6 +577,15 @@ export default async function Home() {
                 >
                   {t("ctaBandButton")}
                   <ArrowRight className="ml-1.5 size-4" aria-hidden />
+                </Link>
+                <Link
+                  href="#pricing"
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "lg" }),
+                    "h-12 rounded-xl text-sm text-muted-foreground hover:text-foreground sm:text-base",
+                  )}
+                >
+                  {t("navPricing")}
                 </Link>
               </div>
               <p className="relative mt-4 text-xs text-muted-foreground/70">

@@ -9,9 +9,9 @@ export default async function SignInPage() {
   const t = await getTranslations("signIn");
 
   const benefits = [
-    { icon: Dna, text: "Extract brand DNA from any URL" },
-    { icon: Wand2, text: "Generate on-brand ad creatives" },
-    { icon: MessageSquare, text: "Brand-aware AI chat" },
+    { icon: Dna, text: t("benefit1") },
+    { icon: Wand2, text: t("benefit2") },
+    { icon: MessageSquare, text: t("benefit3") },
   ] as const;
 
   return (
@@ -57,7 +57,7 @@ export default async function SignInPage() {
           </div>
 
           {/* Feature reminders */}
-          <ul className="flex flex-col gap-2.5 px-1" aria-label="What you get with Aphilio">
+          <ul className="flex flex-col gap-2.5 px-1" aria-label={t("benefitsAria")}>
             {benefits.map(({ icon: BenefitIcon, text }) => (
               <li key={text} className="flex items-center gap-2.5 text-sm text-muted-foreground">
                 <span className="flex size-6 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-card/80">

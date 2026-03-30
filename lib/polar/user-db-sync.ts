@@ -6,27 +6,48 @@ import prisma from "@/lib/prisma";
 import { creditAmountToStoredUnits } from "@/lib/polar/ingest-credits";
 import { polarClient } from "@/lib/polar/client";
 
-let cachedAphilioCreditsMeterId: string | null | undefined;
+/** Cached Polar meter id per meter_credit benefit UUID (monthly vs yearly use different benefits). */
+const meterIdByBenefitId = new Map<string, string | null>();
 
-async function resolveAphilioCreditsMeterId(): Promise<string | null> {
-  if (cachedAphilioCreditsMeterId !== undefined) {
-    return cachedAphilioCreditsMeterId;
-  }
-  const benefitId = process.env.POLAR_APHILIO_CREDITS_ID;
+async function resolveMeterIdForBenefit(
+  benefitId: string | undefined,
+): Promise<string | null> {
   if (!benefitId || !process.env.POLAR_ACCESS_TOKEN) {
-    cachedAphilioCreditsMeterId = null;
     return null;
+  }
+  const cached = meterIdByBenefitId.get(benefitId);
+  if (cached !== undefined) {
+    return cached;
   }
   try {
     const benefit = await polarClient.benefits.get({ id: benefitId });
     if (benefit.type === "meter_credit") {
-      cachedAphilioCreditsMeterId = benefit.properties.meterId;
-      return cachedAphilioCreditsMeterId;
+      const meterId = benefit.properties.meterId;
+      meterIdByBenefitId.set(benefitId, meterId);
+      return meterId;
     }
   } catch {
     // Polar unavailable or invalid benefit id
   }
-  cachedAphilioCreditsMeterId = null;
+  meterIdByBenefitId.set(benefitId, null);
+  return null;
+}
+
+async function resolveAphilioCreditsMeterForProduct(
+  productId: string | null | undefined,
+): Promise<string | null> {
+  const monthlyProduct = process.env.POLAR_PRODUCT_ID_MONTHLY;
+  const yearlyProduct = process.env.POLAR_PRODUCT_ID_YEARLY;
+  if (monthlyProduct && productId === monthlyProduct) {
+    return resolveMeterIdForBenefit(
+      process.env.POLAR_APHILIO_CREDITS_ID_MONTHLY,
+    );
+  }
+  if (yearlyProduct && productId === yearlyProduct) {
+    return resolveMeterIdForBenefit(
+      process.env.POLAR_APHILIO_CREDITS_ID_YEARLY,
+    );
+  }
   return null;
 }
 
@@ -94,10 +115,6 @@ export async function syncLocalUserFromPolarCustomerState(
   const externalId = state.externalId;
   if (!externalId) return;
 
-  const meterId = await resolveAphilioCreditsMeterId();
-  const creditsBalance =
-    meterId !== null ? creditsBalanceFromState(state, meterId) : undefined;
-
   const primarySubscription = primaryActiveSubscription(
     state.activeSubscriptions,
   );
@@ -106,6 +123,14 @@ export async function syncLocalUserFromPolarCustomerState(
   const webhookSubscription = context?.subscriptionFromWebhook;
   const webhookMatchesUser =
     webhookSubscription?.customer.externalId === externalId;
+
+  const productIdForCredits =
+    primarySubscription?.productId ??
+    (webhookMatchesUser ? webhookSubscription.productId : undefined);
+
+  const meterId = await resolveAphilioCreditsMeterForProduct(productIdForCredits);
+  const creditsBalance =
+    meterId !== null ? creditsBalanceFromState(state, meterId) : undefined;
 
   const data: Prisma.UserUpdateInput = {
     polarCustomerId: state.id,

@@ -56,7 +56,9 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { LogoutButton } from "@/components/logout-button";
 import { DashboardBackIcon } from "@/components/dashboard-back-link";
 import {
+  dashboardToolHeaderActionsClass,
   dashboardToolHeaderBarClass,
+  dashboardToolHeaderPrimaryClass,
   dashboardToolHeaderRowClass,
 } from "@/lib/dashboard-tool-layout";
 
@@ -325,10 +327,10 @@ export function ChatInterface({
           <div
             className={cn(
               dashboardToolHeaderRowClass,
-              "flex-nowrap gap-2 py-2.5 sm:gap-3 sm:py-3",
+              "gap-2 py-2.5 md:gap-4 md:py-4",
             )}
           >
-            <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+            <div className={dashboardToolHeaderPrimaryClass}>
               <DashboardBackIcon
                 ariaLabel={tCommon("backToDashboard")}
                 title={tCommon("back")}
@@ -347,7 +349,7 @@ export function ChatInterface({
                 </span>
               </div>
             </div>
-            <div className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+            <div className={dashboardToolHeaderActionsClass}>
               <LanguageSwitcher currentLocale={currentLocale} />
               <LogoutButton className="h-8 px-2.5 text-xs" />
               <button
@@ -367,10 +369,10 @@ export function ChatInterface({
           <div
             className={cn(
               dashboardToolHeaderRowClass,
-              "flex-nowrap gap-2 py-2.5 sm:gap-3 sm:py-3",
+              "gap-2 py-2.5 md:gap-4 md:py-4",
             )}
           >
-            <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+            <div className={dashboardToolHeaderPrimaryClass}>
               <button
                 type="button"
                 onClick={() => setSidebarOpen(true)}
@@ -397,7 +399,7 @@ export function ChatInterface({
                 </span>
               </div>
             </div>
-            <div className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+            <div className={dashboardToolHeaderActionsClass}>
               <LanguageSwitcher
                 currentLocale={currentLocale}
                 className="max-w-[min(11rem,46vw)] sm:max-w-[13rem]"
@@ -458,7 +460,7 @@ export function ChatInterface({
 
         {/* Input area */}
         <div className="shrink-0 border-t border-border/50 bg-card/30 shadow-[0_-1px_0_0_oklch(0_0_0_/0.04)] backdrop-blur-xl dark:shadow-[0_-1px_0_0_oklch(1_0_0_/0.06)]">
-          <div className="mx-auto w-full max-w-5xl px-4 py-3 sm:px-8 md:px-10">
+          <div className="mx-auto w-full max-w-5xl px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-8 md:px-10">
             {/* Image attachments row */}
             {hasAttachments && (
               <div className="mb-2 flex flex-wrap items-center gap-2">

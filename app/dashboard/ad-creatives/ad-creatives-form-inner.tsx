@@ -19,7 +19,9 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { LogoutButton } from "@/components/logout-button";
 import { cn } from "@/lib/utils";
 import {
+  dashboardToolHeaderActionsClass,
   dashboardToolHeaderBarClass,
+  dashboardToolHeaderPrimaryClass,
   dashboardToolHeaderRowClass,
 } from "@/lib/dashboard-tool-layout";
 import { NoDnaState } from "./no-dna-state";
@@ -168,10 +170,10 @@ export function AdCreativesFormInner({
           <div
             className={cn(
               dashboardToolHeaderRowClass,
-              "gap-2 py-2.5 sm:gap-3 sm:py-3",
+              "gap-2 py-2.5 md:gap-4 md:py-4",
             )}
           >
-            <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+            <div className={dashboardToolHeaderPrimaryClass}>
               {hasLibrary ? (
                 <button
                   type="button"
@@ -200,7 +202,7 @@ export function AdCreativesFormInner({
                 </div>
               </div>
             </div>
-            <div className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+            <div className={dashboardToolHeaderActionsClass}>
               <LanguageSwitcher
                 currentLocale={currentLocale}
                 className="max-w-[min(11rem,46vw)] sm:max-w-[13rem]"

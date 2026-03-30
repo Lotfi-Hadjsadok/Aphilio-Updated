@@ -1,9 +1,13 @@
+"use client";
+
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { BotAvatar } from "./bot-avatar";
 import { ReferenceThumbsRow } from "./reference-thumbs-row";
 import type { PersistedMessage } from "@/types/chat";
 
 export function BotBubble({ message }: { message: PersistedMessage }) {
+  const t = useTranslations("chat.botBubble");
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-start gap-3">
@@ -11,7 +15,7 @@ export function BotBubble({ message }: { message: PersistedMessage }) {
         <div className="min-w-0 flex-1">
           {message.contextName && (
             <p className="mb-1 text-xs text-zinc-500">
-              Context:{" "}
+              {t("contextLabel")}{" "}
               <span className="font-medium text-zinc-800">{message.contextName}</span>
               {message.aspectRatio && (
                 <span className="ml-2 rounded border border-zinc-300 px-1.5 py-0.5 font-mono text-[0.65rem] text-zinc-600">
@@ -26,7 +30,7 @@ export function BotBubble({ message }: { message: PersistedMessage }) {
                 <Image
                   unoptimized
                   src={message.imageUrl}
-                  alt="Generated"
+                  alt={t("generatedImageAlt")}
                   width={360}
                   height={360}
                   className="h-auto w-full object-cover"
@@ -45,7 +49,7 @@ export function BotBubble({ message }: { message: PersistedMessage }) {
         <ReferenceThumbsRow urls={message.referenceImageUrls} />
       )}
       {message.imageUrl && (
-        <p className="pl-14 text-xs text-zinc-500">Saved to library</p>
+        <p className="pl-14 text-xs text-zinc-500">{t("savedToLibrary")}</p>
       )}
     </div>
   );

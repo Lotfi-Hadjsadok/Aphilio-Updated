@@ -1,0 +1,50 @@
+# CI/CD: SSH to VPS, pull, install, Prisma, build, PM2 reload.
+# Secrets: SSH_HOST, SSH_USER, SSH_PASSWORD, GIT_PAT (repo scope).
+# Optional: SSH_PORT (default 22), APP_DIR (default ~/aphilio on the server).
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy (build on VPS)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get update -qq && sudo apt-get install -y sshpass
+
+      - name: Pull, build and restart PM2 on VPS
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSHPASS: ${{ secrets.SSH_PASSWORD }}
+          SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+          APP_DIR: ${{ secrets.APP_DIR || '~/aphilio' }}
+          GIT_PAT: ${{ secrets.GIT_PAT }}
+          GIT_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          REMOTE="https://x-access-token:${GIT_PAT}@github.com/${GIT_REPOSITORY}.git"
+          sshpass -e ssh \
+            -o StrictHostKeyChecking=no \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=20 \
+            -p "${SSH_PORT}" "${SSH_USER}@${SSH_HOST}" \
+            "set -e && cd \"${APP_DIR}\" \
+              && git remote set-url origin \"${REMOTE}\" \
+              && git fetch origin \
+              && git reset --hard origin/main \
+              && npm install --legacy-peer-deps \
+              && npx prisma generate \
+              && npx prisma migrate deploy \
+              && npm run build \
+              && (pm2 reload ecosystem.config.cjs --update-env || pm2 start ecosystem.config.cjs) \
+              && pm2 save"

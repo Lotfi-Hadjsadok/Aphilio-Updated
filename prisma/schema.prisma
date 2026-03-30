@@ -39,6 +39,10 @@ model User {
   polarSubscriptionCurrentPeriodEnd  DateTime? @map("polar_subscription_current_period_end")
   /// When the subscription access ends (`ends_at`), if set; e.g. scheduled cancellation.
   polarSubscriptionEndsAt            DateTime? @map("polar_subscription_ends_at")
+  /// When false (default), image generation is blocked if cached credits are insufficient. When true, local balance may go negative until Polar sync.
+  allowCreditOverage Boolean @default(false) @map("allow_credit_overage")
+  /// When overage is allowed: max local debt in stored units (same scale as balance); null = no cap on how negative balance may go.
+  maxCreditOverageStoredUnits Int? @map("max_credit_overage_stored_units")
 
   sessions           Session[]
   accounts           Account[]

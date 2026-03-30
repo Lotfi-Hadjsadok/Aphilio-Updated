@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
  * and titles share one horizontal track and safe-area padding.
  */
 export const dashboardToolHeaderBarClass = cn(
-  "shrink-0 border-b border-border/40 bg-gradient-to-r from-card/80 via-card/50 to-card/30 backdrop-blur-xl",
+  "shrink-0 overflow-x-hidden border-b border-border/40 bg-gradient-to-r from-card/80 via-card/50 to-card/30 backdrop-blur-xl",
   "pt-[env(safe-area-inset-top)]",
 );
 
@@ -17,8 +17,17 @@ export const dashboardToolPageGutterClass = cn(
 
 /**
  * Full-width row: back + title flush left, actions flush right (`justify-between`).
+ * Below `md`, stacks into two rows so controls never force horizontal scrolling.
  */
 export const dashboardToolHeaderRowClass = cn(
-  "flex w-full min-w-0 flex-wrap items-center justify-between gap-3 py-3.5 sm:gap-4 sm:py-4",
+  "flex w-full min-w-0 flex-col gap-2 overflow-x-hidden py-3.5 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-4 md:py-4",
   dashboardToolPageGutterClass,
 );
+
+/** Primary block (back + title) in a tool header row — full width when stacked. */
+export const dashboardToolHeaderPrimaryClass =
+  "flex w-full min-w-0 items-center gap-2 sm:gap-3 md:flex-1 md:min-w-0";
+
+/** Actions block (language, logout, etc.) — full width row when stacked, auto width in toolbar row. */
+export const dashboardToolHeaderActionsClass =
+  "flex w-full min-w-0 flex-wrap items-center justify-end gap-1.5 md:w-auto md:shrink-0 sm:gap-2";

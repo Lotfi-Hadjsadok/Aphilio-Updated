@@ -15,6 +15,13 @@ import {
   requireAuthAndSubscription,
   ERR_UNAUTHORIZED,
 } from "@/lib/auth-guard";
+import {
+  creditCostForMode,
+  enqueuePolarCreditUsageIngest,
+  reserveCreditsAtGenerationStart,
+  revertOptimisticCreditsDeduction,
+} from "@/lib/polar/ingest-credits";
+import type { AdImageGenerationMode } from "@/types/ad-creatives";
 import { isSvgUrl, messageFromUnknownError } from "@/lib/utils";
 import type {
   ConversationSummary,
@@ -307,6 +314,14 @@ export async function sendChatMessageAction(
     uploadedReferenceImageUrls = uploadedReferenceResults.map((result) => result.publicUrl);
   }
 
+  const chatImageMode: AdImageGenerationMode =
+    rawMode === "premium" ? "premium" : "fast";
+  const creditCost = creditCostForMode(chatImageMode);
+  const reserved = await reserveCreditsAtGenerationStart(userId, creditCost);
+  if (!reserved.ok) {
+    return { status: "error", message: reserved.message };
+  }
+
   // ── Generate image ────────────────────────────────────────────────────────
   try {
     const generatedDataUrl = await generateImageFromPrompt(
@@ -388,6 +403,8 @@ export async function sendChatMessageAction(
       }),
     ]);
 
+    enqueuePolarCreditUsageIngest(userId, creditCost);
+
     return {
       status: "success",
       conversationId: targetConversationId,
@@ -397,6 +414,7 @@ export async function sendChatMessageAction(
       botMessage: rowToPersistedMessage(botMessage),
     };
   } catch (error) {
+    await revertOptimisticCreditsDeduction(userId, creditCost);
     return {
       status: "error",
       message: messageFromUnknownError(error, "Failed to generate image. Please try again."),

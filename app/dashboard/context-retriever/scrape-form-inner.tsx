@@ -137,7 +137,7 @@ export function ScrapeFormInner({ savedContexts }: { savedContexts: SavedContext
 
         <div
           className={cn(
-            "relative flex min-h-0 flex-1 flex-col items-center justify-center pb-10 pt-6 sm:pb-12 sm:pt-8",
+            "relative flex min-h-0 w-full min-w-0 flex-1 flex-col items-center justify-center overflow-y-auto overflow-x-hidden pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-6 sm:pb-12 sm:pt-8",
             dashboardToolPageGutterClass,
           )}
         >
@@ -145,18 +145,18 @@ export function ScrapeFormInner({ savedContexts }: { savedContexts: SavedContext
             <Globe className="h-8 w-8 text-foreground sm:h-10 sm:w-10" strokeWidth={1.5} />
           </div>
 
-          <div className="mb-8 w-full max-w-2xl space-y-3 text-center">
+          <div className="mb-8 w-full max-w-2xl space-y-3 px-0 text-center">
             <h1 className="font-heading text-balance text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
               {tDna("scrapeHeroTitle")}
             </h1>
-            <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
+            <p className="mx-auto max-w-[min(36rem,100%)] text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base">
               {tDna("scrapeHeroDescription")}
             </p>
           </div>
 
           <form
             action={formAction}
-            className="w-full max-w-lg shrink-0 space-y-4"
+            className="w-full max-w-lg min-w-0 shrink-0 space-y-4"
             onSubmit={(event) => {
               const rawUrl = new FormData(event.currentTarget).get("url");
               if (typeof rawUrl === "string") setSubmittedUrl(rawUrl.trim());

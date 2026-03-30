@@ -63,12 +63,16 @@ export function LockedToolActionCard({
   primary: isPrimary,
   iconAnimationDelaySeconds,
   checkoutSlug = "monthly",
+  activatePlanLabel,
+  unlockAriaLabel,
 }: {
   icon: ComponentType<{ className?: string; strokeWidth?: number }>;
   title: string;
   primary?: boolean;
   iconAnimationDelaySeconds?: number;
   checkoutSlug?: string;
+  activatePlanLabel: string;
+  unlockAriaLabel: string;
 }) {
   return (
     <a
@@ -80,7 +84,7 @@ export function LockedToolActionCard({
         "dark:hover:shadow-[0_8px_32px_-12px_rgba(251,191,36,0.12)] dark:hover:ring-amber-400/15",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
       )}
-      aria-label={`Activate plan to unlock ${title}`}
+      aria-label={unlockAriaLabel}
     >
       <span
         className="animate-dna-tool-shimmer pointer-events-none absolute inset-0 rounded-[inherit] bg-gradient-to-r from-fuchsia-500/10 via-transparent to-cyan-500/10 opacity-0 transition-opacity duration-300 group-hover/dna-tool:opacity-100"
@@ -160,7 +164,7 @@ export function LockedToolActionCard({
               className="size-2.5 shrink-0 text-amber-500/75 transition-colors duration-300 group-hover/dna-tool:text-amber-600 dark:text-amber-400/75 dark:group-hover/dna-tool:text-amber-300"
               aria-hidden
             />
-            <span className="uppercase">Activate plan</span>
+            <span className="uppercase">{activatePlanLabel}</span>
           </span>
         </div>
       </div>

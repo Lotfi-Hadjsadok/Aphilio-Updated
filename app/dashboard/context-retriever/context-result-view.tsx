@@ -9,7 +9,9 @@ import type { DeleteDNAState, ScrapeResult } from "@/types/scrape";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { DashboardBackIcon } from "@/components/dashboard-back-link";
 import {
+  dashboardToolHeaderActionsClass,
   dashboardToolHeaderBarClass,
+  dashboardToolHeaderPrimaryClass,
   dashboardToolHeaderRowClass,
 } from "@/lib/dashboard-tool-layout";
 import { Badge } from "@/components/ui/badge";
@@ -90,7 +92,7 @@ export function ResultExperience({
     <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden">
       <header className={cn(dashboardToolHeaderBarClass, "relative z-10")}>
         <div className={dashboardToolHeaderRowClass}>
-          <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className={cn(dashboardToolHeaderPrimaryClass, "gap-3")}>
             <DashboardBackIcon
               href={backHref}
               ariaLabel={backAriaLabel}
@@ -116,7 +118,7 @@ export function ResultExperience({
             </div>
           </div>
 
-          <div className="flex w-full flex-wrap items-center justify-end gap-1.5 sm:w-auto">
+          <div className={dashboardToolHeaderActionsClass}>
             {fromLibrary && (
               <DeleteDnaButton
                 contextId={result.id}

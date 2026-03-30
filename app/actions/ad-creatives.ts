@@ -29,8 +29,8 @@ import {
 } from "@/lib/auth-guard";
 import {
   creditCostForMode,
-  deductCreditsOptimisticallyLocally,
   enqueuePolarCreditUsageIngest,
+  reserveCreditsAtGenerationStart,
   revertOptimisticCreditsDeduction,
 } from "@/lib/polar/ingest-credits";
 import { messageFromUnknownError } from "@/lib/utils";
@@ -306,7 +306,10 @@ export async function generateImageFromPromptAction(
   if (!contextId) return { status: "error", message: "No context ID provided." };
 
   const creditCost = creditCostForMode(rawMode);
-  await deductCreditsOptimisticallyLocally(userId, creditCost);
+  const reserved = await reserveCreditsAtGenerationStart(userId, creditCost);
+  if (!reserved.ok) {
+    return { status: "error", message: reserved.message };
+  }
 
   try {
     let generatedImageUrl: string;

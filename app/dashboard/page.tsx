@@ -9,6 +9,7 @@ import {
   LayoutTemplate,
   Lock,
   MessageSquare,
+  Settings,
   Sparkles,
 } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -27,7 +28,7 @@ import { getUserSubscriptionStatus } from "@/lib/polar/subscription";
 type ToolCardProps = {
   href: string;
   title: string;
-  description: string;
+  description?: string;
   actionLabel: string;
   icon: React.ReactNode;
   accent?: string;
@@ -64,9 +65,9 @@ function ToolCard({
             <p className="font-heading text-lg font-semibold tracking-tight text-foreground sm:text-xl">
               {title}
             </p>
-            <p className="text-[0.8rem] leading-relaxed text-muted-foreground sm:text-sm">
-              {description}
-            </p>
+            {description ? (
+              <p className="text-[0.8rem] leading-relaxed text-muted-foreground sm:text-sm">{description}</p>
+            ) : null}
           </div>
           <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-gradient">
             {actionLabel}
@@ -86,6 +87,8 @@ type LockedToolCardProps = {
   description: string;
   icon: React.ReactNode;
   checkoutSlug: string;
+  activatePlanLabel: string;
+  unlockAriaLabel: string;
 };
 
 function LockedToolCard({
@@ -93,12 +96,14 @@ function LockedToolCard({
   description,
   icon,
   checkoutSlug,
+  activatePlanLabel,
+  unlockAriaLabel,
 }: LockedToolCardProps) {
   return (
     <a
       href={`/api/checkout/start?slug=${checkoutSlug}`}
       className={cn("group block h-full", dashboardNavFocusRingClass)}
-      aria-label={`Activate plan to unlock ${title}`}
+      aria-label={unlockAriaLabel}
     >
       <div className="dashboard-tool-card relative flex h-full flex-col overflow-hidden">
         {/* Blurred / dimmed base content */}
@@ -127,11 +132,11 @@ function LockedToolCard({
             />
           </div>
 
-          {/* "Activate Plan" label — slides up on hover */}
+          {/* Locked CTA label — slides up on hover */}
           <div className="translate-y-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-background/80 px-3 py-1.5 text-xs font-semibold text-foreground ring-1 ring-border/60 backdrop-blur-sm">
               <Sparkles className="size-3 text-amber-400" aria-hidden />
-              Activate Plan
+              {activatePlanLabel}
             </span>
           </div>
         </div>
@@ -176,35 +181,50 @@ export default async function DashboardPage() {
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border/80 to-transparent" />
       </div>
 
-      <div className="relative mx-auto flex h-full min-h-0 w-full max-w-6xl flex-1 flex-col px-4 py-6 sm:px-8 sm:py-8">
+      <div className="relative mx-auto flex h-full min-h-0 w-full max-w-6xl flex-1 flex-col px-4 pt-6 pb-[max(3rem,env(safe-area-inset-bottom))] sm:px-8 sm:py-8">
         {/* Top bar: logo + language + library */}
-        <header className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
-          <BrandLogoLink className="shrink-0" />
-          <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center sm:mx-4">
+        <header className="flex w-full min-w-0 flex-col gap-3 overflow-x-hidden sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
+          <BrandLogoLink className="min-w-0 max-w-full shrink-0 self-start sm:self-auto" />
+          <div className="flex min-h-0 min-w-0 w-full flex-1 items-center justify-center sm:mx-4 sm:w-auto">
             <LanguageSwitcher currentLocale={locale} />
           </div>
-          <div className="flex w-fit shrink-0 flex-wrap items-center justify-center gap-2 self-center sm:self-auto">
+          <div className="flex w-full min-w-0 shrink-0 flex-wrap items-center justify-center gap-2 self-center sm:w-fit sm:self-auto">
             {isSubscribed ? (
-              <Link
-                href="/dashboard/library"
-                className={cn(dashboardNavPillLinkClassName, "w-fit")}
-              >
-                <Images className="size-4" strokeWidth={1.75} />
-                {t("dashboard.library")}
-              </Link>
+              <>
+                <Link
+                  href="/dashboard/library"
+                  className={cn(dashboardNavPillLinkClassName, "w-fit")}
+                >
+                  <Images className="size-4" strokeWidth={1.75} />
+                  {t("dashboard.library")}
+                </Link>
+                <Link
+                  href="/dashboard/settings"
+                  className={cn(dashboardNavPillLinkClassName, "w-fit")}
+                >
+                  <Settings className="size-4" strokeWidth={1.75} />
+                  {t("dashboard.settings")}
+                </Link>
+              </>
             ) : (
-              <a
-                href="/api/checkout/start?slug=monthly"
-                className={cn(
-                  dashboardNavPillLinkClassName,
-                  "w-fit opacity-90 ring-1 ring-border/40",
-                )}
-                aria-label={t("dashboard.libraryLockedAria")}
-              >
-                <Lock className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden />
-                <Images className="size-4 opacity-70" strokeWidth={1.75} aria-hidden />
-                {t("dashboard.library")}
-              </a>
+              <>
+                <Link href="/dashboard/settings" className={cn(dashboardNavPillLinkClassName, "w-fit")}>
+                  <Settings className="size-4" strokeWidth={1.75} />
+                  {t("dashboard.settings")}
+                </Link>
+                <a
+                  href="/api/checkout/start?slug=monthly"
+                  className={cn(
+                    dashboardNavPillLinkClassName,
+                    "w-fit opacity-90 ring-1 ring-border/40",
+                  )}
+                  aria-label={t("dashboard.libraryLockedAria")}
+                >
+                  <Lock className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden />
+                  <Images className="size-4 opacity-70" strokeWidth={1.75} aria-hidden />
+                  {t("dashboard.library")}
+                </a>
+              </>
             )}
             <LogoutButton />
           </div>
@@ -250,6 +270,10 @@ export default async function DashboardPage() {
                 description={t("dashboard.tools.chat.description")}
                 icon={<MessageSquare className="h-6 w-6 text-foreground/50" strokeWidth={1.65} aria-hidden />}
                 checkoutSlug="monthly"
+                activatePlanLabel={t("dashboard.activatePlan")}
+                unlockAriaLabel={t("dashboard.activatePlanUnlockAria", {
+                  title: t("dashboard.tools.chat.title"),
+                })}
               />
             )}
             {isSubscribed ? (
@@ -266,28 +290,32 @@ export default async function DashboardPage() {
                 description={t("dashboard.tools.adCreatives.description")}
                 icon={<LayoutTemplate className="h-6 w-6 text-foreground/50" strokeWidth={1.65} aria-hidden />}
                 checkoutSlug="monthly"
+                activatePlanLabel={t("dashboard.activatePlan")}
+                unlockAriaLabel={t("dashboard.activatePlanUnlockAria", {
+                  title: t("dashboard.tools.adCreatives.title"),
+                })}
               />
             )}
           </div>
         </section>
 
-        {/* Workflow hint — subtle bottom strip */}
-        <footer className="mt-auto shrink-0 pb-2 pt-6 sm:pt-8">
-          <div className="flex items-center justify-center gap-6 text-[0.7rem] font-medium uppercase tracking-[0.18em] text-muted-foreground/60 sm:gap-8 sm:text-xs">
+        {/* Workflow hint — desktop / tablet only */}
+        <footer className="mt-auto hidden shrink-0 justify-center pt-6 sm:flex sm:pt-8">
+          <div className="flex flex-wrap items-center justify-center gap-6 text-[0.7rem] font-medium uppercase tracking-[0.18em] text-muted-foreground/60 sm:gap-8 sm:text-xs">
             <span className="flex items-center gap-2">
               <span className="flex h-5 w-5 items-center justify-center rounded-md bg-muted/60 text-[0.6rem] font-bold text-muted-foreground ring-1 ring-border/50">
                 1
               </span>
               {t("dashboard.workflow.capture")}
             </span>
-            <ArrowRight className="size-3 text-muted-foreground/40" aria-hidden />
+            <ArrowRight className="size-3 shrink-0 text-muted-foreground/40" aria-hidden />
             <span className="flex items-center gap-2">
               <span className="flex h-5 w-5 items-center justify-center rounded-md bg-muted/60 text-[0.6rem] font-bold text-muted-foreground ring-1 ring-border/50">
                 2
               </span>
               {t("dashboard.workflow.create")}
             </span>
-            <ArrowRight className="size-3 text-muted-foreground/40" aria-hidden />
+            <ArrowRight className="size-3 shrink-0 text-muted-foreground/40" aria-hidden />
             <span className="flex items-center gap-2">
               <span className="flex h-5 w-5 items-center justify-center rounded-md bg-muted/60 text-[0.6rem] font-bold text-muted-foreground ring-1 ring-border/50">
                 3

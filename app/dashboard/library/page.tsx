@@ -38,9 +38,9 @@ export default async function LibraryPage() {
 
       <div className="relative mx-auto w-full max-w-6xl px-4 py-6 sm:px-8 sm:py-8">
         {/* Top bar: logo + back */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <BrandLogoLink />
-          <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 overflow-x-hidden">
+          <BrandLogoLink className="min-w-0 max-w-full" />
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
             <DashboardBackPill label={tCommon("dashboard")} />
             <LogoutButton />
           </div>
@@ -52,7 +52,7 @@ export default async function LibraryPage() {
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-accent-gradient-subtle shadow-lg ring-1 ring-border/60">
               <Images className="h-6 w-6 text-foreground" strokeWidth={1.65} />
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl lg:text-4xl">
                 {t("title")}
               </h1>

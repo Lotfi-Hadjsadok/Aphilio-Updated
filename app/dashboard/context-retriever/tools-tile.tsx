@@ -15,6 +15,7 @@ export function ToolsTile({
   isSubscribed: boolean;
 }) {
   const tCtx = useTranslations("dna.contextResult");
+  const tDashboard = useTranslations("dashboard");
   return (
     <BentoTile
       label={tCtx("workspaceTools")}
@@ -44,6 +45,8 @@ export function ToolsTile({
             title={tCtx("openInChat")}
             primary
             iconAnimationDelaySeconds={0}
+            activatePlanLabel={tDashboard("activatePlan")}
+            unlockAriaLabel={tDashboard("activatePlanUnlockAria", { title: tCtx("openInChat") })}
           />
         )}
         {isSubscribed ? (
@@ -58,6 +61,8 @@ export function ToolsTile({
             icon={Wand2}
             title={tCtx("openAdCreatives")}
             iconAnimationDelaySeconds={0.35}
+            activatePlanLabel={tDashboard("activatePlan")}
+            unlockAriaLabel={tDashboard("activatePlanUnlockAria", { title: tCtx("openAdCreatives") })}
           />
         )}
       </div>
