@@ -11,6 +11,8 @@ import {
 import type { LoadAdCreativesDnaState } from "@/types/ad-creatives";
 import { requireSubscriptionOrRedirectToPlans } from "@/lib/polar/subscription";
 import prisma from "@/lib/prisma";
+import { creditStoredUnitsForMode } from "@/lib/polar/ingest-credits";
+import type { AdImageGenerationMode } from "@/types/ad-creatives";
 import { AdCreativesForm } from "./ad-creatives-form";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -62,6 +64,11 @@ export default async function AdCreativesPage({ searchParams }: PageProps) {
 
   const initialContextIdForPicker = resumePayload?.contextId ?? contextId;
 
+  const modes: AdImageGenerationMode[] = ["fast", "premium"];
+  const creditCostStoredUnitsByMode = Object.fromEntries(
+    modes.map((mode) => [mode, creditStoredUnitsForMode(mode)]),
+  ) as Record<AdImageGenerationMode, number>;
+
   return (
     <main className="landing-grid-bg ad-studio-page-edge-glow relative flex h-full min-h-0 w-full flex-1 flex-col overflow-x-hidden overflow-y-hidden bg-background text-foreground antialiased">
       <AdCreativesForm
@@ -74,6 +81,7 @@ export default async function AdCreativesPage({ searchParams }: PageProps) {
         resumeLoadError={resumeLoadError}
         currentLocale={locale}
         initialCreditsBalanceStored={userRow?.aphilioCreditsBalance ?? 0}
+        creditCostStoredUnitsByMode={creditCostStoredUnitsByMode}
       />
     </main>
   );

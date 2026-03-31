@@ -4,7 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import { loadDnaForAdCreativesAction } from "@/app/actions/ad-creatives";
 import type { AdStudioResumePayload } from "@/app/actions/ad-creative-studio-sessions";
 import type { SavedContextSummary } from "@/types/scrape";
-import type { LoadAdCreativesDnaState } from "@/types/ad-creatives";
+import type { AdImageGenerationMode, LoadAdCreativesDnaState } from "@/types/ad-creatives";
 import { APHILIO_GA_EVENTS } from "@/lib/analytics/events";
 import { trackGaEvent } from "@/lib/analytics/track-client";
 import { usePendingEdge } from "./use-pending-edge";
@@ -21,6 +21,7 @@ export function AdCreativesBrandStudioBody({
   onReturnToBrandPicker,
   onFlowChrome,
   initialCreditsBalanceStored,
+  creditCostStoredUnitsByMode,
 }: {
   savedContexts: SavedContextSummary[];
   initialLoadState?: LoadAdCreativesDnaState;
@@ -29,6 +30,7 @@ export function AdCreativesBrandStudioBody({
   onReturnToBrandPicker: () => void;
   onFlowChrome: (meta: { hasReadyBrand: boolean; activeStudioSessionId: string | null }) => void;
   initialCreditsBalanceStored: number;
+  creditCostStoredUnitsByMode: Record<AdImageGenerationMode, number>;
 }) {
   const [loadState, loadFormAction, loadPending] = useActionState(
     loadDnaForAdCreativesAction,
@@ -69,6 +71,7 @@ export function AdCreativesBrandStudioBody({
       resume={resumePayload}
       onChangeDna={onReturnToBrandPicker}
       initialCreditsBalanceStored={initialCreditsBalanceStored}
+      creditCostStoredUnitsByMode={creditCostStoredUnitsByMode}
     />
   ) : (
     <DnaSelectionStep

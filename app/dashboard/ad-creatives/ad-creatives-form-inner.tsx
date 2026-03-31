@@ -12,7 +12,7 @@ import {
   type ListAdStudioSessionsState,
 } from "@/app/actions/ad-creative-studio-sessions";
 import type { SavedContextSummary } from "@/types/scrape";
-import type { LoadAdCreativesDnaState } from "@/types/ad-creatives";
+import type { AdImageGenerationMode, LoadAdCreativesDnaState } from "@/types/ad-creatives";
 import { Button } from "@/components/ui/button";
 import { DashboardBackIcon } from "@/components/dashboard/dashboard-back-icon";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -41,6 +41,7 @@ export function AdCreativesFormInner({
   resumeLoadError,
   currentLocale,
   initialCreditsBalanceStored,
+  creditCostStoredUnitsByMode,
   onChangeDnaRequest,
   onOpenSession,
 }: {
@@ -52,6 +53,7 @@ export function AdCreativesFormInner({
   resumeLoadError: string | null;
   currentLocale: string;
   initialCreditsBalanceStored: number;
+  creditCostStoredUnitsByMode: Record<AdImageGenerationMode, number>;
   onChangeDnaRequest: () => void;
   onOpenSession: (studioSessionId: string) => void;
 }) {
@@ -259,6 +261,7 @@ export function AdCreativesFormInner({
               onReturnToBrandPicker={handleReturnToBrandPicker}
               onFlowChrome={reportFlowChrome}
               initialCreditsBalanceStored={initialCreditsBalanceStored}
+              creditCostStoredUnitsByMode={creditCostStoredUnitsByMode}
             />
           )}
         </div>

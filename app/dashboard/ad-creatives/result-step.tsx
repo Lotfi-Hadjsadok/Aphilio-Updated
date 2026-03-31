@@ -5,6 +5,7 @@ import { ChevronLeft, Coins, Loader2, Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type {
   AdCreativesDnaPayload,
+  AdImageGenerationMode,
   GenerateAdPromptsState,
   SelectAngleState,
   SelectedTemplate,
@@ -28,6 +29,7 @@ export function ResultStep({
   selectedTemplates,
   initialSlotOutcomes,
   initialCreditsBalanceStored,
+  creditCostStoredUnitsByMode,
   journeyFurthestStep,
   onJourneyStepClick,
 }: {
@@ -42,6 +44,7 @@ export function ResultStep({
   selectedTemplates: SelectedTemplate[];
   initialSlotOutcomes?: StudioSlotOutcomePersisted[];
   initialCreditsBalanceStored: number;
+  creditCostStoredUnitsByMode: Record<AdImageGenerationMode, number>;
   journeyFurthestStep: number;
   onJourneyStepClick: (step: number) => void;
 }) {
@@ -190,6 +193,7 @@ export function ResultStep({
                   onSlotUpdate={handleSlotUpdate}
                   onCreditPending={handleCreditPending}
                   onCreditReverted={handleCreditReverted}
+                  creditCostStoredUnitsByMode={creditCostStoredUnitsByMode}
                 />
               ))}
             </div>

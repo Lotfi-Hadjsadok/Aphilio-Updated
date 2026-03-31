@@ -81,9 +81,9 @@ export const metadata: Metadata = {
   authors: [{ name: "Aphilio" }],
   creator: "Aphilio",
   icons: {
-    icon: [{ url: "/aphilio-logo.webp", type: "image/webp", sizes: "1024x1024" }],
-    apple: [{ url: "/aphilio-logo.webp", type: "image/webp", sizes: "1024x1024" }],
-    shortcut: "/aphilio-logo.webp",
+    icon: [{ url: "/favicon.png", type: "image/png" }],
+    apple: [{ url: "/favicon.png", type: "image/png" }],
+    shortcut: "/favicon.png",
   },
   openGraph: {
     title: "Aphilio: Turn Any URL Into On-Brand Ad Creatives",

@@ -19,11 +19,6 @@ import { ErrorBanner } from "./error-banner";
 import { CreativeSummaryBlock } from "./creative-summary-block";
 import { QualityToggle } from "./quality-toggle";
 
-const CREDIT_STORED_UNITS: Record<AdImageGenerationMode, number> = {
-  fast: 100,
-  premium: 150,
-};
-
 function buildInitialImageState(
   prompt: GeneratedAdPrompt,
   initialSlot: StudioSlotOutcomePersisted | undefined,
@@ -51,6 +46,7 @@ export function GeneratedAdCard({
   onSlotUpdate,
   onCreditPending,
   onCreditReverted,
+  creditCostStoredUnitsByMode,
 }: {
   prompt: GeneratedAdPrompt;
   contextId: string;
@@ -60,6 +56,7 @@ export function GeneratedAdCard({
   onSlotUpdate?: (slotIndex: number, outcome: StudioSlotOutcomePersisted) => void;
   onCreditPending?: (storedUnits: number) => void;
   onCreditReverted?: (storedUnits: number) => void;
+  creditCostStoredUnitsByMode: Record<AdImageGenerationMode, number>;
 }) {
   const tGen = useTranslations("adCreatives.generatedCard");
   const tCommon = useTranslations("common");
@@ -74,7 +71,7 @@ export function GeneratedAdCard({
     const hadImageBefore = imageState.status === "success";
     const modeFromForm = String(formData.get("imageModel") ?? "fast") as AdImageGenerationMode;
     const aspectRatioFromForm = String(formData.get("aspectRatio") ?? prompt.aspectRatio);
-    const storedUnits = CREDIT_STORED_UNITS[modeFromForm];
+    const storedUnits = creditCostStoredUnitsByMode[modeFromForm];
 
     trackGaEvent(APHILIO_GA_EVENTS.adStudioImageGenerationStart, {
       slot_index: slotIndex,
@@ -139,7 +136,7 @@ export function GeneratedAdCard({
     const formData = new FormData(event.currentTarget);
     const modeFromForm = String(formData.get("imageModel") ?? "fast") as AdImageGenerationMode;
     setRegenerateErrorMessage(null);
-    onCreditPending?.(CREDIT_STORED_UNITS[modeFromForm]);
+    onCreditPending?.(creditCostStoredUnitsByMode[modeFromForm]);
     setIsGenerating(true);
     void runImageGeneration(formData);
   }

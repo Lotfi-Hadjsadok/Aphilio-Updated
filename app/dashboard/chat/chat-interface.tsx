@@ -14,6 +14,7 @@ import { useTranslations } from "next-intl";
 import Image from "next/image";
 import {
   ArrowUp,
+  Coins,
   ImagePlus,
   Loader2,
   Menu,
@@ -79,6 +80,8 @@ type ChatInterfaceProps = {
   initialConversations: ConversationSummary[];
   initialContextId?: string;
   currentLocale: string;
+  initialCreditsBalanceStored: number;
+  creditCostStoredUnitsByMode: Record<ChatImageMode, number>;
 };
 
 export function ChatInterface({
@@ -86,6 +89,8 @@ export function ChatInterface({
   initialConversations,
   initialContextId,
   currentLocale,
+  initialCreditsBalanceStored,
+  creditCostStoredUnitsByMode,
 }: ChatInterfaceProps) {
   const t = useTranslations("chat");
   const tCommon = useTranslations("common");
@@ -102,6 +107,14 @@ export function ChatInterface({
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [showImagePanel, setShowImagePanel] = useState(false);
   const [textValue, setTextValue] = useState("");
+
+  const [balanceAdjustmentStoredUnits, setBalanceAdjustmentStoredUnits] = useState(0);
+  const displayCredits = (initialCreditsBalanceStored + balanceAdjustmentStoredUnits) / 100;
+  const displayCreditsFormatted = displayCredits.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+  const pendingCreditCostRef = useRef(0);
 
   const messagesScrollRootRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -192,6 +205,7 @@ export function ChatInterface({
   useEffect(() => {
     if (isSendPending) return;
     if (sendState.status === "success") {
+      pendingCreditCostRef.current = 0;
       setLocalMessages((prev) => {
         const withoutOptimistic = prev.filter(
           (message) => !message.id.startsWith("optimistic-"),
@@ -219,6 +233,11 @@ export function ChatInterface({
               : conversation,
           ),
         );
+      }
+    } else if (sendState.status === "error") {
+      if (pendingCreditCostRef.current > 0) {
+        setBalanceAdjustmentStoredUnits((prev) => prev + pendingCreditCostRef.current);
+        pendingCreditCostRef.current = 0;
       }
     }
   }, [isSendPending, sendState]);
@@ -328,6 +347,10 @@ export function ChatInterface({
       createdAt: new Date().toISOString(),
     };
 
+    const costUnits = creditCostStoredUnitsByMode[imageMode];
+    pendingCreditCostRef.current = costUnits;
+    setBalanceAdjustmentStoredUnits((prev) => prev - costUnits);
+
     // Urgent (non-transition) updates — render immediately
     setLocalMessages((prev) => [...prev, optimisticUserMessage]);
     setTextValue("");
@@ -395,6 +418,10 @@ export function ChatInterface({
               </div>
             </div>
             <div className={dashboardToolHeaderActionsClass}>
+              <div className="flex items-center gap-1.5 rounded-full border border-border/50 bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground">
+                <Coins className="size-3 shrink-0" aria-hidden />
+                <span className="tabular-nums">{displayCreditsFormatted}</span>
+              </div>
               <LanguageSwitcher currentLocale={currentLocale} />
               <LogoutButton
                 className="h-8 px-2.5 text-xs"
@@ -448,6 +475,10 @@ export function ChatInterface({
               </div>
             </div>
             <div className={dashboardToolHeaderActionsClass}>
+              <div className="flex items-center gap-1 rounded-full border border-border/50 bg-muted/40 px-2 py-1 text-xs text-muted-foreground">
+                <Coins className="size-3 shrink-0" aria-hidden />
+                <span className="tabular-nums">{displayCreditsFormatted}</span>
+              </div>
               <LanguageSwitcher
                 currentLocale={currentLocale}
                 className="max-w-[min(11rem,46vw)] sm:max-w-[13rem]"

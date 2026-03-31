@@ -16,6 +16,11 @@ export function creditCostForMode(mode: AdImageGenerationMode): number {
     : Number(process.env.APHILIO_CREDIT_COST_FAST ?? DEFAULT_CREDIT_COST_FAST);
 }
 
+/** Same units as DB / {@link reserveCreditsAtGenerationStart}; driven by env credit amounts. */
+export function creditStoredUnitsForMode(mode: AdImageGenerationMode): number {
+  return creditAmountToStoredUnits(creditCostForMode(mode));
+}
+
 export const INSUFFICIENT_CREDITS_MESSAGE =
   "You do not have enough credits for this generation. Add credits or enable spending beyond your balance in Settings.";
 

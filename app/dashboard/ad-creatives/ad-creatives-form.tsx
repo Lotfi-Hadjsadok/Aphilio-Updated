@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import type { SavedContextSummary } from "@/types/scrape";
-import type { LoadAdCreativesDnaState } from "@/types/ad-creatives";
+import type { AdImageGenerationMode, LoadAdCreativesDnaState } from "@/types/ad-creatives";
 import type {
   AdStudioResumePayload,
   AdStudioSessionListItem,
@@ -18,6 +18,7 @@ export function AdCreativesForm({
   resumeLoadError,
   currentLocale,
   initialCreditsBalanceStored,
+  creditCostStoredUnitsByMode,
 }: {
   savedContexts: SavedContextSummary[];
   initialStudioSessions: AdStudioSessionListItem[];
@@ -27,6 +28,7 @@ export function AdCreativesForm({
   resumeLoadError: string | null;
   currentLocale: string;
   initialCreditsBalanceStored: number;
+  creditCostStoredUnitsByMode: Record<AdImageGenerationMode, number>;
 }) {
   const router = useRouter();
 
@@ -40,6 +42,7 @@ export function AdCreativesForm({
       resumeLoadError={resumeLoadError}
       currentLocale={currentLocale}
       initialCreditsBalanceStored={initialCreditsBalanceStored}
+      creditCostStoredUnitsByMode={creditCostStoredUnitsByMode}
       onChangeDnaRequest={() => {
         router.replace("/dashboard/ad-creatives");
       }}
