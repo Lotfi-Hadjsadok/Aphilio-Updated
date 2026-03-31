@@ -1,5 +1,6 @@
 "use client";
 
+import { isGoogleAnalyticsAllowed } from "@/lib/analytics/allowed";
 import type { AphilioGaEventParams } from "@/lib/analytics/events";
 
 declare global {
@@ -13,13 +14,14 @@ function measurementId(): string | undefined {
 }
 
 export function isGoogleAnalyticsConfigured(): boolean {
-  return Boolean(measurementId());
+  return Boolean(measurementId()) && isGoogleAnalyticsAllowed();
 }
 
 /**
  * Sends a GA4 event via gtag (client-only). Params are limited to primitives GA accepts.
  */
 export function trackGaEvent(eventName: string, eventParams?: AphilioGaEventParams): void {
+  if (!isGoogleAnalyticsAllowed()) return;
   const gaId = measurementId();
   if (!gaId || typeof window === "undefined") return;
   const gtagFn = window.gtag;
@@ -31,6 +33,7 @@ export function trackGaEvent(eventName: string, eventParams?: AphilioGaEventPara
  * SPA / client navigation page views (initial load is handled by gtag config).
  */
 export function trackGaPageView(pagePath: string, pageTitle?: string): void {
+  if (!isGoogleAnalyticsAllowed()) return;
   const gaId = measurementId();
   if (!gaId || typeof window === "undefined") return;
   const gtagFn = window.gtag;

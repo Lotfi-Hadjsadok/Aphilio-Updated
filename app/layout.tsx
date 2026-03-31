@@ -15,9 +15,12 @@ import {
   GoogleAnalyticsPageViews,
   GoogleAnalyticsScripts,
 } from "@/components/analytics/google-analytics";
+import { isGoogleAnalyticsAllowed } from "@/lib/analytics/allowed";
 import "./globals.css";
 
 const gaMeasurementId = process.env.NEXT_PUBLIC_GTM_ID;
+const shouldLoadGoogleAnalytics =
+  Boolean(gaMeasurementId) && isGoogleAnalyticsAllowed();
 
 const inter = Inter({
   variable: "--font-inter",
@@ -143,7 +146,7 @@ export default async function RootLayout({
       className={`${inter.variable} ${cairo.variable} ${baloo2.variable} ${fuzzyBubbles.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        {gaMeasurementId ? (
+        {shouldLoadGoogleAnalytics && gaMeasurementId ? (
           <>
             <GoogleAnalyticsScripts measurementId={gaMeasurementId} />
             <GoogleAnalyticsPageViews />

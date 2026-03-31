@@ -16,7 +16,6 @@ import { updateAdStudioSessionActiveStepAction } from "@/app/actions/ad-creative
 import type { AdStudioResumePayload } from "@/app/actions/ad-creative-studio-sessions";
 import type {
   AdCreativesDnaPayload,
-  AdImageGenerationMode,
   GenerateAdPromptsState,
   SelectAngleState,
   SelectedTemplate,
@@ -47,14 +46,10 @@ export function AdCreativesGenerateBlock({
   payload,
   resume,
   onChangeDna,
-  initialCreditsBalanceStored,
-  creditCostStoredUnitsByMode,
 }: {
   payload: AdCreativesDnaPayload;
   resume: AdStudioResumePayload | null;
   onChangeDna: () => void;
-  initialCreditsBalanceStored: number;
-  creditCostStoredUnitsByMode: Record<AdImageGenerationMode, number>;
 }) {
   const initialSelectAngle: SelectAngleState =
     resume?.selectAngleState.status === "ready" ? resume.selectAngleState : initialSelectAngleState;
@@ -236,8 +231,6 @@ export function AdCreativesGenerateBlock({
           selectAngleState={selectAngleState}
           selectedTemplates={selectedTemplates}
           initialSlotOutcomes={resume?.slotOutcomes}
-          initialCreditsBalanceStored={initialCreditsBalanceStored}
-          creditCostStoredUnitsByMode={creditCostStoredUnitsByMode}
           journeyFurthestStep={furthestStep}
           onJourneyStepClick={handleJourneyStepClick}
         />

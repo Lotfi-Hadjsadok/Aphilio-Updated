@@ -6,9 +6,11 @@ export async function getUserSubscriptionStatus(userId: string): Promise<boolean
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { hasActiveSubscription: true },
+      select: { hasActiveSubscription: true, aphilioCreditsBalance: true },
     });
-    return user?.hasActiveSubscription ?? false;
+    if (!user) return false;
+    const hasCredits = user.aphilioCreditsBalance > 0;
+    return user.hasActiveSubscription || hasCredits;
   } catch {
     return false;
   }
@@ -16,7 +18,9 @@ export async function getUserSubscriptionStatus(userId: string): Promise<boolean
 
 /**
  * Subscribed-only app routes: sends logged-in users without an active plan to `/plans`
- * (with optional return path). Uses cached `hasActiveSubscription` (no Polar API call).
+ * (with optional return path). Uses cached `hasActiveSubscription` and
+ * `aphilioCreditsBalance` (no Polar API call): any positive credit balance counts as access
+ * (e.g. demo grants via Polar ingest).
  */
 export async function requireSubscriptionOrRedirectToPlans(params: {
   userId: string;

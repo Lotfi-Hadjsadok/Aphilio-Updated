@@ -7,8 +7,6 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import { BrandLogoLink } from "@/components/brand-logo";
 import { AccountSettingsCard } from "@/components/settings/account-settings-card";
-import { BillingSettingsForm } from "@/components/settings/billing-settings-form";
-import { CreditsLockedCta } from "@/components/settings/credits-locked-cta";
 import { PreferencesSettingsCard } from "@/components/settings/preferences-settings-card";
 import { SettingsShell } from "@/components/settings/settings-shell";
 import { SubscriptionSettingsPanel } from "@/components/settings/subscription-settings-panel";
@@ -51,9 +49,6 @@ export default async function SettingsPage({ searchParams }: PageProps) {
     select: {
       onboardingCompleted: true,
       preferredLanguage: true,
-      aphilioCreditsBalance: true,
-      allowCreditOverage: true,
-      maxCreditOverageStoredUnits: true,
       createdAt: true,
       polarSubscriptionStatus: true,
       polarSubscriptionCurrentPeriodEnd: true,
@@ -72,11 +67,6 @@ export default async function SettingsPage({ searchParams }: PageProps) {
     where: { userId: session.user.id },
     orderBy: { createdAt: "asc" },
     select: { providerId: true },
-  });
-
-  const creditsBalanceDisplay = (user.aphilioCreditsBalance / 100).toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
   });
 
   const locale = await getLocale();
@@ -167,21 +157,6 @@ export default async function SettingsPage({ searchParams }: PageProps) {
                 currentPeriodEnd={user.polarSubscriptionCurrentPeriodEnd}
                 endsAt={user.polarSubscriptionEndsAt}
               />
-            }
-            creditsPanel={
-              isSubscribed ? (
-                <BillingSettingsForm
-                  initialAllowCreditOverage={user.allowCreditOverage}
-                  initialMaxCreditOverageStoredUnits={user.maxCreditOverageStoredUnits}
-                  creditsBalanceDisplay={creditsBalanceDisplay}
-                />
-              ) : (
-                <CreditsLockedCta
-                  title={t("creditsLockedTitle")}
-                  description={t("creditsLockedDescription")}
-                  buttonLabel={t("creditsSubscribeButton")}
-                />
-              )
             }
             preferencesPanel={<PreferencesSettingsCard currentLocale={locale} />}
           />

@@ -32,9 +32,10 @@ export function DeleteConfirmDialog({
         <Trash2 className="size-3.5" />
       </AlertDialog.Trigger>
       <AlertDialog.Portal>
-        <AlertDialog.Backdrop className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]" />
+        {/* Above DnaLibrarySidebar (z-[100] / z-[101]) */}
+        <AlertDialog.Backdrop className="fixed inset-0 z-[110] bg-black/40 backdrop-blur-[2px]" />
         <AlertDialog.Viewport>
-          <AlertDialog.Popup className="fixed left-1/2 top-1/2 z-[60] w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border/70 bg-background p-5 shadow-xl">
+          <AlertDialog.Popup className="fixed left-1/2 top-1/2 z-[120] w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border/70 bg-background p-5 shadow-xl">
             <AlertDialog.Title className="text-base font-semibold text-foreground">
               {tDna("deleteTitle")}
             </AlertDialog.Title>

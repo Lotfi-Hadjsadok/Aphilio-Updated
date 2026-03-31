@@ -6,7 +6,12 @@ import { BotAvatar } from "./bot-avatar";
 import { ReferenceThumbsRow } from "./reference-thumbs-row";
 import type { PersistedMessage } from "@/types/chat";
 
-export function BotBubble({ message }: { message: PersistedMessage }) {
+type BotBubbleProps = {
+  message: PersistedMessage;
+  autoSelectedReferences?: boolean;
+};
+
+export function BotBubble({ message, autoSelectedReferences = false }: BotBubbleProps) {
   const t = useTranslations("chat.botBubble");
   return (
     <div className="flex flex-col gap-2">
@@ -46,7 +51,10 @@ export function BotBubble({ message }: { message: PersistedMessage }) {
         </div>
       </div>
       {message.referenceImageUrls.length > 0 && (
-        <ReferenceThumbsRow urls={message.referenceImageUrls} />
+        <ReferenceThumbsRow
+          urls={message.referenceImageUrls}
+          autoSelected={autoSelectedReferences}
+        />
       )}
       {message.imageUrl && (
         <p className="pl-14 text-xs text-zinc-500">{t("savedToLibrary")}</p>

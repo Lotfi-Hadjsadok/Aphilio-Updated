@@ -44,6 +44,12 @@ model User {
   /// When overage is allowed: max local debt in stored units (same scale as balance); null = no cap on how negative balance may go.
   maxCreditOverageStoredUnits Int? @map("max_credit_overage_stored_units")
 
+  /// Better Auth admin plugin: `admin` | `subscriber` (comma-separated for multiple).
+  role       String?
+  banned     Boolean   @default(false)
+  banReason  String?   @map("ban_reason")
+  banExpires DateTime? @map("ban_expires")
+
   sessions           Session[]
   accounts           Account[]
   scrapedContexts           ScrapedContext[]
@@ -65,6 +71,9 @@ model Session {
   userAgent String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Better Auth admin plugin: set when an admin is impersonating this session’s user.
+  impersonatedBy String? @map("impersonated_by")
 
   @@unique([token])
   @@map("session")

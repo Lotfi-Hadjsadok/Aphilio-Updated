@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
-import { CreditCard, Globe, Sparkles, UserRound } from "lucide-react";
+import { Globe, Sparkles, UserRound } from "lucide-react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -12,15 +12,13 @@ import {
 } from "@/lib/settings-ui";
 import { cn } from "@/lib/utils";
 
-export type SettingsTabValue = "account" | "subscription" | "credits" | "preferences";
+export type SettingsTabValue = "account" | "subscription" | "preferences";
 
 function parseTab(value: string | undefined): SettingsTabValue {
-  if (
-    value === "account" ||
-    value === "subscription" ||
-    value === "credits" ||
-    value === "preferences"
-  ) {
+  if (value === "credits") {
+    return "account";
+  }
+  if (value === "account" || value === "subscription" || value === "preferences") {
     return value;
   }
   return "account";
@@ -30,7 +28,6 @@ type SettingsShellProps = {
   initialTab: string | undefined;
   accountPanel: ReactNode;
   subscriptionPanel: ReactNode;
-  creditsPanel: ReactNode;
   preferencesPanel: ReactNode;
 };
 
@@ -38,7 +35,6 @@ export function SettingsShell({
   initialTab,
   accountPanel,
   subscriptionPanel,
-  creditsPanel,
   preferencesPanel,
 }: SettingsShellProps) {
   const t = useTranslations("settings");
@@ -73,12 +69,6 @@ export function SettingsShell({
               {t("tabSubscription")}
             </span>
           </TabsTrigger>
-          <TabsTrigger value="credits" className={settingsTabsTriggerClassName}>
-            <CreditCard className="shrink-0" aria-hidden />
-            <span className="line-clamp-2 max-w-[min(100%,9rem)] sm:truncate sm:max-w-none">
-              {t("tabCredits")}
-            </span>
-          </TabsTrigger>
           <TabsTrigger value="preferences" className={settingsTabsTriggerClassName}>
             <Globe className="shrink-0" aria-hidden />
             <span className="line-clamp-2 max-w-[min(100%,9rem)] sm:truncate sm:max-w-none">
@@ -94,9 +84,6 @@ export function SettingsShell({
         </TabsContent>
         <TabsContent value="subscription" className="mt-0 space-y-4 outline-none">
           {subscriptionPanel}
-        </TabsContent>
-        <TabsContent value="credits" className="mt-0 space-y-4 outline-none">
-          {creditsPanel}
         </TabsContent>
         <TabsContent value="preferences" className="mt-0 space-y-4 outline-none">
           {preferencesPanel}

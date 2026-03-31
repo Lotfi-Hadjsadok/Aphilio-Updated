@@ -14,7 +14,6 @@ import { useTranslations } from "next-intl";
 import Image from "next/image";
 import {
   ArrowUp,
-  Coins,
   ImagePlus,
   Loader2,
   Menu,
@@ -75,12 +74,17 @@ import type {
   SendChatMessageState,
 } from "@/types/chat";
 
+/** Matches default env credit costs in `lib/polar/ingest-credits` when server props are missing. */
+const DEFAULT_CREDIT_COST_STORED_UNITS_BY_MODE: Record<ChatImageMode, number> = {
+  fast: 100,
+  premium: 150,
+};
+
 type ChatInterfaceProps = {
   savedContexts: SavedContextSummary[];
   initialConversations: ConversationSummary[];
   initialContextId?: string;
   currentLocale: string;
-  initialCreditsBalanceStored: number;
   creditCostStoredUnitsByMode: Record<ChatImageMode, number>;
 };
 
@@ -89,7 +93,6 @@ export function ChatInterface({
   initialConversations,
   initialContextId,
   currentLocale,
-  initialCreditsBalanceStored,
   creditCostStoredUnitsByMode,
 }: ChatInterfaceProps) {
   const t = useTranslations("chat");
@@ -108,12 +111,6 @@ export function ChatInterface({
   const [showImagePanel, setShowImagePanel] = useState(false);
   const [textValue, setTextValue] = useState("");
 
-  const [balanceAdjustmentStoredUnits, setBalanceAdjustmentStoredUnits] = useState(0);
-  const displayCredits = (initialCreditsBalanceStored + balanceAdjustmentStoredUnits) / 100;
-  const displayCreditsFormatted = displayCredits.toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
   const pendingCreditCostRef = useRef(0);
 
   const messagesScrollRootRef = useRef<HTMLDivElement>(null);
@@ -235,10 +232,7 @@ export function ChatInterface({
         );
       }
     } else if (sendState.status === "error") {
-      if (pendingCreditCostRef.current > 0) {
-        setBalanceAdjustmentStoredUnits((prev) => prev + pendingCreditCostRef.current);
-        pendingCreditCostRef.current = 0;
-      }
+      pendingCreditCostRef.current = 0;
     }
   }, [isSendPending, sendState]);
 
@@ -347,9 +341,10 @@ export function ChatInterface({
       createdAt: new Date().toISOString(),
     };
 
-    const costUnits = creditCostStoredUnitsByMode[imageMode];
+    const costUnits =
+      creditCostStoredUnitsByMode?.[imageMode] ??
+      DEFAULT_CREDIT_COST_STORED_UNITS_BY_MODE[imageMode];
     pendingCreditCostRef.current = costUnits;
-    setBalanceAdjustmentStoredUnits((prev) => prev - costUnits);
 
     // Urgent (non-transition) updates — render immediately
     setLocalMessages((prev) => [...prev, optimisticUserMessage]);
@@ -418,10 +413,6 @@ export function ChatInterface({
               </div>
             </div>
             <div className={dashboardToolHeaderActionsClass}>
-              <div className="flex items-center gap-1.5 rounded-full border border-border/50 bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground">
-                <Coins className="size-3 shrink-0" aria-hidden />
-                <span className="tabular-nums">{displayCreditsFormatted}</span>
-              </div>
               <LanguageSwitcher currentLocale={currentLocale} />
               <LogoutButton
                 className="h-8 px-2.5 text-xs"
@@ -475,10 +466,6 @@ export function ChatInterface({
               </div>
             </div>
             <div className={dashboardToolHeaderActionsClass}>
-              <div className="flex items-center gap-1 rounded-full border border-border/50 bg-muted/40 px-2 py-1 text-xs text-muted-foreground">
-                <Coins className="size-3 shrink-0" aria-hidden />
-                <span className="tabular-nums">{displayCreditsFormatted}</span>
-              </div>
               <LanguageSwitcher
                 currentLocale={currentLocale}
                 className="max-w-[min(11rem,46vw)] sm:max-w-[13rem]"
@@ -511,13 +498,24 @@ export function ChatInterface({
                 <WelcomeScreen />
               ) : (
                 <div className="flex flex-col gap-8">
-                  {localMessages.map((message) =>
-                    message.role === "user" ? (
-                      <UserBubble key={message.id} message={message} />
-                    ) : (
-                      <BotBubble key={message.id} message={message} />
-                    ),
-                  )}
+                  {localMessages.map((message, messageIndex) => {
+                    if (message.role === "user") {
+                      return <UserBubble key={message.id} message={message} />;
+                    }
+                    // Detect auto-RAG: bot has reference images but the preceding
+                    // user message had none (the user didn't manually pick any).
+                    const precedingUserMessage = localMessages[messageIndex - 1];
+                    const autoSelectedReferences =
+                      message.referenceImageUrls.length > 0 &&
+                      (precedingUserMessage?.referenceImageUrls.length ?? 0) === 0;
+                    return (
+                      <BotBubble
+                        key={message.id}
+                        message={message}
+                        autoSelectedReferences={autoSelectedReferences}
+                      />
+                    );
+                  })}
                   {isSendPending && <LoadingBotBubble />}
                   {sendState.status === "error" && !isSendPending && (
                     <ErrorBubble text={sendState.message} />

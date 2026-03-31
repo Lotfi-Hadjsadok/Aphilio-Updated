@@ -6,6 +6,7 @@ import {
   embedTextsForContextDocuments,
   embeddingArrayToPgVectorLiteral,
   generateImageFromPrompt,
+  generateImageFromPromptForContext,
   IMAGE_MODEL_FAST,
   IMAGE_MODEL_PREMIUM,
 } from "@/lib/langchain";
@@ -15,8 +16,8 @@ import {
   requireAuthAndSubscription,
   ERR_UNAUTHORIZED,
 } from "@/lib/auth-guard";
+import { creditCostForMode } from "@/lib/polar/credits-units";
 import {
-  creditCostForMode,
   enqueuePolarCreditUsageIngest,
   reserveCreditsAtGenerationStart,
   revertOptimisticCreditsDeduction,
@@ -314,6 +315,9 @@ export async function sendChatMessageAction(
     uploadedReferenceImageUrls = uploadedReferenceResults.map((result) => result.publicUrl);
   }
 
+  const noImagesManuallyProvided =
+    filteredContextUrls.length === 0 && filteredUploaded.length === 0;
+
   const chatImageMode: AdImageGenerationMode =
     rawMode === "premium" ? "premium" : "fast";
   const creditCost = creditCostForMode(chatImageMode);
@@ -324,21 +328,38 @@ export async function sendChatMessageAction(
 
   // ── Generate image ────────────────────────────────────────────────────────
   try {
-    const generatedDataUrl = await generateImageFromPrompt(
-      enrichedPrompt,
-      referenceImageGroups,
-      logoUrl,
-      imageModel,
-    );
+    let generatedDataUrl: string;
+    let autoRagReferenceUrls: string[] = [];
+
+    if (contextId && noImagesManuallyProvided) {
+      // No images manually selected — auto-RAG: pick semantically similar context
+      // images from the brand DNA, mirroring how ad creatives generation works.
+      const ragResult = await generateImageFromPromptForContext(
+        enrichedPrompt,
+        contextId,
+        imageModel,
+      );
+      generatedDataUrl = ragResult.imageUrl;
+      autoRagReferenceUrls = ragResult.referenceImageUrls;
+    } else {
+      generatedDataUrl = await generateImageFromPrompt(
+        enrichedPrompt,
+        referenceImageGroups,
+        logoUrl,
+        imageModel,
+      );
+    }
 
     const saveContextId = contextId ?? "chat";
     const r2Key = `chat/${userId}/${saveContextId}/${Date.now()}.webp`;
     const uploaded = await uploadImageToR2({ sourceUrl: generatedDataUrl, key: r2Key });
 
-    const allReferenceUrls: string[] = [
-      ...filteredContextUrls,
-      ...uploadedReferenceImageUrls,
-    ];
+    // Manual references are what the user intentionally picked (shown in the user bubble).
+    // Auto-RAG references are only shown below the bot's generated image.
+    const manualReferenceUrls: string[] = [...filteredContextUrls, ...uploadedReferenceImageUrls];
+    const botReferenceUrls: string[] = noImagesManuallyProvided
+      ? autoRagReferenceUrls
+      : manualReferenceUrls;
 
     await prisma.generatedCreative.create({
       data: {
@@ -387,7 +408,8 @@ export async function sendChatMessageAction(
           text,
           contextId,
           contextName: contextName ?? null,
-          referenceImageUrls: allReferenceUrls,
+          // Only store images the user explicitly chose; auto-RAG refs belong on the bot message.
+          referenceImageUrls: manualReferenceUrls,
         },
       }),
       prisma.chatPersistedMessage.create({
@@ -398,7 +420,7 @@ export async function sendChatMessageAction(
           aspectRatio,
           contextId,
           contextName: contextName ?? null,
-          referenceImageUrls: allReferenceUrls,
+          referenceImageUrls: botReferenceUrls,
         },
       }),
     ]);

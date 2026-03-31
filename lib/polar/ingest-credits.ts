@@ -1,31 +1,22 @@
+import "server-only";
+
 import { polarClient } from "@/lib/polar/client";
 import prisma from "@/lib/prisma";
-import type { AdImageGenerationMode } from "@/types/ad-creatives";
 
-const DEFAULT_CREDIT_COST_FAST = 1;
-const DEFAULT_CREDIT_COST_PREMIUM = 1.5;
+import {
+  creditAmountToStoredUnits,
+  INSUFFICIENT_CREDITS_MESSAGE,
+  SPENDING_CAP_REACHED_MESSAGE,
+} from "@/lib/polar/credits-units";
 
-/** Polar credit amount → integer units stored in Postgres (amount × 100, truncated toward zero). */
-export function creditAmountToStoredUnits(creditAmount: number): number {
-  return Math.trunc(creditAmount * 100);
-}
-
-export function creditCostForMode(mode: AdImageGenerationMode): number {
-  return mode === "premium"
-    ? Number(process.env.APHILIO_CREDIT_COST_PREMIUM ?? DEFAULT_CREDIT_COST_PREMIUM)
-    : Number(process.env.APHILIO_CREDIT_COST_FAST ?? DEFAULT_CREDIT_COST_FAST);
-}
-
-/** Same units as DB / {@link reserveCreditsAtGenerationStart}; driven by env credit amounts. */
-export function creditStoredUnitsForMode(mode: AdImageGenerationMode): number {
-  return creditAmountToStoredUnits(creditCostForMode(mode));
-}
-
-export const INSUFFICIENT_CREDITS_MESSAGE =
-  "You do not have enough credits for this generation. Add credits or enable spending beyond your balance in Settings.";
-
-export const SPENDING_CAP_REACHED_MESSAGE =
-  "This generation would exceed your spending limit beyond your balance. Raise the cap in Settings or add credits.";
+export {
+  creditAmountToStoredUnits,
+  creditCostForMode,
+  creditStoredUnitsForMode,
+  INSUFFICIENT_CREDITS_MESSAGE,
+  SPENDING_CAP_REACHED_MESSAGE,
+  storedCreditsUnitsToDisplay,
+} from "@/lib/polar/credits-units";
 
 const CREDIT_RESERVATION_UPDATE_SQL = `UPDATE "user"
      SET aphilio_credits_balance = aphilio_credits_balance - $1
@@ -228,6 +219,58 @@ export function enqueuePolarCreditUsageIngest(
     .catch(() => {
       // Non-fatal: the Polar webhook will re-sync the balance when it arrives.
     });
+}
+
+/**
+ * Grants credits on Polar's usage meter: ingest a **negative** `credit` value so the meter
+ * increases balance (opposite of {@link enqueuePolarCreditUsageIngest}). Awaits the API call.
+ */
+export async function ingestPolarCreditGrant(
+  externalCustomerId: string,
+  grantCreditAmount: number,
+): Promise<void> {
+  if (!process.env.POLAR_ACCESS_TOKEN) {
+    throw new Error("POLAR_ACCESS_TOKEN is not set.");
+  }
+  if (!Number.isFinite(grantCreditAmount) || grantCreditAmount <= 0) {
+    throw new Error("Grant amount must be a positive finite number.");
+  }
+
+  await polarClient.events.ingest({
+    events: [
+      {
+        name: "credit_usage",
+        externalCustomerId,
+        metadata: { credit: -grantCreditAmount },
+      },
+    ],
+  });
+}
+
+/**
+ * Records usage on Polar's meter (positive `credit` in metadata). Awaits the API call.
+ * Use for admin-side decrements so failures surface to the operator.
+ */
+export async function ingestPolarCreditUsageAwait(
+  externalCustomerId: string,
+  usageCreditAmount: number,
+): Promise<void> {
+  if (!process.env.POLAR_ACCESS_TOKEN) {
+    throw new Error("POLAR_ACCESS_TOKEN is not set.");
+  }
+  if (!Number.isFinite(usageCreditAmount) || usageCreditAmount <= 0) {
+    throw new Error("Usage amount must be a positive finite number.");
+  }
+
+  await polarClient.events.ingest({
+    events: [
+      {
+        name: "credit_usage",
+        externalCustomerId,
+        metadata: { credit: usageCreditAmount },
+      },
+    ],
+  });
 }
 
 /**

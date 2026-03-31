@@ -10,6 +10,7 @@ import {
   Lock,
   MessageSquare,
   Settings,
+  Shield,
 } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { BrandLogoLink } from "@/components/brand-logo";
@@ -23,6 +24,7 @@ import { LocaleSync } from "@/components/locale-sync";
 import { LogoutButton } from "@/components/logout-button";
 import { getUserSubscriptionStatus } from "@/lib/polar/subscription";
 import { plansUrlWithReturn } from "@/lib/plans";
+import { isPlatformAdmin } from "@/lib/server-auth";
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({
@@ -43,6 +45,7 @@ export default async function DashboardPage() {
   }
 
   const isSubscribed = await getUserSubscriptionStatus(session.user.id);
+  const showAdminNav = isPlatformAdmin(session);
 
   const chatPlansUrl = plansUrlWithReturn("/dashboard/chat");
   const adCreativesPlansUrl = plansUrlWithReturn("/dashboard/ad-creatives");
@@ -109,6 +112,15 @@ export default async function DashboardPage() {
                 </Link>
               </>
             )}
+            {showAdminNav ? (
+              <Link
+                href="/dashboard/admin"
+                className={cn(dashboardNavPillLinkClassName, "w-fit")}
+              >
+                <Shield className="size-4" strokeWidth={1.75} />
+                {t("dashboard.admin")}
+              </Link>
+            ) : null}
             <LogoutButton label={tCommon("logout")} />
           </div>
         </header>

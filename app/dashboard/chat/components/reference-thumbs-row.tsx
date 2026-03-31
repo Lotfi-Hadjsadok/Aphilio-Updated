@@ -2,12 +2,21 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 
-export function ReferenceThumbsRow({ urls }: { urls: string[] }) {
+type ReferenceThumbsRowProps = {
+  urls: string[];
+  autoSelected?: boolean;
+};
+
+export function ReferenceThumbsRow({ urls, autoSelected = false }: ReferenceThumbsRowProps) {
   const [open, setOpen] = useState(false);
 
   if (urls.length === 0) return null;
+
+  const label = autoSelected
+    ? `${urls.length} auto-selected reference${urls.length !== 1 ? "s" : ""}`
+    : `${urls.length} reference${urls.length !== 1 ? "s" : ""}`;
 
   return (
     <div className="mt-3 pl-14">
@@ -17,7 +26,10 @@ export function ReferenceThumbsRow({ urls }: { urls: string[] }) {
         className="inline-flex items-center gap-1.5 text-xs text-zinc-600 transition-colors hover:text-zinc-900"
       >
         {open ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
-        {urls.length} reference{urls.length !== 1 ? "s" : ""}
+        {autoSelected && (
+          <Sparkles className="size-3 text-violet-500" aria-hidden />
+        )}
+        {label}
       </button>
       {open && (
         <div className="mt-2 flex flex-wrap gap-2">

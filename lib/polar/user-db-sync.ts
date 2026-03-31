@@ -3,7 +3,7 @@ import type { CustomerStateSubscription } from "@polar-sh/sdk/models/components/
 import type { Subscription } from "@polar-sh/sdk/models/components/subscription.js";
 import type { Prisma } from "@/app/generated/prisma/client";
 import prisma from "@/lib/prisma";
-import { creditAmountToStoredUnits } from "@/lib/polar/ingest-credits";
+import { creditAmountToStoredUnits } from "@/lib/polar/credits-units";
 import { polarClient } from "@/lib/polar/client";
 
 /** Cached Polar meter id per meter_credit benefit UUID (monthly vs yearly use different benefits). */

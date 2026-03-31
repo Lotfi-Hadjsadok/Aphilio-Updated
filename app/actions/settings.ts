@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-guard";
-import { creditAmountToStoredUnits } from "@/lib/polar/ingest-credits";
+import { creditAmountToStoredUnits } from "@/lib/polar/credits-units";
 import { polarClient } from "@/lib/polar/client";
 
 export type UpdateBillingSettingsState =
