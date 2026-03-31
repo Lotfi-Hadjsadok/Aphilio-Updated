@@ -50,6 +50,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+/** Served from `public/main.jpg` — single source for OG + Twitter cards. */
+const socialShareImage = {
+  url: "/main.jpg",
+  width: 2752,
+  height: 1536,
+  alt: "Aphilio: Brand DNA extraction and on-brand AI ad creative generation",
+  type: "image/jpeg",
+} as const;
+
 export const metadata: Metadata = {
   metadataBase: new URL(`${getSiteOrigin()}/`),
   title: {
@@ -84,22 +93,14 @@ export const metadata: Metadata = {
     siteName: "Aphilio",
     locale: "en_US",
     url: "/",
-    images: [
-      {
-        url: "/main.jpg",
-        width: 2752,
-        height: 1536,
-        alt: "Aphilio: Brand DNA extraction and on-brand AI ad creative generation",
-        type: "image/jpeg",
-      },
-    ],
+    images: [socialShareImage],
   },
   twitter: {
     card: "summary_large_image",
     title: "Aphilio: Turn Any URL Into On-Brand Ad Creatives",
     description:
       "Extract brand DNA from any URL. Generate on-brand ads with AI. Free to start.",
-    images: ["/main.jpg"],
+    images: [socialShareImage],
     creator: "@aphilio",
   },
   robots: {
