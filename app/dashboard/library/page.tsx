@@ -4,12 +4,12 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { Images, Loader2 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { DashboardBackPill } from "@/components/dashboard-back-link";
+import { DashboardBackPill } from "@/components/dashboard/dashboard-back-pill";
 import { auth } from "@/lib/auth";
 import { BrandLogoLink } from "@/components/brand-logo";
 import { LogoutButton } from "@/components/logout-button";
 import { getLibraryCreatives } from "@/app/actions/library";
-import { requireActiveSubscriptionOrCheckout } from "@/lib/polar/subscription";
+import { requireSubscriptionOrRedirectToPlans } from "@/lib/polar/subscription";
 import { LibraryGrid } from "./library-grid";
 
 async function LibraryContent() {
@@ -21,7 +21,10 @@ export default async function LibraryPage() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/sign-in");
 
-  await requireActiveSubscriptionOrCheckout({ userId: session.user.id });
+  await requireSubscriptionOrRedirectToPlans({
+    userId: session.user.id,
+    returnTo: "/dashboard/library",
+  });
 
   const t = await getTranslations("library");
   const tCommon = await getTranslations("common");

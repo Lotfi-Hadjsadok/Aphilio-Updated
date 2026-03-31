@@ -1,19 +1,20 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
-  Check,
   Globe,
   LayoutGrid,
   ScanSearch,
   ShieldCheck,
+  Zap,
 } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
 import { BrandLogoLink } from "@/components/brand-logo";
-import { CheckoutTrackedLink } from "@/components/analytics/checkout-tracked-link";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { DnaPreviewFlipChips, type DnaChipFaceData } from "@/components/landing/dna-preview-flip-chips";
+import { LandingDemoImage } from "@/components/landing/landing-demo-image";
+import { PricingPlansSection } from "@/components/landing/pricing-plans-section";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 import { auth } from "@/lib/auth";
@@ -21,9 +22,9 @@ import { getSiteOrigin } from "@/lib/site-url";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "Aphilio: Brand DNA Extraction & On-Brand Ad Creative Generator",
+    title: "Aphilio: Turn Websites Into Ads That Convert",
     description:
-      "Extract your brand DNA from any URL (colors, fonts, logos, and voice), then generate on-brand ad creatives in multiple formats with AI.",
+      "We scan your site and generate high-converting, on-brand creatives in seconds.",
     alternates: {
       canonical: "/",
     },
@@ -63,61 +64,46 @@ const jsonLd = {
   ],
 };
 
-/** Shared landing typography — hierarchy, spacing, readable line length. */
 const landingEyebrow =
   "text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/90 sm:text-[0.8125rem] sm:tracking-[0.18em]";
 const landingSectionHeading =
-  "font-heading text-2xl font-semibold leading-[1.15] tracking-tight text-foreground sm:text-3xl sm:leading-[1.12]";
+  "font-heading text-3xl font-semibold leading-[1.12] tracking-tight text-foreground sm:text-4xl sm:leading-[1.08]";
 const landingFeatureTitle =
-  "font-heading text-xl font-semibold leading-snug tracking-tight text-foreground sm:text-2xl sm:leading-snug";
+  "font-heading text-2xl font-semibold leading-snug tracking-tight text-foreground sm:text-3xl sm:leading-snug";
 const landingBody =
-  "text-[0.9375rem] leading-[1.65] text-muted-foreground sm:text-base sm:leading-[1.65]";
+  "text-[0.9375rem] leading-[1.7] text-muted-foreground sm:text-[1.0625rem] sm:leading-[1.7]";
 const landingCardTitle =
-  "font-heading text-lg font-semibold leading-snug tracking-tight text-foreground sm:text-xl";
-/** Hero headline rows — same scale so setup + payoff read as one statement. */
+  "font-heading text-xl font-semibold leading-snug tracking-tight text-foreground sm:text-2xl";
 const landingHeroHeadlineLine =
-  "block w-full text-[1.75rem] font-semibold leading-[1.2] tracking-tight text-foreground sm:text-[2.65rem] sm:leading-[1.14] lg:text-[3.15rem] lg:leading-[1.1]";
+  "block w-full text-[2.25rem] font-semibold leading-[1.15] tracking-tight text-foreground sm:text-[3.5rem] sm:leading-[1.1] lg:text-[4.25rem] lg:leading-[1.06]";
 
-/** Intrinsic size of each demo asset (avoids cropping with object-contain). */
-const demoImageDimensions: Record<string, { width: number; height: number }> = {
-  "/demos/dna-preview-demo.webp": { width: 2777, height: 2028 },
-  "/demos/ad-creative-generation-demo.webp": { width: 2118, height: 1783 },
-  "/demos/creative-library-demo.webp": { width: 2464, height: 1972 },
-  "/demos/chat-demo.webp": { width: 2718, height: 2021 },
-};
+const stepAccents = [
+  {
+    borderClass: "border-orange-500/30",
+    bgClass: "bg-orange-500/[0.06]",
+    numberClass: "text-orange-500",
+    glowClass: "bg-orange-500",
+  },
+  {
+    borderClass: "border-purple-500/30",
+    bgClass: "bg-purple-500/[0.06]",
+    numberClass: "text-purple-500",
+    glowClass: "bg-purple-500",
+  },
+  {
+    borderClass: "border-blue-500/30",
+    bgClass: "bg-blue-500/[0.06]",
+    numberClass: "text-blue-500",
+    glowClass: "bg-blue-500",
+  },
+];
 
-function LandingDemoImage({
-  src,
-  alt,
-  sizes,
-  priority,
-  className,
-}: {
-  src: string;
-  alt: string;
-  sizes: string;
-  priority?: boolean;
-  className?: string;
-}) {
-  const pixels = demoImageDimensions[src];
-  if (!pixels) {
-    throw new Error(`Missing demoImageDimensions for ${src}`);
-  }
-  return (
-    <Image
-      src={src}
-      alt={alt}
-      width={pixels.width}
-      height={pixels.height}
-      sizes={sizes}
-      priority={priority}
-      className={cn(
-        "h-auto w-full max-w-full object-contain object-top",
-        className,
-      )}
-    />
-  );
-}
+const whyIconStyles = [
+  { iconBg: "bg-blue-500/10 border-blue-500/20", iconColor: "text-blue-500" },
+  { iconBg: "bg-purple-500/10 border-purple-500/20", iconColor: "text-purple-500" },
+  { iconBg: "bg-emerald-500/10 border-emerald-500/20", iconColor: "text-emerald-500" },
+  { iconBg: "bg-orange-500/10 border-orange-500/20", iconColor: "text-orange-500" },
+];
 
 export default async function Home() {
   const siteOrigin = getSiteOrigin();
@@ -176,15 +162,6 @@ export default async function Home() {
     },
   ];
 
-  const proFeatures = [
-    t("pricingProF1"),
-    t("pricingProF2"),
-    t("pricingProF3"),
-    t("pricingProF4"),
-    t("pricingProF5"),
-    t("pricingProF6"),
-  ];
-
   const featureDemoBlocks = [
     {
       title: t("featureSourceTitle"),
@@ -221,6 +198,149 @@ export default async function Home() {
     },
   ];
 
+  const heroStats = [
+    { value: t("heroStat1Value"), label: t("heroStat1Label") },
+    { value: t("heroStat2Value"), label: t("heroStat2Label") },
+    { value: t("heroStat3Value"), label: t("heroStat3Label") },
+  ];
+
+  const featureAccents = [
+    {
+      badge: t("featureBadgeExtract"),
+      badgeClass: "text-orange-500 bg-orange-500/10 border border-orange-500/25",
+      glowClass: "from-orange-500/[0.07]",
+    },
+    {
+      badge: t("featureBadgeGenerate"),
+      badgeClass: "text-purple-500 bg-purple-500/10 border border-purple-500/25",
+      glowClass: "from-purple-500/[0.07]",
+    },
+    {
+      badge: t("featureBadgeOrganize"),
+      badgeClass: "text-blue-500 bg-blue-500/10 border border-blue-500/25",
+      glowClass: "from-blue-500/[0.07]",
+    },
+    {
+      badge: t("featureBadgeChat"),
+      badgeClass: "text-pink-500 bg-pink-500/10 border border-pink-500/25",
+      glowClass: "from-pink-500/[0.07]",
+    },
+  ];
+
+  const dnaChipsFrontData: DnaChipFaceData[] = [
+    {
+      label: t("featureBadgeExtract"),
+      borderClass: "border-orange-500/25",
+      bgClass: "bg-orange-500/[0.07]",
+      labelColor: "text-orange-400",
+      delay: "0s",
+      duration: "4.2s",
+      rotate: "-2deg",
+      content: {
+        kind: "text",
+        text: t("featureSourceTitle"),
+        textClassName: "mt-1 text-[0.78rem] font-semibold leading-[1.2] text-foreground/70",
+      },
+    },
+    {
+      label: t("featureBadgeGenerate"),
+      borderClass: "border-purple-500/25",
+      bgClass: "bg-purple-500/[0.07]",
+      labelColor: "text-purple-400",
+      delay: "0.6s",
+      duration: "3.8s",
+      rotate: "1.5deg",
+      content: {
+        kind: "text",
+        text: t("featureShipTitle"),
+        textClassName: "mt-1 text-[0.78rem] font-semibold leading-[1.2] text-foreground/70",
+      },
+    },
+    {
+      label: t("featureBadgeOrganize"),
+      borderClass: "border-blue-500/25",
+      bgClass: "bg-blue-500/[0.07]",
+      labelColor: "text-blue-400",
+      delay: "1.1s",
+      duration: "4.6s",
+      rotate: "-1.2deg",
+      content: {
+        kind: "text",
+        text: t("featureLibraryTitle"),
+        textClassName: "mt-1 text-[0.78rem] font-semibold leading-[1.2] text-foreground/70",
+      },
+    },
+    {
+      label: t("featureBadgeChat"),
+      borderClass: "border-pink-500/25",
+      bgClass: "bg-pink-500/[0.07]",
+      labelColor: "text-pink-400",
+      delay: "1.6s",
+      duration: "4s",
+      rotate: "2deg",
+      content: {
+        kind: "text",
+        text: t("featureAccountTitle"),
+        textClassName: "mt-1 text-[0.78rem] font-semibold leading-[1.2] text-foreground/70",
+      },
+    },
+  ];
+
+  const dnaChipsBackData: DnaChipFaceData[] = [
+    {
+      label: t("chipBrandColors"),
+      borderClass: "border-orange-500/25",
+      bgClass: "bg-orange-500/[0.07]",
+      labelColor: "text-orange-400",
+      delay: "0s",
+      duration: "4.2s",
+      rotate: "-2deg",
+      content: {
+        kind: "colors",
+        colors: ["#f97316", "#f59e0b", "#a855f7", "#3b82f6"],
+      },
+    },
+    {
+      label: t("chipTypography"),
+      borderClass: "border-purple-500/25",
+      bgClass: "bg-purple-500/[0.07]",
+      labelColor: "text-purple-400",
+      delay: "0.6s",
+      duration: "3.8s",
+      rotate: "1.5deg",
+      content: {
+        kind: "pills",
+        items: ["1:1", "4:5", "9:16", "16:9"],
+      },
+    },
+    {
+      label: t("chipBrandVoice"),
+      borderClass: "border-blue-500/25",
+      bgClass: "bg-blue-500/[0.07]",
+      labelColor: "text-blue-400",
+      delay: "1.1s",
+      duration: "4.6s",
+      rotate: "-1.2deg",
+      content: {
+        kind: "pills",
+        items: ["Bold", "Clear", "Human"],
+      },
+    },
+    {
+      label: t("chipAdAngles"),
+      borderClass: "border-pink-500/25",
+      bgClass: "bg-pink-500/[0.07]",
+      labelColor: "text-pink-400",
+      delay: "1.6s",
+      duration: "4s",
+      rotate: "2deg",
+      content: {
+        kind: "pills",
+        items: ["Pain", "Proof", "Urgency"],
+      },
+    },
+  ];
+
   return (
     <>
       <script
@@ -228,10 +348,12 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       <div className="landing-grid-bg relative flex min-h-[100dvh] flex-col overflow-hidden bg-background text-foreground">
+        {/* Background glow orbs — more vivid than before */}
         <div className="pointer-events-none absolute inset-0" aria-hidden>
-          <div className="glow-orb absolute -left-28 -top-10 h-[28rem] w-[28rem] bg-accent-gradient opacity-[0.14] sm:opacity-[0.18]" />
-          <div className="glow-orb absolute -right-20 top-1/3 h-80 w-80 bg-accent-gradient opacity-[0.12] sm:opacity-[0.16]" />
-          <div className="glow-orb absolute bottom-0 left-1/2 h-72 w-72 -translate-x-1/2 bg-accent-gradient opacity-[0.08] sm:opacity-[0.12]" />
+          <div className="glow-orb absolute -left-32 -top-16 h-[36rem] w-[36rem] bg-accent-gradient opacity-[0.22] sm:opacity-[0.28] animate-pulse-glow" />
+          <div className="glow-orb absolute -right-24 top-1/4 h-96 w-96 bg-accent-gradient opacity-[0.18] sm:opacity-[0.22]" style={{ animationDelay: "1.2s" }} />
+          <div className="glow-orb absolute bottom-10 left-1/2 h-80 w-80 -translate-x-1/2 bg-accent-gradient opacity-[0.12] sm:opacity-[0.18]" style={{ animationDelay: "2.4s" }} />
+          <div className="glow-orb absolute right-1/4 top-2/3 h-56 w-56 bg-accent-gradient opacity-[0.1] sm:opacity-[0.14]" style={{ animationDelay: "0.8s" }} />
         </div>
 
         <a
@@ -242,12 +364,12 @@ export default async function Home() {
         </a>
 
         {/* Header */}
-        <header className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-3 px-5 py-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:px-8 sm:py-6">
+        <header className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-3 px-5 py-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:px-8 sm:py-7">
           <BrandLogoLink priority className="shrink-0" />
-          <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center gap-6 sm:mx-4">
+          <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center gap-4 sm:mx-4 sm:gap-6">
             <LanguageSwitcher currentLocale={locale} />
             <Link
-              href="#pricing"
+              href="/plans"
               className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:block"
             >
               {t("navPricing")}
@@ -278,384 +400,353 @@ export default async function Home() {
           )}
         </header>
 
+        {/* Mobile primary menu */}
+        <nav
+          className="relative z-10 mx-auto mb-1 flex w-full max-w-6xl items-center justify-center px-4 sm:hidden"
+          aria-label="Primary"
+        >
+          <div className="inline-flex w-full max-w-md items-center justify-between gap-2 rounded-2xl border border-border/60 bg-card/80 px-3 py-2 text-xs shadow-sm backdrop-blur-sm">
+            <Link
+              href="#features"
+              className="flex-1 rounded-xl px-2 py-1 text-center font-medium text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
+            >
+              {t("navFeatures")}
+            </Link>
+            <Link
+              href="#how-it-works"
+              className="flex-1 rounded-xl px-2 py-1 text-center font-medium text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
+            >
+              {t("navHowItWorks")}
+            </Link>
+            <Link
+              href="/plans"
+              className="flex-1 rounded-xl px-2 py-1 text-center font-semibold text-foreground ring-1 ring-border/70 transition-colors hover:bg-accent/10"
+            >
+              {t("navPricing")}
+            </Link>
+          </div>
+        </nav>
+
         <main
           id="main-content"
-          className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 pb-16 pt-4 sm:px-8 sm:pb-20 sm:pt-6 lg:pb-24 lg:pt-10"
+          className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 pb-20 pt-10 sm:px-8 sm:pb-28 sm:pt-16 lg:pb-32 lg:pt-24"
         >
-          {/* Hero */}
+          {/* ─── HERO ─────────────────────────────────────────────────────── */}
           <div className="flex flex-col items-center justify-center text-center">
-            <h1 className="font-heading flex w-full max-w-[40rem] flex-col items-center gap-2 text-balance sm:max-w-[44rem] sm:gap-2.5">
-              <span className={landingHeroHeadlineLine}>
-                <span className="text-foreground">{t("headline1")}</span>{" "}
-                <span className="text-gradient">{t("headline2")}</span>
-                <span
-                  className="inline-block align-[0.08em] pl-1.5 text-[0.72em] leading-none sm:pl-2 sm:text-[0.68em]"
-                  aria-hidden={true}
-                >
-                  {t("headlineEmoji")}
+            {/* Eyebrow badge */}
+            <div className="mb-7 sm:mb-9">
+              <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/70 px-4 py-1.5 shadow-sm backdrop-blur-sm">
+                <span className="size-2 rounded-full bg-accent-gradient animate-pulse-glow" aria-hidden />
+                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  {t("heroEyebrow")}
                 </span>
               </span>
-              <span className={landingHeroHeadlineLine}>{t("headline3")}</span>
+            </div>
+
+            {/* Headline */}
+            <h1 className="font-heading flex w-full max-w-[46rem] flex-col items-center gap-1.5 text-balance sm:max-w-[54rem] sm:gap-2">
+              <span className={landingHeroHeadlineLine}>
+                {t("headline1")}
+              </span>
+              <span className={cn(landingHeroHeadlineLine, "text-gradient leading-tight py-1")}>
+                {t("headline2")}
+              </span>
             </h1>
 
-            <p className="mx-auto mt-7 max-w-[min(100%,36rem)] text-pretty text-[0.9375rem] leading-[1.65] text-muted-foreground sm:mt-9 sm:max-w-[38rem] sm:text-[1.0625rem] sm:leading-[1.7]">
+            {/* Subhead */}
+            <p className="mx-auto mt-8 max-w-[min(100%,42rem)] text-pretty text-[1rem] leading-[1.72] text-muted-foreground sm:mt-10 sm:max-w-[44rem] sm:text-[1.125rem] sm:leading-[1.72]">
               {t("subhead")}
             </p>
 
-            <div className="mt-8 flex w-full max-w-md flex-col items-stretch gap-3 sm:mt-10 sm:max-w-none sm:flex-row sm:items-center sm:justify-center sm:gap-4">
+            {/* CTA buttons */}
+            <div className="mt-10 flex w-full max-w-md flex-col items-stretch gap-3.5 sm:mt-12 sm:max-w-none sm:flex-row sm:items-center sm:justify-center sm:gap-5">
               <Link
                 href="#features"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
-                  "h-12 rounded-xl border-border/80 bg-background/60 px-8 text-sm font-semibold shadow-sm backdrop-blur-sm sm:min-w-[11rem] sm:text-base",
+                  "h-14 rounded-2xl border-border/80 bg-background/60 px-9 text-base font-semibold shadow-sm backdrop-blur-sm sm:min-w-[13rem]",
                 )}
               >
                 {t("ctaSeeFeatures")}
               </Link>
               <Link
-                href="#pricing"
+                href="/plans"
                 className={cn(
                   buttonVariants({ variant: "default", size: "lg" }),
-                  "h-12 rounded-xl px-8 text-sm font-semibold shadow-md sm:min-w-[11rem] sm:text-base",
+                  "h-14 rounded-2xl px-9 text-base font-semibold shadow-lg sm:min-w-[13rem]",
                 )}
               >
-                {t("ctaSubscribe")}
-                <ArrowRight className="ml-1.5 size-4" aria-hidden />
+                {t("ctaViewPlans")}
+                <ArrowRight className="ml-2 size-5" aria-hidden />
               </Link>
             </div>
+
+            {/* Stats strip */}
+            <div className="mt-12 flex items-center justify-center gap-6 sm:mt-14 sm:gap-12">
+              {heroStats.map(({ value, label }) => (
+                <div key={`${value}-${label}`} className="text-center">
+                  <div className="font-heading text-2xl font-bold text-gradient sm:text-3xl">{value}</div>
+                  <div className="mt-0.5 text-xs text-muted-foreground/80 sm:text-sm">{label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* DNA Preview Chips */}
+            <DnaPreviewFlipChips chipsFront={dnaChipsFrontData} chipsBack={dnaChipsBackData} />
           </div>
 
-          {/* Feature demos */}
+          {/* ─── FEATURE DEMOS ──────────────────────────────────────────────── */}
           <section
             id="features"
-            className="mx-auto mt-16 w-full max-w-6xl scroll-mt-24 sm:mt-20 lg:mt-28"
+            className="mx-auto mt-28 w-full max-w-6xl scroll-mt-24 sm:mt-36 lg:mt-44"
             aria-labelledby="features-heading"
           >
-            <h2 id="features-heading" className="sr-only">
-              {t("featuresSectionAria")}
-            </h2>
+            <div className="mb-14 space-y-5 text-center sm:mb-16">
+              <p className={landingEyebrow}>{t("featuresEyebrow")}</p>
+              <h2 id="features-heading" className={landingSectionHeading}>
+                {t("featuresHeading")}
+              </h2>
+            </div>
 
-            <div className="flex flex-col gap-14 sm:gap-16 lg:gap-20">
-              {featureDemoBlocks.map((block, blockIndex) => (
-                <article
-                  key={block.title}
-                  className={cn(
-                    "flex flex-col gap-8 lg:flex-row lg:items-center lg:gap-12 xl:gap-16",
-                    blockIndex % 2 === 1 && "lg:flex-row-reverse",
-                  )}
-                >
-                  <div className="min-w-0 shrink-0 space-y-4 text-left lg:max-w-[min(100%,22rem)] xl:max-w-[24rem]">
-                    <h3 className={landingFeatureTitle}>{block.title}</h3>
-                    <p className={cn(landingBody, "max-w-[40ch] text-pretty")}>
-                      {block.description}
-                    </p>
-                  </div>
+            <div className="flex flex-col gap-20 sm:gap-24 lg:gap-32">
+              {featureDemoBlocks.map((block, blockIndex) => {
+                const accent = featureAccents[blockIndex];
+                return (
+                  <article
+                    key={block.title}
+                    className={cn(
+                      "flex flex-col gap-10 lg:flex-row lg:items-center lg:gap-16 xl:gap-20",
+                      blockIndex % 2 === 1 && "lg:flex-row-reverse",
+                    )}
+                  >
+                    <div className="min-w-0 shrink-0 space-y-5 text-left lg:max-w-[min(100%,24rem)] xl:max-w-[26rem]">
+                      {/* Feature badge */}
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.16em]",
+                          accent.badgeClass,
+                        )}
+                      >
+                        <Zap className="size-3" aria-hidden />
+                        {accent.badge}
+                      </span>
+                      <h3 className={landingFeatureTitle}>{block.title}</h3>
+                      <p className={cn(landingBody, "max-w-[40ch] text-pretty")}>
+                        {block.description}
+                      </p>
+                    </div>
 
-                  <div className="min-w-0 flex-1">
-                    {"browserChromeUrl" in block && block.browserChromeUrl ? (
-                      <div className="overflow-hidden rounded-2xl bg-muted/20">
-                        <div className="flex items-center gap-3 border-b border-border/40 bg-muted/25 px-3 py-2.5 sm:px-4 sm:py-3">
-                          <div className="flex shrink-0 gap-1.5" aria-hidden>
-                            <span className="size-2.5 rounded-full bg-red-400/90" />
-                            <span className="size-2.5 rounded-full bg-amber-400/90" />
-                            <span className="size-2.5 rounded-full bg-emerald-400/90" />
+                    <div className="min-w-0 flex-1">
+                      {"browserChromeUrl" in block && block.browserChromeUrl ? (
+                        <div className="overflow-hidden rounded-3xl border border-border/60 bg-muted/20 shadow-2xl ring-1 ring-foreground/[0.04]">
+                          <div className="flex items-center gap-3 border-b border-border/40 bg-muted/25 px-3 py-2.5 sm:px-4 sm:py-3">
+                            <div className="flex shrink-0 gap-1.5" aria-hidden>
+                              <span className="size-2.5 rounded-full bg-red-400/90" />
+                              <span className="size-2.5 rounded-full bg-amber-400/90" />
+                              <span className="size-2.5 rounded-full bg-emerald-400/90" />
+                            </div>
+                            <div className="min-w-0 flex-1 truncate rounded-md bg-background/70 px-3 py-2 text-left text-[0.7rem] text-muted-foreground sm:text-xs">
+                              {block.browserChromeUrl}
+                            </div>
                           </div>
-                          <div className="min-w-0 flex-1 truncate rounded-md bg-background/70 px-3 py-2 text-left text-[0.7rem] text-muted-foreground sm:text-xs">
-                            {block.browserChromeUrl}
+                          <div className="w-full bg-muted/30">
+                            <LandingDemoImage
+                              src={block.image.src}
+                              alt={block.image.alt}
+                              sizes="(max-width: 1024px) 100vw, 50vw"
+                              priority={blockIndex === 0}
+                            />
                           </div>
                         </div>
-                        <div className="w-full bg-muted/30">
+                      ) : (
+                        <div className="overflow-hidden rounded-3xl border border-border/50 bg-muted/15 shadow-2xl ring-1 ring-foreground/[0.03]">
                           <LandingDemoImage
                             src={block.image.src}
                             alt={block.image.alt}
                             sizes="(max-width: 1024px) 100vw, 50vw"
-                            priority={blockIndex === 0}
                           />
                         </div>
-                      </div>
-                    ) : (
-                      <div className="overflow-hidden rounded-xl bg-muted/15">
-                        <LandingDemoImage
-                          src={block.image.src}
-                          alt={block.image.alt}
-                          sizes="(max-width: 1024px) 100vw, 50vw"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </article>
-              ))}
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           </section>
 
-          {/* How it works */}
+          {/* ─── HOW IT WORKS ────────────────────────────────────────────────── */}
           <section
             id="how-it-works"
-            className="mx-auto mt-16 w-full max-w-5xl scroll-mt-24 sm:mt-20 lg:mt-28"
+            className="mx-auto mt-28 w-full max-w-5xl scroll-mt-24 sm:mt-36 lg:mt-44"
             aria-labelledby="how-it-works-title"
           >
-            <div className="mb-10 space-y-4 text-center sm:mb-12 sm:space-y-5">
+            <div className="mb-14 space-y-5 text-center sm:mb-16">
               <p className={landingEyebrow}>{t("howEyebrow")}</p>
               <h2 id="how-it-works-title" className={landingSectionHeading}>
                 {t("howTitle")}
               </h2>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3 sm:gap-5">
-              {steps.map((step) => (
-                <div
-                  key={step.stepNumber}
-                  className="group relative overflow-hidden rounded-2xl border border-border/80 bg-card/80 p-5 text-left shadow-sm ring-1 ring-foreground/[0.03] backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg sm:p-6"
-                >
+            <div className="grid gap-6 sm:grid-cols-3 sm:gap-7">
+              {steps.map((step, stepIndex) => {
+                const accent = stepAccents[stepIndex];
+                return (
                   <div
-                    className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-accent-gradient opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-[0.12]"
-                    aria-hidden
-                  />
-                  <span className="font-heading text-3xl font-bold tabular-nums text-foreground/[0.08] transition-colors group-hover:text-foreground/[0.14]">
-                    {step.stepNumber}
-                  </span>
-                  <h3 className={cn(landingCardTitle, "mt-3 text-foreground")}>
-                    {step.title}
-                  </h3>
-                  <p className={cn(landingBody, "mt-3 text-pretty")}>
-                    {step.description}
-                  </p>
-                </div>
-              ))}
+                    key={step.stepNumber}
+                    className={cn(
+                      "group relative overflow-hidden rounded-3xl border p-7 text-left shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:p-8",
+                      accent.borderClass,
+                      accent.bgClass,
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-[0.18]",
+                        accent.glowClass,
+                      )}
+                      aria-hidden
+                    />
+                    <span
+                      className={cn(
+                        "font-heading text-5xl font-bold tabular-nums transition-opacity duration-200",
+                        accent.numberClass,
+                        "opacity-40 group-hover:opacity-70",
+                      )}
+                    >
+                      {step.stepNumber}
+                    </span>
+                    <h3 className={cn(landingCardTitle, "mt-4 text-foreground")}>
+                      {step.title}
+                    </h3>
+                    <p className={cn(landingBody, "mt-4 text-pretty")}>
+                      {step.description}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </section>
 
-          {/* Why Aphilio */}
+          {/* ─── WHY APHILIO ─────────────────────────────────────────────────── */}
           <section
-            className="mx-auto mt-16 w-full max-w-5xl sm:mt-20 lg:mt-24"
+            className="mx-auto mt-28 w-full max-w-5xl sm:mt-36 lg:mt-40"
             aria-labelledby="why-title"
           >
-            <div className="mb-10 space-y-4 text-center sm:mb-12 sm:space-y-5">
+            <div className="mb-14 space-y-5 text-center sm:mb-16">
               <p className={landingEyebrow}>{t("whyEyebrow")}</p>
               <h2 id="why-title" className={landingSectionHeading}>
                 {t("whyTitle")}
               </h2>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
-              {whyItems.map(({ icon: WhyIcon, title, description }) => (
-                <div
-                  key={title}
-                  className="feature-card-muted group relative overflow-hidden rounded-2xl border p-5 sm:p-6"
-                >
+            <div className="grid gap-6 sm:grid-cols-2 sm:gap-7">
+              {whyItems.map(({ icon: WhyIcon, title, description }, whyIndex) => {
+                const iconStyle = whyIconStyles[whyIndex];
+                return (
                   <div
-                    className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-accent-gradient opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-[0.1]"
-                    aria-hidden
-                  />
-                  <div className="flex size-10 items-center justify-center rounded-xl border border-border/60 bg-background/80 shadow-sm">
-                    <WhyIcon className="size-5 text-foreground/70" aria-hidden />
-                  </div>
-                  <h3 className={cn(landingCardTitle, "mt-4")}>{title}</h3>
-                  <p className={cn(landingBody, "mt-3 text-pretty")}>
-                    {description}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Pricing */}
-          <section
-            id="pricing"
-            className="mx-auto mt-16 w-full max-w-5xl scroll-mt-24 sm:mt-20 lg:mt-28"
-            aria-labelledby="pricing-title"
-          >
-            <div className="mb-10 space-y-4 text-center sm:mb-12 sm:space-y-5">
-              <p className={landingEyebrow}>{t("pricingEyebrow")}</p>
-              <h2 id="pricing-title" className={landingSectionHeading}>
-                {t("pricingTitle")}
-              </h2>
-              <p
-                className={cn(
-                  landingBody,
-                  "mx-auto max-w-md text-pretty text-muted-foreground/95",
-                )}
-              >
-                {t("pricingSubtitle")}
-              </p>
-            </div>
-
-            <div className="grid gap-5 sm:grid-cols-2">
-              {/* Monthly */}
-              <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-card/80 p-6 shadow-sm ring-1 ring-foreground/[0.03] backdrop-blur-sm sm:p-7">
-                <div
-                  className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-accent-gradient opacity-[0.06] blur-3xl transition-opacity duration-300 group-hover:opacity-[0.1]"
-                  aria-hidden
-                />
-                <div className="relative">
-                  <h3 className={landingFeatureTitle}>{t("pricingMonthlyTitle")}</h3>
-                  <p className={cn(landingBody, "mt-2")}>
-                    {t("pricingMonthlyTagline")}
-                  </p>
-                  <div className="mt-5 flex items-baseline gap-1.5">
-                    <span className="font-heading text-4xl font-bold tracking-tight">
-                      {t("pricingProMonthlyPrice")}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {t("pricingProPeriod")}
-                    </span>
-                  </div>
-                  <p className="mt-1.5 text-xs text-muted-foreground/80">
-                    {t("pricingMonthlyBillingNote")}
-                  </p>
-                </div>
-
-                <ul className="relative mt-6 flex-1 space-y-3">
-                  {proFeatures.map((feature) => (
-                    <li
-                      key={feature}
-                      className="flex items-start gap-2.5 text-[0.9375rem] leading-[1.55] text-foreground/85 sm:text-base sm:leading-[1.55]"
-                    >
-                      <Check
-                        className="mt-0.5 size-4 shrink-0 text-foreground/65"
-                        aria-hidden
-                      />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="relative mt-8">
-                  <CheckoutTrackedLink
-                    planSlug="monthly"
-                    href="/api/checkout/start?slug=monthly"
+                    key={title}
                     className={cn(
-                      buttonVariants({ variant: "outline", size: "default" }),
-                      "w-full rounded-xl font-semibold",
+                      "group relative overflow-hidden rounded-3xl border border-border/70 bg-card/80 p-7 shadow-sm ring-1 ring-foreground/[0.03] backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg sm:p-8",
                     )}
                   >
-                    {t("pricingMonthlyCta")}
-                  </CheckoutTrackedLink>
-                </div>
-              </div>
-
-              {/* Yearly */}
-              <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-foreground/[0.12] bg-card/90 p-6 shadow-lg ring-1 ring-foreground/[0.06] backdrop-blur-sm sm:p-7">
-                <div
-                  className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full bg-accent-gradient opacity-[0.12] blur-3xl transition-opacity duration-300 group-hover:opacity-[0.18]"
-                  aria-hidden
-                />
-
-                <div className="relative flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className={landingFeatureTitle}>{t("pricingYearlyTitle")}</h3>
-                    <p className={cn(landingBody, "mt-2")}>
-                      {t("pricingYearlyTagline")}
+                    <div
+                      className={cn(
+                        "pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-accent-gradient opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-[0.1]",
+                      )}
+                      aria-hidden
+                    />
+                    <div
+                      className={cn(
+                        "flex size-12 items-center justify-center rounded-2xl border shadow-sm",
+                        iconStyle.iconBg,
+                      )}
+                    >
+                      <WhyIcon
+                        className={cn("size-5", iconStyle.iconColor)}
+                        aria-hidden
+                      />
+                    </div>
+                    <h3 className={cn(landingCardTitle, "mt-5")}>{title}</h3>
+                    <p className={cn(landingBody, "mt-4 text-pretty")}>
+                      {description}
                     </p>
                   </div>
-                  <span className="gradient-pill shrink-0 text-[0.6rem] tracking-[0.13em]">
-                    {t("pricingProBadge")}
-                  </span>
-                </div>
-
-                <div className="relative mt-5">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="font-heading text-4xl font-bold tracking-tight">
-                      {t("pricingProYearlyPrice")}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {t("pricingProPeriod")}
-                    </span>
-                  </div>
-                  <p className="mt-1.5 text-xs text-muted-foreground/80">
-                    {t("pricingYearlyBillingNote")}
-                  </p>
-                  <p className="mt-2 text-xs font-semibold text-gradient">
-                    {t("pricingProSaveLabel")}
-                  </p>
-                </div>
-
-                <ul className="relative mt-6 flex-1 space-y-3">
-                  {proFeatures.map((feature) => (
-                    <li
-                      key={feature}
-                      className="flex items-start gap-2.5 text-[0.9375rem] leading-[1.55] text-foreground/85 sm:text-base sm:leading-[1.55]"
-                    >
-                      <Check
-                        className="mt-0.5 size-4 shrink-0 text-foreground/65"
-                        aria-hidden
-                      />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="relative mt-8">
-                  <CheckoutTrackedLink
-                    planSlug="yearly"
-                    href="/api/checkout/start?slug=yearly"
-                    className={cn(
-                      buttonVariants({ variant: "default", size: "default" }),
-                      "w-full rounded-xl font-semibold",
-                    )}
-                  >
-                    {t("pricingYearlyCta")}
-                  </CheckoutTrackedLink>
-                </div>
-              </div>
+                );
+              })}
             </div>
           </section>
 
-          {/* CTA band */}
+          <PricingPlansSection className="mt-28 sm:mt-36 lg:mt-44" />
+
+          {/* ─── CTA BAND ─────────────────────────────────────────────────────── */}
           <section
-            className="mx-auto mt-16 w-full max-w-5xl sm:mt-20 lg:mt-24"
+            className="mx-auto mt-28 w-full max-w-5xl sm:mt-36 lg:mt-40"
             aria-labelledby="cta-band-title"
           >
-            <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-card/90 via-card/70 to-muted/30 p-8 text-center shadow-md ring-1 ring-foreground/[0.04] backdrop-blur-sm sm:p-10 lg:p-12">
+            <div className="relative overflow-hidden rounded-3xl border border-border/50 bg-gradient-to-br from-card via-card/80 to-muted/40 p-10 text-center shadow-2xl ring-1 ring-foreground/[0.04] backdrop-blur-sm sm:p-14 lg:p-16">
               <div
-                className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-accent-gradient opacity-[0.08] blur-3xl"
+                className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-accent-gradient opacity-[0.1] blur-3xl"
                 aria-hidden
               />
               <div
-                className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-accent-gradient opacity-[0.06] blur-3xl"
+                className="pointer-events-none absolute -bottom-20 -left-20 h-60 w-60 rounded-full bg-accent-gradient opacity-[0.08] blur-3xl"
                 aria-hidden
               />
+              <div
+                className="pointer-events-none absolute left-1/2 top-0 h-40 w-96 -translate-x-1/2 rounded-full bg-accent-gradient opacity-[0.06] blur-3xl"
+                aria-hidden
+              />
+
+              <div className="relative mb-6">
+                <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/70 px-4 py-1.5 shadow-sm backdrop-blur-sm">
+                  <span className="size-2 rounded-full bg-accent-gradient animate-pulse-glow" aria-hidden />
+                  <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    {t("ctaBandEyebrow")}
+                  </span>
+                </span>
+              </div>
+
               <h2
                 id="cta-band-title"
-                className="relative font-heading text-2xl font-semibold leading-[1.15] tracking-tight text-foreground sm:text-3xl sm:leading-[1.12] lg:text-[2rem] lg:leading-tight"
+                className="relative font-heading text-3xl font-semibold leading-[1.12] tracking-tight text-foreground sm:text-4xl sm:leading-[1.08] lg:text-[2.75rem] lg:leading-tight"
               >
                 {t("ctaBandTitle")}
               </h2>
-              <p className="relative mx-auto mt-4 max-w-[46ch] text-base leading-[1.65] text-muted-foreground/95 sm:mt-5 sm:text-[1.0625rem] sm:leading-[1.65]">
+              <p className="relative mx-auto mt-5 max-w-[48ch] text-[1.0625rem] leading-[1.7] text-muted-foreground/95 sm:mt-6 sm:text-lg sm:leading-[1.7]">
                 {t("ctaBandDescription")}
               </p>
-              <div className="relative mt-7 flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4">
+              <div className="relative mt-9 flex flex-col items-center gap-4 sm:flex-row sm:justify-center sm:gap-5">
                 <Link
                   href="/sign-in"
                   className={cn(
                     buttonVariants({ variant: "default", size: "lg" }),
-                    "inline-flex h-12 rounded-xl px-8 text-sm font-semibold shadow-md sm:text-base",
+                    "inline-flex h-14 rounded-2xl px-10 text-base font-semibold shadow-lg",
                   )}
                 >
-                  {t("ctaBandButton")}
-                  <ArrowRight className="ml-1.5 size-4" aria-hidden />
+                  {tCommon("signIn")}
+                  <ArrowRight className="ml-2 size-5" aria-hidden />
                 </Link>
                 <Link
-                  href="#pricing"
+                  href="/plans"
                   className={cn(
                     buttonVariants({ variant: "ghost", size: "lg" }),
-                    "h-12 rounded-xl text-sm text-muted-foreground hover:text-foreground sm:text-base",
+                    "h-14 rounded-2xl text-base text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {t("navPricing")}
                 </Link>
               </div>
-              <p className="relative mt-5 text-sm text-muted-foreground/75">
-                {t("trustWorkspace")} · {t("trustBrowser")}
+              <p className="relative mt-6 text-sm text-muted-foreground/65">
+                {t("trustWorkspace")}
               </p>
             </div>
           </section>
 
-          <footer className="relative mx-auto mt-16 w-full max-w-5xl border-t border-border/60 pt-10 text-center sm:mt-20">
+          <footer className="relative mx-auto mt-20 w-full max-w-5xl border-t border-border/60 pt-10 text-center sm:mt-24">
             <p className="text-sm leading-relaxed text-muted-foreground/90">
               {t("footerTagline")}
             </p>
-            <p className="mt-3 text-xs leading-relaxed text-muted-foreground/75">
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground/65">
               {t("footerCopyright", { year })}
             </p>
           </footer>

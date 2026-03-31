@@ -54,7 +54,7 @@ import { ConversationSidebar } from "./components/conversation-sidebar";
 import { UploadedThumb } from "./components/uploaded-thumb";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { LogoutButton } from "@/components/logout-button";
-import { DashboardBackIcon } from "@/components/dashboard-back-link";
+import { DashboardBackIcon } from "@/components/dashboard/dashboard-back-icon";
 import {
   dashboardToolHeaderActionsClass,
   dashboardToolHeaderBarClass,

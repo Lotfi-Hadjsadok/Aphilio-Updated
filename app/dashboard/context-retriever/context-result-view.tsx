@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { deleteSavedContext } from "@/app/actions/scrape";
 import type { DeleteDNAState, ScrapeResult } from "@/types/scrape";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { DashboardBackIcon } from "@/components/dashboard-back-link";
+import { DashboardBackIcon } from "@/components/dashboard/dashboard-back-icon";
 import {
   dashboardToolHeaderActionsClass,
   dashboardToolHeaderBarClass,

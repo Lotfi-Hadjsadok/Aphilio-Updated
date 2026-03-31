@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { Loader2, PenSquare, Search, Sparkles, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { dashboardNavPillLinkClassName } from "@/components/dashboard-back-link";
+import { dashboardNavPillLinkClassName } from "@/components/dashboard/dashboard-nav-link-classes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";

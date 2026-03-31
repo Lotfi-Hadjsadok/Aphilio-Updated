@@ -3,7 +3,7 @@
 import type { RefObject } from "react";
 import { useTranslations } from "next-intl";
 import { Globe, Library } from "lucide-react";
-import { DashboardBackIcon } from "@/components/dashboard-back-link";
+import { DashboardBackIcon } from "@/components/dashboard/dashboard-back-icon";
 import { dashboardToolHeaderBarClass, dashboardToolPageGutterClass } from "@/lib/dashboard-tool-layout";
 import { cn } from "@/lib/utils";
 import type { SavedContextSummary } from "@/types/scrape";

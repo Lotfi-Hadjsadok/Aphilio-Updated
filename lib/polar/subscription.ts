@@ -1,5 +1,6 @@
+import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
-import { redirectToPolarProductCheckout } from "@/lib/polar/checkout-redirect";
+import { plansUrlWithReturn } from "@/lib/plans";
 
 export async function getUserSubscriptionStatus(userId: string): Promise<boolean> {
   try {
@@ -14,17 +15,15 @@ export async function getUserSubscriptionStatus(userId: string): Promise<boolean
 }
 
 /**
- * Sends unsubscribed users to Polar checkout. Uses cached `hasActiveSubscription` (no Polar API call).
+ * Subscribed-only app routes: sends logged-in users without an active plan to `/plans`
+ * (with optional return path). Uses cached `hasActiveSubscription` (no Polar API call).
  */
-export async function requireActiveSubscriptionOrCheckout(params: {
+export async function requireSubscriptionOrRedirectToPlans(params: {
   userId: string;
-  checkoutSlug?: string;
+  returnTo: string;
 }): Promise<void> {
   const subscribed = await getUserSubscriptionStatus(params.userId);
   if (!subscribed) {
-    await redirectToPolarProductCheckout({
-      userId: params.userId,
-      slug: params.checkoutSlug ?? "monthly",
-    });
+    redirect(plansUrlWithReturn(params.returnTo));
   }
 }

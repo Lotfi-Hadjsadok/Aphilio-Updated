@@ -3,7 +3,9 @@
 import { useTranslations } from "next-intl";
 import { MessageSquare, Wand2, Wrench } from "lucide-react";
 import { BentoTile } from "./bento-tile";
-import { LockedToolActionCard, ToolActionCard } from "./tool-action-card";
+import { plansUrlWithReturn } from "@/lib/plans";
+import { LockedToolActionCard } from "./locked-tool-action-card";
+import { ToolActionCard } from "./tool-action-card";
 
 export function ToolsTile({
   contextId,
@@ -45,6 +47,7 @@ export function ToolsTile({
             title={tCtx("openInChat")}
             primary
             iconAnimationDelaySeconds={0}
+            unlockHref={plansUrlWithReturn(`/dashboard/chat?contextId=${contextId}`)}
             activatePlanLabel={tDashboard("activatePlan")}
             unlockAriaLabel={tDashboard("activatePlanUnlockAria", { title: tCtx("openInChat") })}
           />
@@ -61,6 +64,7 @@ export function ToolsTile({
             icon={Wand2}
             title={tCtx("openAdCreatives")}
             iconAnimationDelaySeconds={0.35}
+            unlockHref={plansUrlWithReturn(`/dashboard/ad-creatives?contextId=${contextId}`)}
             activatePlanLabel={tDashboard("activatePlan")}
             unlockAriaLabel={tDashboard("activatePlanUnlockAria", { title: tCtx("openAdCreatives") })}
           />

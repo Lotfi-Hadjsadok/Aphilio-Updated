@@ -10,142 +10,19 @@ import {
   Lock,
   MessageSquare,
   Settings,
-  Sparkles,
 } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { BrandLogoLink } from "@/components/brand-logo";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import {
-  dashboardNavFocusRingClass,
-  dashboardNavPillLinkClassName,
-} from "@/components/dashboard-back-link";
+import { LockedToolCard } from "@/components/dashboard/locked-tool-card";
+import { dashboardNavPillLinkClassName } from "@/components/dashboard/dashboard-nav-link-classes";
+import { ToolCard } from "@/components/dashboard/tool-card";
 import { cn } from "@/lib/utils";
 import prisma from "@/lib/prisma";
 import { LocaleSync } from "@/components/locale-sync";
 import { LogoutButton } from "@/components/logout-button";
 import { getUserSubscriptionStatus } from "@/lib/polar/subscription";
-import { CheckoutTrackedAnchor } from "@/components/analytics/checkout-tracked-anchor";
-
-type ToolCardProps = {
-  href: string;
-  title: string;
-  description?: string;
-  actionLabel: string;
-  icon: React.ReactNode;
-  accent?: string;
-};
-
-function ToolCard({
-  href,
-  title,
-  description,
-  actionLabel,
-  icon,
-  accent,
-}: ToolCardProps) {
-  return (
-    <Link
-      href={href}
-      className={cn("group block h-full", dashboardNavFocusRingClass)}
-    >
-      <div className="dashboard-tool-card flex h-full flex-col">
-        <div
-          className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-accent-gradient opacity-[0.08] blur-3xl transition-opacity duration-500 group-hover:opacity-[0.28]"
-          aria-hidden
-        />
-        <div className="relative flex h-full flex-col gap-4 p-5 sm:p-6">
-          <div
-            className={cn(
-              "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-inner ring-1 ring-border/80",
-              accent ?? "bg-accent-gradient-subtle",
-            )}
-          >
-            {icon}
-          </div>
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <p className="font-heading text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-              {title}
-            </p>
-            {description ? (
-              <p className="text-[0.8rem] leading-relaxed text-muted-foreground sm:text-sm">{description}</p>
-            ) : null}
-          </div>
-          <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-gradient">
-            {actionLabel}
-            <ArrowRight
-              className="size-3.5 transition-transform duration-300 group-hover:translate-x-1"
-              aria-hidden
-            />
-          </p>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-type LockedToolCardProps = {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  checkoutSlug: string;
-  activatePlanLabel: string;
-  unlockAriaLabel: string;
-};
-
-function LockedToolCard({
-  title,
-  description,
-  icon,
-  checkoutSlug,
-  activatePlanLabel,
-  unlockAriaLabel,
-}: LockedToolCardProps) {
-  return (
-    <CheckoutTrackedAnchor
-      planSlug={checkoutSlug}
-      href={`/api/checkout/start?slug=${checkoutSlug}`}
-      className={cn("group block h-full", dashboardNavFocusRingClass)}
-      aria-label={unlockAriaLabel}
-    >
-      <div className="dashboard-tool-card relative flex h-full flex-col overflow-hidden">
-        {/* Blurred / dimmed base content */}
-        <div className="relative flex h-full flex-col gap-4 p-5 opacity-50 blur-[0.5px] transition-all duration-300 group-hover:opacity-30 group-hover:blur-[1px] sm:p-6">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-inner ring-1 ring-border/80 bg-accent-gradient-subtle">
-            {icon}
-          </div>
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <p className="font-heading text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-              {title}
-            </p>
-            <p className="text-[0.8rem] leading-relaxed text-muted-foreground sm:text-sm">
-              {description}
-            </p>
-          </div>
-        </div>
-
-        {/* Lock overlay — always visible, animate on hover */}
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 transition-all duration-300">
-          {/* Padlock icon */}
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-background/70 ring-1 ring-border/60 backdrop-blur-sm transition-all duration-300 group-hover:scale-110 group-hover:bg-background/90 group-hover:ring-border">
-            <Lock
-              className="size-5 text-muted-foreground transition-colors duration-300 group-hover:text-foreground"
-              strokeWidth={1.75}
-              aria-hidden
-            />
-          </div>
-
-          {/* Locked CTA label — slides up on hover */}
-          <div className="translate-y-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-background/80 px-3 py-1.5 text-xs font-semibold text-foreground ring-1 ring-border/60 backdrop-blur-sm">
-              <Sparkles className="size-3 text-amber-400" aria-hidden />
-              {activatePlanLabel}
-            </span>
-          </div>
-        </div>
-      </div>
-    </CheckoutTrackedAnchor>
-  );
-}
+import { plansUrlWithReturn } from "@/lib/plans";
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({
@@ -166,6 +43,10 @@ export default async function DashboardPage() {
   }
 
   const isSubscribed = await getUserSubscriptionStatus(session.user.id);
+
+  const chatPlansUrl = plansUrlWithReturn("/dashboard/chat");
+  const adCreativesPlansUrl = plansUrlWithReturn("/dashboard/ad-creatives");
+  const libraryPlansUrl = plansUrlWithReturn("/dashboard/library");
 
   const displayName = session.user.name ?? session.user.email;
   const locale = await getLocale();
@@ -214,9 +95,8 @@ export default async function DashboardPage() {
                   <Settings className="size-4" strokeWidth={1.75} />
                   {t("dashboard.settings")}
                 </Link>
-                <CheckoutTrackedAnchor
-                  planSlug="monthly"
-                  href="/api/checkout/start?slug=monthly"
+                <Link
+                  href={libraryPlansUrl}
                   className={cn(
                     dashboardNavPillLinkClassName,
                     "w-fit opacity-90 ring-1 ring-border/40",
@@ -226,7 +106,7 @@ export default async function DashboardPage() {
                   <Lock className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden />
                   <Images className="size-4 opacity-70" strokeWidth={1.75} aria-hidden />
                   {t("dashboard.library")}
-                </CheckoutTrackedAnchor>
+                </Link>
               </>
             )}
             <LogoutButton label={tCommon("logout")} />
@@ -272,7 +152,7 @@ export default async function DashboardPage() {
                 title={t("dashboard.tools.chat.title")}
                 description={t("dashboard.tools.chat.description")}
                 icon={<MessageSquare className="h-6 w-6 text-foreground/50" strokeWidth={1.65} aria-hidden />}
-                checkoutSlug="monthly"
+                unlockHref={chatPlansUrl}
                 activatePlanLabel={t("dashboard.activatePlan")}
                 unlockAriaLabel={t("dashboard.activatePlanUnlockAria", {
                   title: t("dashboard.tools.chat.title"),
@@ -292,7 +172,7 @@ export default async function DashboardPage() {
                 title={t("dashboard.tools.adCreatives.title")}
                 description={t("dashboard.tools.adCreatives.description")}
                 icon={<LayoutTemplate className="h-6 w-6 text-foreground/50" strokeWidth={1.65} aria-hidden />}
-                checkoutSlug="monthly"
+                unlockHref={adCreativesPlansUrl}
                 activatePlanLabel={t("dashboard.activatePlan")}
                 unlockAriaLabel={t("dashboard.activatePlanUnlockAria", {
                   title: t("dashboard.tools.adCreatives.title"),

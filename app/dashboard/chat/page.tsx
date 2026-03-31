@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { listSavedContexts } from "@/app/actions/scrape";
 import { listConversations } from "@/app/actions/chat";
-import { requireActiveSubscriptionOrCheckout } from "@/lib/polar/subscription";
+import { requireSubscriptionOrRedirectToPlans } from "@/lib/polar/subscription";
 import { ChatInterface } from "./chat-interface";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -22,7 +22,10 @@ export default async function ChatPage({ searchParams }: PageProps) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/sign-in");
 
-  await requireActiveSubscriptionOrCheckout({ userId: session.user.id });
+  await requireSubscriptionOrRedirectToPlans({
+    userId: session.user.id,
+    returnTo: "/dashboard/chat",
+  });
 
   const { contextId } = await searchParams;
 

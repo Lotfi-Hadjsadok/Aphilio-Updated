@@ -9,7 +9,7 @@ import {
   listAdCreativeStudioSessionsForUser,
 } from "@/app/actions/ad-creative-studio-sessions";
 import type { LoadAdCreativesDnaState } from "@/types/ad-creatives";
-import { requireActiveSubscriptionOrCheckout } from "@/lib/polar/subscription";
+import { requireSubscriptionOrRedirectToPlans } from "@/lib/polar/subscription";
 import prisma from "@/lib/prisma";
 import { AdCreativesForm } from "./ad-creatives-form";
 
@@ -27,7 +27,10 @@ export default async function AdCreativesPage({ searchParams }: PageProps) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/sign-in");
 
-  await requireActiveSubscriptionOrCheckout({ userId: session.user.id });
+  await requireSubscriptionOrRedirectToPlans({
+    userId: session.user.id,
+    returnTo: "/dashboard/ad-creatives",
+  });
 
   const tDna = await getTranslations("dna");
   const { contextId, sessionId } = await searchParams;

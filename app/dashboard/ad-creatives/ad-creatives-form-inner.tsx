@@ -14,7 +14,7 @@ import {
 import type { SavedContextSummary } from "@/types/scrape";
 import type { LoadAdCreativesDnaState } from "@/types/ad-creatives";
 import { Button } from "@/components/ui/button";
-import { DashboardBackIcon } from "@/components/dashboard-back-link";
+import { DashboardBackIcon } from "@/components/dashboard/dashboard-back-icon";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { LogoutButton } from "@/components/logout-button";
 import { cn } from "@/lib/utils";

@@ -171,6 +171,16 @@
   .font-arabic {
     font-family: var(--font-arabic);
   }
+  [lang="ar"] h1,
+  [lang="ar"] h2,
+  [lang="ar"] h3,
+  [lang="ar"] h4,
+  [lang="ar"] h5,
+  [lang="ar"] h6,
+  [lang="ar"] .font-heading {
+    font-family: var(--font-arabic);
+    letter-spacing: normal;
+  }
   html {
     @apply font-sans;
   }
@@ -238,14 +248,14 @@
   /* backgrounds */
   .landing-grid-bg {
     background-image:
-      linear-gradient(oklch(0.7 0 0 / 0.07) 1px, transparent 1px),
-      linear-gradient(90deg, oklch(0.7 0 0 / 0.07) 1px, transparent 1px);
-    background-size: 60px 60px;
+      linear-gradient(oklch(0.65 0 0 / 0.085) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(0.65 0 0 / 0.085) 1px, transparent 1px);
+    background-size: 56px 56px;
   }
   .dark .landing-grid-bg {
     background-image:
-      linear-gradient(oklch(1 0 0 / 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, oklch(1 0 0 / 0.05) 1px, transparent 1px);
+      linear-gradient(oklch(1 0 0 / 0.065) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 0.065) 1px, transparent 1px);
   }
   .dot-grid-bg {
     background-image: radial-gradient(oklch(0.6 0 0 / 0.18) 1px, transparent 1px);
@@ -478,6 +488,7 @@
   }
 
   .animate-float          { animation: float 4s ease-in-out infinite; }
+  .animate-float-slow     { animation: float 6s ease-in-out infinite; }
   .animate-pulse-glow     { animation: pulse-glow 2.5s ease-in-out infinite; }
   .animate-grid-fade      { animation: grid-fade 0.8s ease forwards; }
   .animate-shimmer        { animation: shimmer 2s linear infinite; }
@@ -499,6 +510,7 @@
 
   @media (max-width: 767px), (prefers-reduced-motion: reduce) {
     .animate-float,
+    .animate-float-slow,
     .animate-pulse-glow,
     .animate-grid-fade,
     .animate-orbit,

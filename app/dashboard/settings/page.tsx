@@ -15,7 +15,7 @@ import { SubscriptionSettingsPanel } from "@/components/settings/subscription-se
 import {
   dashboardNavFocusRingClass,
   dashboardNavPillLinkClassName,
-} from "@/components/dashboard-back-link";
+} from "@/components/dashboard/dashboard-nav-link-classes";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { LocaleSync } from "@/components/locale-sync";
 import { LogoutButton } from "@/components/logout-button";
