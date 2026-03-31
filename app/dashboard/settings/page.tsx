@@ -113,7 +113,7 @@ export default async function SettingsPage({ searchParams }: PageProps) {
             <Link href="/dashboard" className={cn(dashboardNavPillLinkClassName, "w-fit")}>
               {tCommon("dashboard")}
             </Link>
-            <LogoutButton />
+            <LogoutButton label={tCommon("logout")} />
           </div>
         </header>
 

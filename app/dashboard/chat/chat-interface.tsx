@@ -396,7 +396,10 @@ export function ChatInterface({
             </div>
             <div className={dashboardToolHeaderActionsClass}>
               <LanguageSwitcher currentLocale={currentLocale} />
-              <LogoutButton className="h-8 px-2.5 text-xs" />
+              <LogoutButton
+                className="h-8 px-2.5 text-xs"
+                label={tCommon("logout")}
+              />
               <button
                 type="button"
                 onClick={handleNewChat}
@@ -449,7 +452,10 @@ export function ChatInterface({
                 currentLocale={currentLocale}
                 className="max-w-[min(11rem,46vw)] sm:max-w-[13rem]"
               />
-              <LogoutButton className="h-8 px-2.5 text-xs" />
+              <LogoutButton
+                className="h-8 px-2.5 text-xs"
+                label={tCommon("logout")}
+              />
               <button
                 type="button"
                 onClick={handleNewChat}

@@ -31,11 +31,13 @@ export default async function OnboardingPage() {
 
   if (user?.onboardingCompleted) redirect("/dashboard");
 
+  const tCommon = await getTranslations("common");
+
   return (
     <main className="landing-grid-bg relative flex h-full min-h-0 w-full flex-1 flex-col items-center justify-center overflow-hidden bg-background text-foreground">
       <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-end px-4 pt-4 sm:px-8 sm:pt-6">
         <div className="pointer-events-auto">
-          <LogoutButton />
+          <LogoutButton label={tCommon("logout")} />
         </div>
       </header>
       <div className="pointer-events-none absolute inset-0" aria-hidden>

@@ -62,7 +62,7 @@ export function SubscriptionSettingsPanel({
   })();
 
   const formatDate = (value: Date | null) => {
-    if (!value) return "—";
+    if (!value) return "-";
     return value.toLocaleDateString(locale, {
       year: "numeric",
       month: "long",

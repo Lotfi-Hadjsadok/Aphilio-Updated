@@ -35,7 +35,7 @@
     "premium": "Prêmio",
     "removeImage": "Remover imagem",
     "interfaceLanguage": "Idioma da interface",
-    "logout": "Log out",
+    "logout": "Sair",
     "signIn": "Entrar"
   },
   "signIn": {
@@ -58,7 +58,7 @@
     },
     "url": {
       "title": "Qual é o seu site?",
-      "description": "Analisaremos seu site para extrair o DNA da sua marca — cores, fontes, logotipo e voz — para que tudo que geramos esteja alinhado à sua identidade.",
+      "description": "Analisaremos seu site para extrair o DNA da sua marca, cores, fontes, logotipo e voz, para que tudo que geramos esteja alinhado à sua identidade.",
       "placeholder": "https://seusite.com.br",
       "errorRequired": "Por favor, insira a URL do site.",
       "errorInvalid": "Por favor, insira uma URL válida."
@@ -107,7 +107,7 @@
       },
       "adCreatives": {
         "title": "Criativos Publicitários",
-        "description": "Crie conceitos de anúncios, títulos e textos do seu DNA — otimizados para redes sociais, busca e iteração rápida.",
+        "description": "Crie conceitos de anúncios, títulos e textos do seu DNA, otimizados para redes sociais, busca e iteração rápida.",
         "action": "Abrir criativos"
       }
     },
@@ -233,7 +233,7 @@
     "newButton": "Novo",
     "noData": {
       "title": "Adicione uma marca primeiro",
-      "description": "Salve uma marca em sua biblioteca primeiro — então você poderá usar este estúdio para gerar anúncios.",
+      "description": "Salve uma marca em sua biblioteca primeiro, então você poderá usar este estúdio para gerar anúncios.",
       "action": "Adicionar marca"
     },
     "step1": {
@@ -252,8 +252,8 @@
     },
     "step4": {
       "title": "Gere suas imagens",
-      "layoutsReady": "{count} layout pronto — selecione a qualidade e gere cada cartão.",
-      "layoutsReadyPlural": "{count} layouts prontos — selecione a qualidade e gere cada cartão.",
+      "layoutsReady": "{count} layout pronto, selecione a qualidade e gere cada cartão.",
+      "layoutsReadyPlural": "{count} layouts prontos, selecione a qualidade e gere cada cartão.",
       "adjustFormats": "Ajustar formatos",
       "rebuildAll": "Reconstruir tudo",
       "refreshing": "Atualizando…",
@@ -292,8 +292,8 @@
       "download": "Baixar",
       "fullSize": "Tamanho real",
       "generating": "Gerando…",
-      "generatingHintPremium": "Qualidade premium – isso leva um momento",
-      "generatingHintFast": "Modo rápido – isso leva um momento",
+      "generatingHintPremium": "Qualidade premium, isso leva um momento",
+      "generatingHintFast": "Modo rápido, isso leva um momento",
       "generateImage": "Gerar imagem",
       "regenerateImage": "Regenerar imagem"
     },
@@ -369,7 +369,7 @@
       }
     },
     "referenceImages": {
-      "noSimilarSections": "Nenhuma imagem encontrada em seções semelhantes – a IA usará apenas o logotipo da sua marca.",
+      "noSimilarSections": "Nenhuma imagem encontrada em seções semelhantes, a IA usará apenas o logotipo da sua marca.",
       "referenceImageCount": "{count, plural, one {# imagem de referência} other {# imagens de referência}}",
       "referenceFromSections": "de {count, plural, one {# secção semelhante} other {# secções semelhantes}}",
       "altReference": "Referência {position}"
@@ -462,13 +462,13 @@
   },
   "landing": {
     "skipToContent": "Ir para o conteúdo",
-    "pill": "Inteligência de marca → Criativos de anúncio",
-    "headlineBefore": "Transforme qualquer URL em",
-    "headlineHighlight": "criativos de anúncio fiéis à marca",
-    "headlineAfter": "em minutos",
-    "subhead": "A Aphilio extrai o DNA da sua marca (cores, fontes, logotipo e voz) diretamente de qualquer site ao vivo e gera anúncios e visuais que combinam de verdade com a sua marca.",
-    "ctaPrimary": "Começar com o Google",
-    "ctaSecondary": "Ver preços",
+    "headline1": "Cole um link.",
+    "headline2": "Obtenha o DNA da marca.",
+    "headlineEmoji": "🧬",
+    "headline3": "Publique anúncios irresistíveis.",
+    "subhead": "Cole qualquer URL. Aphilio abre seu site ao vivo em um navegador real, captura cores, fontes, voz e ângulos em segundos e gera criativos que nunca saem da linha da marca.",
+    "ctaSeeFeatures": "Ver recursos",
+    "ctaSubscribe": "Subscrever",
     "navPricing": "Preços",
     "trustBrowser": "Renderização em navegador real",
     "trustDna": "Extração com IA",
@@ -481,20 +481,19 @@
     "step2Description": "Cores, tipografia, logotipos, voz, personalidade e ângulos de marketing são capturados e estruturados num perfil reutilizável.",
     "step3Title": "Gere criativos fiéis à marca",
     "step3Description": "Use o seu perfil DNA no estúdio de anúncios ou no chat com IA para gerar imagens, textos e anúncios em vários formatos em segundos.",
-    "previewEyebrow": "Pré-visualização ao vivo",
-    "previewTitle": "O que o DNA captura do seu URL",
     "previewUrlPlaceholder": "https://seusite.com",
     "previewPaletteLabel": "Paleta da marca",
     "previewTypeLabel": "Tipografia",
     "previewTypeSample": "Aa: fonte do título da marca",
     "previewVoiceLabel": "Voz da marca",
     "previewVoiceSample": "Confiante, clara, humana.",
-    "featuresEyebrow": "O que você recebe",
-    "featuresTitle": "Três ferramentas. Uma marca. Tudo coerente.",
+    "featuresSectionAria": "Funcionalidades",
     "featureSourceTitle": "Extração de DNA da marca",
     "featureSourceDescription": "Cole qualquer URL e obtenha um perfil completo: cores, tipografia, logotipos, voz, personalidade e ângulos de marketing, extraídos do site ao vivo em segundos.",
     "featureShipTitle": "Estúdio de criativos de anúncio",
     "featureShipDescription": "Escolha ângulos de marketing, modelos de anúncio e gere vários formatos (1:1, 4:5, 9:16, 16:9) baseados no seu DNA exato.",
+    "featureLibraryTitle": "Biblioteca de criativos",
+    "featureLibraryDescription": "Navegue e gerencie todas as imagens geradas em um só lugar, organizadas por marca, fáceis de revisitar e prontas para reutilizar em campanhas.",
     "featureAccountTitle": "Chat com IA consciente da marca",
     "featureAccountDescription": "Descreva o que precisa em linguagem natural. A IA usa o contexto da marca e gera visuais coerentes na conversa.",
     "ctaBandTitle": "Pronto para extrair o DNA da sua marca?",
@@ -505,13 +504,13 @@
     "whyEyebrow": "Por que Aphilio",
     "whyTitle": "Feito de forma diferente das ferramentas de IA genéricas",
     "whyItem1Title": "Navegador real, não um scraper",
-    "whyItem1Desc": "Abrimos o seu URL numa sessão de navegador real para capturar o que os utilizadores veem — cores ao vivo, fontes renderizadas e imagens reais, não HTML bruto.",
+    "whyItem1Desc": "Abrimos o seu URL numa sessão de navegador real para capturar o que os utilizadores veem, cores ao vivo, fontes renderizadas e imagens reais, não HTML bruto.",
     "whyItem2Title": "Cada sinal da marca, capturado",
-    "whyItem2Desc": "Cores, tipografia, logotipos, voz, personalidade e ângulos de marketing — tudo estruturado num perfil reutilizável no seu espaço de trabalho.",
+    "whyItem2Desc": "Cores, tipografia, logotipos, voz, personalidade e ângulos de marketing, tudo estruturado num perfil reutilizável no seu espaço de trabalho.",
     "whyItem3Title": "Saídas de IA alinhadas à sua marca",
     "whyItem3Desc": "Cada imagem, título e anúncio baseia-se no seu perfil DNA exato. A IA não pode desviar-se da identidade da marca.",
     "whyItem4Title": "Todos os formatos, prontos para publicar",
-    "whyItem4Desc": "Quadrado, retrato, story e paisagem — gere as quatro proporções de uma vez e publique em qualquer lugar sem recortes manuais.",
+    "whyItem4Desc": "Quadrado, retrato, story e paisagem, gere as quatro proporções de uma vez e publique em qualquer lugar sem recortes manuais.",
     "pricingEyebrow": "Preços",
     "pricingTitle": "Escolha o seu plano",
     "pricingSubtitle": "Acesso completo a todos os recursos. Troque ou cancele quando quiser.",
@@ -524,7 +523,7 @@
     "pricingYearlyBillingNote": "240 $ cobrados uma vez por ano",
     "pricingYearlyCta": "Subscrever anual",
     "pricingProF1": "Extrações de DNA da marca ilimitadas",
-    "pricingProF2": "Estúdio de anúncios — todos os formatos e layouts",
+    "pricingProF2": "Estúdio de anúncios, todos os formatos e layouts",
     "pricingProF3": "Chat com IA consciente da marca com geração de imagens",
     "pricingProF4": "Biblioteca criativa com imagens guardadas",
     "pricingProF5": "Suporte prioritário",

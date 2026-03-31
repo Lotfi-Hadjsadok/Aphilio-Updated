@@ -67,7 +67,10 @@ export function BrandDnaToolHeader({
         />
         <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:gap-2">
           <LibraryTriggerButton />
-          <LogoutButton className="h-9 shrink-0 px-3 text-xs sm:text-sm" />
+          <LogoutButton
+            className="h-9 shrink-0 px-3 text-xs sm:text-sm"
+            label={tCommon("logout")}
+          />
         </div>
       </div>
 
@@ -94,7 +97,10 @@ export function BrandDnaToolHeader({
 
         <div className="flex shrink-0 items-center gap-2">
           <LibraryTriggerButton />
-          <LogoutButton className="h-9 shrink-0 px-3 text-xs sm:text-sm" />
+          <LogoutButton
+            className="h-9 shrink-0 px-3 text-xs sm:text-sm"
+            label={tCommon("logout")}
+          />
         </div>
       </div>
 

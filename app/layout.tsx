@@ -17,7 +17,7 @@ import {
 } from "@/components/analytics/google-analytics";
 import "./globals.css";
 
-const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+const gaMeasurementId = process.env.NEXT_PUBLIC_GTM_ID;
 
 const inter = Inter({
   variable: "--font-inter",

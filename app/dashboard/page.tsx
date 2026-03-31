@@ -229,7 +229,7 @@ export default async function DashboardPage() {
                 </CheckoutTrackedAnchor>
               </>
             )}
-            <LogoutButton />
+            <LogoutButton label={tCommon("logout")} />
           </div>
         </header>
 

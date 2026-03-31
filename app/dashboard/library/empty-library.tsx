@@ -9,7 +9,7 @@ export function EmptyLibrary() {
       <div className="max-w-xs space-y-1.5">
         <p className="font-heading text-base font-semibold text-foreground">No creatives yet</p>
         <p className="text-sm text-muted-foreground">
-          Generate ad images from the Ad Creatives tool — they&apos;ll appear here automatically.
+          Generate ad images from the Ad Creatives tool. They&apos;ll appear here automatically.
         </p>
       </div>
     </div>

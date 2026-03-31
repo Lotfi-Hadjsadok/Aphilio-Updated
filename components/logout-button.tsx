@@ -9,11 +9,17 @@ import { authClient } from "@/lib/auth-client";
 
 type LogoutButtonProps = {
   className?: string;
+  /**
+   * Pass from `getTranslations("common")` (server) or `useTranslations("common")` (client)
+   * so the label always matches the active locale. When omitted, the button resolves `logout` client-side.
+   */
+  label?: string;
 };
 
-export function LogoutButton({ className }: LogoutButtonProps) {
+export function LogoutButton({ className, label }: LogoutButtonProps) {
   const router = useRouter();
   const t = useTranslations("common");
+  const logoutLabel = label ?? t("logout");
 
   return (
     <Button
@@ -36,7 +42,7 @@ export function LogoutButton({ className }: LogoutButtonProps) {
       }
     >
       <LogOut className="size-3.5 shrink-0 opacity-70" aria-hidden />
-      {t("logout")}
+      {logoutLabel}
     </Button>
   );
 }

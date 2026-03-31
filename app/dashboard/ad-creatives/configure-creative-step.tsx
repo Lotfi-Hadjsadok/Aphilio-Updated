@@ -204,7 +204,7 @@ export function ConfigureCreativeStep({
                                         key={option.value}
                                         type="button"
                                         onClick={() => setRatio(template.id, option.value)}
-                                        title={`${ratioLabel} — ${ratioNote}`}
+                                        title={`${ratioLabel}: ${ratioNote}`}
                                         aria-label={`${ratioLabel} ${option.value}`}
                                         className={cn(
                                           "flex min-w-0 flex-col items-center justify-center rounded-xl border p-1.5 transition-all sm:p-2",

@@ -135,7 +135,10 @@ export function ResultExperience({
               />
             )}
             {newUrlEl}
-            <LogoutButton className="h-8 px-2.5 text-xs" />
+            <LogoutButton
+              className="h-8 px-2.5 text-xs"
+              label={tCommon("logout")}
+            />
           </div>
         </div>
       </header>

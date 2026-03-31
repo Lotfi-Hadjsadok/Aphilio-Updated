@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
   Check,
-  CheckCircle2,
   Globe,
   LayoutGrid,
   ScanSearch,
   ShieldCheck,
-  Zap,
 } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { headers } from "next/headers";
@@ -64,13 +63,61 @@ const jsonLd = {
   ],
 };
 
-const previewSwatches = [
-  "bg-[#f97316]",
-  "bg-[#a855f7]",
-  "bg-[#3b82f6]",
-  "bg-[#ec4899]",
-  "bg-[#22c55e]",
-] as const;
+/** Shared landing typography — hierarchy, spacing, readable line length. */
+const landingEyebrow =
+  "text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/90 sm:text-[0.8125rem] sm:tracking-[0.18em]";
+const landingSectionHeading =
+  "font-heading text-2xl font-semibold leading-[1.15] tracking-tight text-foreground sm:text-3xl sm:leading-[1.12]";
+const landingFeatureTitle =
+  "font-heading text-xl font-semibold leading-snug tracking-tight text-foreground sm:text-2xl sm:leading-snug";
+const landingBody =
+  "text-[0.9375rem] leading-[1.65] text-muted-foreground sm:text-base sm:leading-[1.65]";
+const landingCardTitle =
+  "font-heading text-lg font-semibold leading-snug tracking-tight text-foreground sm:text-xl";
+/** Hero headline rows — same scale so setup + payoff read as one statement. */
+const landingHeroHeadlineLine =
+  "block w-full text-[1.75rem] font-semibold leading-[1.2] tracking-tight text-foreground sm:text-[2.65rem] sm:leading-[1.14] lg:text-[3.15rem] lg:leading-[1.1]";
+
+/** Intrinsic size of each demo asset (avoids cropping with object-contain). */
+const demoImageDimensions: Record<string, { width: number; height: number }> = {
+  "/demos/dna-preview-demo.webp": { width: 2777, height: 2028 },
+  "/demos/ad-creative-generation-demo.webp": { width: 2118, height: 1783 },
+  "/demos/creative-library-demo.webp": { width: 2464, height: 1972 },
+  "/demos/chat-demo.webp": { width: 2718, height: 2021 },
+};
+
+function LandingDemoImage({
+  src,
+  alt,
+  sizes,
+  priority,
+  className,
+}: {
+  src: string;
+  alt: string;
+  sizes: string;
+  priority?: boolean;
+  className?: string;
+}) {
+  const pixels = demoImageDimensions[src];
+  if (!pixels) {
+    throw new Error(`Missing demoImageDimensions for ${src}`);
+  }
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      width={pixels.width}
+      height={pixels.height}
+      sizes={sizes}
+      priority={priority}
+      className={cn(
+        "h-auto w-full max-w-full object-contain object-top",
+        className,
+      )}
+    />
+  );
+}
 
 export default async function Home() {
   const siteOrigin = getSiteOrigin();
@@ -106,12 +153,6 @@ export default async function Home() {
     },
   ];
 
-  const trustItems = [
-    { icon: Globe, label: t("trustBrowser") },
-    { icon: Zap, label: t("trustDna") },
-    { icon: CheckCircle2, label: t("trustWorkspace") },
-  ];
-
   const whyItems = [
     {
       icon: Globe,
@@ -142,6 +183,42 @@ export default async function Home() {
     t("pricingProF4"),
     t("pricingProF5"),
     t("pricingProF6"),
+  ];
+
+  const featureDemoBlocks = [
+    {
+      title: t("featureSourceTitle"),
+      description: t("featureSourceDescription"),
+      image: {
+        src: "/demos/dna-preview-demo.webp",
+        alt: t("featureSourceTitle"),
+      },
+      browserChromeUrl: "https://shipfa.st",
+    },
+    {
+      title: t("featureShipTitle"),
+      description: t("featureShipDescription"),
+      image: {
+        src: "/demos/ad-creative-generation-demo.webp",
+        alt: t("featureShipTitle"),
+      },
+    },
+    {
+      title: t("featureLibraryTitle"),
+      description: t("featureLibraryDescription"),
+      image: {
+        src: "/demos/creative-library-demo.webp",
+        alt: t("featureLibraryTitle"),
+      },
+    },
+    {
+      title: t("featureAccountTitle"),
+      description: t("featureAccountDescription"),
+      image: {
+        src: "/demos/chat-demo.webp",
+        alt: t("featureAccountTitle"),
+      },
+    },
   ];
 
   return (
@@ -207,122 +284,107 @@ export default async function Home() {
         >
           {/* Hero */}
           <div className="flex flex-col items-center justify-center text-center">
-            <span className="gradient-pill mb-6 tracking-[0.13em] sm:mb-7">
-              {t("pill")}
-            </span>
-
-            <h1 className="font-heading max-w-4xl text-balance text-[2.35rem] font-semibold leading-[1.07] tracking-tight sm:text-[3.15rem] sm:leading-[1.06] lg:text-[4.25rem] lg:leading-[1.04]">
-              {t("headlineBefore")}{" "}
-              <span className="text-gradient">{t("headlineHighlight")}</span>{" "}
-              {t("headlineAfter")}
+            <h1 className="font-heading flex w-full max-w-[40rem] flex-col items-center gap-2 text-balance sm:max-w-[44rem] sm:gap-2.5">
+              <span className={landingHeroHeadlineLine}>
+                <span className="text-foreground">{t("headline1")}</span>{" "}
+                <span className="text-gradient">{t("headline2")}</span>
+                <span
+                  className="inline-block align-[0.08em] pl-1.5 text-[0.72em] leading-none sm:pl-2 sm:text-[0.68em]"
+                  aria-hidden={true}
+                >
+                  {t("headlineEmoji")}
+                </span>
+              </span>
+              <span className={landingHeroHeadlineLine}>{t("headline3")}</span>
             </h1>
 
-            <p className="mx-auto mt-5 max-w-[52ch] text-pretty text-base leading-relaxed text-muted-foreground sm:mt-6 sm:text-lg">
+            <p className="mx-auto mt-7 max-w-[min(100%,36rem)] text-pretty text-[0.9375rem] leading-[1.65] text-muted-foreground sm:mt-9 sm:max-w-[38rem] sm:text-[1.0625rem] sm:leading-[1.7]">
               {t("subhead")}
             </p>
 
-            <div className="mt-9 flex flex-col items-center gap-3 sm:mt-10 sm:flex-row sm:gap-4">
+            <div className="mt-8 flex w-full max-w-md flex-col items-stretch gap-3 sm:mt-10 sm:max-w-none sm:flex-row sm:items-center sm:justify-center sm:gap-4">
               <Link
-                href="/sign-in"
+                href="#features"
                 className={cn(
-                  buttonVariants({ variant: "default", size: "lg" }),
-                  "h-12 min-w-[14rem] rounded-xl px-8 text-sm font-semibold shadow-md sm:text-base",
+                  buttonVariants({ variant: "outline", size: "lg" }),
+                  "h-12 rounded-xl border-border/80 bg-background/60 px-8 text-sm font-semibold shadow-sm backdrop-blur-sm sm:min-w-[11rem] sm:text-base",
                 )}
               >
-                {t("ctaPrimary")}
-                <ArrowRight className="ml-1.5 size-4" aria-hidden />
+                {t("ctaSeeFeatures")}
               </Link>
               <Link
                 href="#pricing"
                 className={cn(
-                  buttonVariants({ variant: "ghost", size: "lg" }),
-                  "h-12 rounded-xl text-sm text-muted-foreground hover:text-foreground sm:text-base",
+                  buttonVariants({ variant: "default", size: "lg" }),
+                  "h-12 rounded-xl px-8 text-sm font-semibold shadow-md sm:min-w-[11rem] sm:text-base",
                 )}
               >
-                {t("ctaSecondary")}
+                {t("ctaSubscribe")}
+                <ArrowRight className="ml-1.5 size-4" aria-hidden />
               </Link>
-            </div>
-
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 sm:mt-12">
-              {trustItems.map(({ icon: TrustIcon, label }) => (
-                <span
-                  key={label}
-                  className="inline-flex items-center gap-2 text-xs text-muted-foreground sm:text-sm"
-                >
-                  <TrustIcon className="size-4 text-foreground/45" aria-hidden />
-                  {label}
-                </span>
-              ))}
             </div>
           </div>
 
-          {/* Product preview */}
+          {/* Feature demos */}
           <section
-            className="mx-auto mt-16 w-full max-w-3xl sm:mt-20 lg:mt-24"
-            aria-labelledby="preview-title"
+            id="features"
+            className="mx-auto mt-16 w-full max-w-6xl scroll-mt-24 sm:mt-20 lg:mt-28"
+            aria-labelledby="features-heading"
           >
-            <div className="mb-6 space-y-2 text-center sm:mb-8">
-              <p className="text-[0.6rem] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-                {t("previewEyebrow")}
-              </p>
-              <h2
-                id="preview-title"
-                className="font-heading text-lg font-semibold tracking-tight sm:text-xl"
-              >
-                {t("previewTitle")}
-              </h2>
-            </div>
+            <h2 id="features-heading" className="sr-only">
+              {t("featuresSectionAria")}
+            </h2>
 
-            <div className="relative rounded-2xl border border-border/70 bg-card/60 p-1 shadow-lg shadow-black/5 ring-1 ring-foreground/[0.04] backdrop-blur-md dark:shadow-black/20">
-              <div className="overflow-hidden rounded-[calc(var(--radius-xl)-2px)] border border-border/50 bg-muted/20">
-                <div className="flex items-center gap-3 border-b border-border/60 bg-muted/30 px-3 py-2.5 sm:px-4 sm:py-3">
-                  <div className="flex shrink-0 gap-1.5" aria-hidden>
-                    <span className="size-2.5 rounded-full bg-red-400/90" />
-                    <span className="size-2.5 rounded-full bg-amber-400/90" />
-                    <span className="size-2.5 rounded-full bg-emerald-400/90" />
-                  </div>
-                  <div className="min-w-0 flex-1 truncate rounded-lg bg-background/80 px-3 py-2 text-left text-[0.7rem] text-muted-foreground shadow-inner ring-1 ring-border/40 sm:text-xs">
-                    {t("previewUrlPlaceholder")}
-                  </div>
-                </div>
-                <div className="grid gap-5 p-4 sm:grid-cols-2 sm:gap-6 sm:p-6">
-                  <div className="space-y-3 text-left">
-                    <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground">
-                      {t("previewPaletteLabel")}
+            <div className="flex flex-col gap-14 sm:gap-16 lg:gap-20">
+              {featureDemoBlocks.map((block, blockIndex) => (
+                <article
+                  key={block.title}
+                  className={cn(
+                    "flex flex-col gap-8 lg:flex-row lg:items-center lg:gap-12 xl:gap-16",
+                    blockIndex % 2 === 1 && "lg:flex-row-reverse",
+                  )}
+                >
+                  <div className="min-w-0 shrink-0 space-y-4 text-left lg:max-w-[min(100%,22rem)] xl:max-w-[24rem]">
+                    <h3 className={landingFeatureTitle}>{block.title}</h3>
+                    <p className={cn(landingBody, "max-w-[40ch] text-pretty")}>
+                      {block.description}
                     </p>
-                    <div className="flex flex-wrap gap-2">
-                      {previewSwatches.map((swatchClass) => (
-                        <span
-                          key={swatchClass}
-                          className={cn(
-                            "size-9 rounded-xl shadow-sm ring-2 ring-background sm:size-10",
-                            swatchClass,
-                          )}
-                          aria-hidden
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    {"browserChromeUrl" in block && block.browserChromeUrl ? (
+                      <div className="overflow-hidden rounded-2xl bg-muted/20">
+                        <div className="flex items-center gap-3 border-b border-border/40 bg-muted/25 px-3 py-2.5 sm:px-4 sm:py-3">
+                          <div className="flex shrink-0 gap-1.5" aria-hidden>
+                            <span className="size-2.5 rounded-full bg-red-400/90" />
+                            <span className="size-2.5 rounded-full bg-amber-400/90" />
+                            <span className="size-2.5 rounded-full bg-emerald-400/90" />
+                          </div>
+                          <div className="min-w-0 flex-1 truncate rounded-md bg-background/70 px-3 py-2 text-left text-[0.7rem] text-muted-foreground sm:text-xs">
+                            {block.browserChromeUrl}
+                          </div>
+                        </div>
+                        <div className="w-full bg-muted/30">
+                          <LandingDemoImage
+                            src={block.image.src}
+                            alt={block.image.alt}
+                            sizes="(max-width: 1024px) 100vw, 50vw"
+                            priority={blockIndex === 0}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="overflow-hidden rounded-xl bg-muted/15">
+                        <LandingDemoImage
+                          src={block.image.src}
+                          alt={block.image.alt}
+                          sizes="(max-width: 1024px) 100vw, 50vw"
                         />
-                      ))}
-                    </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="space-y-4 text-left">
-                    <div>
-                      <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground">
-                        {t("previewTypeLabel")}
-                      </p>
-                      <p className="font-heading mt-2 text-lg font-semibold tracking-tight sm:text-xl">
-                        {t("previewTypeSample")}
-                      </p>
-                    </div>
-                    <div className="rounded-xl border border-border/60 bg-background/50 px-3 py-2.5 sm:px-4 sm:py-3">
-                      <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground">
-                        {t("previewVoiceLabel")}
-                      </p>
-                      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                        {t("previewVoiceSample")}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                </article>
+              ))}
             </div>
           </section>
 
@@ -332,14 +394,9 @@ export default async function Home() {
             className="mx-auto mt-16 w-full max-w-5xl scroll-mt-24 sm:mt-20 lg:mt-28"
             aria-labelledby="how-it-works-title"
           >
-            <div className="mb-8 space-y-2 text-center sm:mb-10">
-              <p className="text-[0.6rem] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-                {t("howEyebrow")}
-              </p>
-              <h2
-                id="how-it-works-title"
-                className="font-heading text-xl font-semibold tracking-tight sm:text-2xl"
-              >
+            <div className="mb-10 space-y-4 text-center sm:mb-12 sm:space-y-5">
+              <p className={landingEyebrow}>{t("howEyebrow")}</p>
+              <h2 id="how-it-works-title" className={landingSectionHeading}>
                 {t("howTitle")}
               </h2>
             </div>
@@ -357,10 +414,10 @@ export default async function Home() {
                   <span className="font-heading text-3xl font-bold tabular-nums text-foreground/[0.08] transition-colors group-hover:text-foreground/[0.14]">
                     {step.stepNumber}
                   </span>
-                  <h3 className="font-heading mt-3 text-base font-semibold tracking-tight text-foreground sm:text-lg">
+                  <h3 className={cn(landingCardTitle, "mt-3 text-foreground")}>
                     {step.title}
                   </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  <p className={cn(landingBody, "mt-3 text-pretty")}>
                     {step.description}
                   </p>
                 </div>
@@ -373,14 +430,9 @@ export default async function Home() {
             className="mx-auto mt-16 w-full max-w-5xl sm:mt-20 lg:mt-24"
             aria-labelledby="why-title"
           >
-            <div className="mb-8 space-y-2 text-center sm:mb-10">
-              <p className="text-[0.6rem] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-                {t("whyEyebrow")}
-              </p>
-              <h2
-                id="why-title"
-                className="font-heading text-xl font-semibold tracking-tight sm:text-2xl"
-              >
+            <div className="mb-10 space-y-4 text-center sm:mb-12 sm:space-y-5">
+              <p className={landingEyebrow}>{t("whyEyebrow")}</p>
+              <h2 id="why-title" className={landingSectionHeading}>
                 {t("whyTitle")}
               </h2>
             </div>
@@ -398,10 +450,8 @@ export default async function Home() {
                   <div className="flex size-10 items-center justify-center rounded-xl border border-border/60 bg-background/80 shadow-sm">
                     <WhyIcon className="size-5 text-foreground/70" aria-hidden />
                   </div>
-                  <h3 className="font-heading mt-4 text-base font-semibold tracking-tight">
-                    {title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  <h3 className={cn(landingCardTitle, "mt-4")}>{title}</h3>
+                  <p className={cn(landingBody, "mt-3 text-pretty")}>
                     {description}
                   </p>
                 </div>
@@ -415,17 +465,17 @@ export default async function Home() {
             className="mx-auto mt-16 w-full max-w-5xl scroll-mt-24 sm:mt-20 lg:mt-28"
             aria-labelledby="pricing-title"
           >
-            <div className="mb-8 space-y-2 text-center sm:mb-10">
-              <p className="text-[0.6rem] font-bold uppercase tracking-[0.22em] text-muted-foreground">
-                {t("pricingEyebrow")}
-              </p>
-              <h2
-                id="pricing-title"
-                className="font-heading text-xl font-semibold tracking-tight sm:text-2xl"
-              >
+            <div className="mb-10 space-y-4 text-center sm:mb-12 sm:space-y-5">
+              <p className={landingEyebrow}>{t("pricingEyebrow")}</p>
+              <h2 id="pricing-title" className={landingSectionHeading}>
                 {t("pricingTitle")}
               </h2>
-              <p className="text-sm text-muted-foreground">
+              <p
+                className={cn(
+                  landingBody,
+                  "mx-auto max-w-md text-pretty text-muted-foreground/95",
+                )}
+              >
                 {t("pricingSubtitle")}
               </p>
             </div>
@@ -438,10 +488,8 @@ export default async function Home() {
                   aria-hidden
                 />
                 <div className="relative">
-                  <h3 className="font-heading text-lg font-semibold tracking-tight">
-                    {t("pricingMonthlyTitle")}
-                  </h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                  <h3 className={landingFeatureTitle}>{t("pricingMonthlyTitle")}</h3>
+                  <p className={cn(landingBody, "mt-2")}>
                     {t("pricingMonthlyTagline")}
                   </p>
                   <div className="mt-5 flex items-baseline gap-1.5">
@@ -461,10 +509,10 @@ export default async function Home() {
                   {proFeatures.map((feature) => (
                     <li
                       key={feature}
-                      className="flex items-start gap-2.5 text-sm text-foreground/80"
+                      className="flex items-start gap-2.5 text-[0.9375rem] leading-[1.55] text-foreground/85 sm:text-base sm:leading-[1.55]"
                     >
                       <Check
-                        className="mt-0.5 size-4 shrink-0 text-foreground/70"
+                        className="mt-0.5 size-4 shrink-0 text-foreground/65"
                         aria-hidden
                       />
                       {feature}
@@ -495,10 +543,8 @@ export default async function Home() {
 
                 <div className="relative flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-heading text-lg font-semibold tracking-tight">
-                      {t("pricingYearlyTitle")}
-                    </h3>
-                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                    <h3 className={landingFeatureTitle}>{t("pricingYearlyTitle")}</h3>
+                    <p className={cn(landingBody, "mt-2")}>
                       {t("pricingYearlyTagline")}
                     </p>
                   </div>
@@ -528,10 +574,10 @@ export default async function Home() {
                   {proFeatures.map((feature) => (
                     <li
                       key={feature}
-                      className="flex items-start gap-2.5 text-sm text-foreground/80"
+                      className="flex items-start gap-2.5 text-[0.9375rem] leading-[1.55] text-foreground/85 sm:text-base sm:leading-[1.55]"
                     >
                       <Check
-                        className="mt-0.5 size-4 shrink-0 text-foreground/70"
+                        className="mt-0.5 size-4 shrink-0 text-foreground/65"
                         aria-hidden
                       />
                       {feature}
@@ -571,11 +617,11 @@ export default async function Home() {
               />
               <h2
                 id="cta-band-title"
-                className="relative font-heading text-xl font-semibold tracking-tight sm:text-2xl lg:text-3xl"
+                className="relative font-heading text-2xl font-semibold leading-[1.15] tracking-tight text-foreground sm:text-3xl sm:leading-[1.12] lg:text-[2rem] lg:leading-tight"
               >
                 {t("ctaBandTitle")}
               </h2>
-              <p className="relative mx-auto mt-3 max-w-[46ch] text-sm leading-relaxed text-muted-foreground sm:text-base">
+              <p className="relative mx-auto mt-4 max-w-[46ch] text-base leading-[1.65] text-muted-foreground/95 sm:mt-5 sm:text-[1.0625rem] sm:leading-[1.65]">
                 {t("ctaBandDescription")}
               </p>
               <div className="relative mt-7 flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4">
@@ -599,15 +645,17 @@ export default async function Home() {
                   {t("navPricing")}
                 </Link>
               </div>
-              <p className="relative mt-4 text-xs text-muted-foreground/70">
+              <p className="relative mt-5 text-sm text-muted-foreground/75">
                 {t("trustWorkspace")} · {t("trustBrowser")}
               </p>
             </div>
           </section>
 
-          <footer className="relative mx-auto mt-16 w-full max-w-5xl border-t border-border/60 pt-8 text-center sm:mt-20">
-            <p className="text-sm text-muted-foreground">{t("footerTagline")}</p>
-            <p className="mt-2 text-xs text-muted-foreground/80">
+          <footer className="relative mx-auto mt-16 w-full max-w-5xl border-t border-border/60 pt-10 text-center sm:mt-20">
+            <p className="text-sm leading-relaxed text-muted-foreground/90">
+              {t("footerTagline")}
+            </p>
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground/75">
               {t("footerCopyright", { year })}
             </p>
           </footer>

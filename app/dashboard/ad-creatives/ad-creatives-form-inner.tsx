@@ -209,7 +209,10 @@ export function AdCreativesFormInner({
                 currentLocale={currentLocale}
                 className="max-w-[min(11rem,46vw)] sm:max-w-[13rem]"
               />
-              <LogoutButton className="h-8 px-2.5 text-xs" />
+              <LogoutButton
+                className="h-8 px-2.5 text-xs"
+                label={tCommon("logout")}
+              />
               {hasLibrary ? (
                 <Button
                   type="button"

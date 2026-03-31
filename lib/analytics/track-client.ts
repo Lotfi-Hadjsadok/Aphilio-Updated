@@ -9,7 +9,7 @@ declare global {
 }
 
 function measurementId(): string | undefined {
-  return process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+  return process.env.NEXT_PUBLIC_GTM_ID;
 }
 
 export function isGoogleAnalyticsConfigured(): boolean {

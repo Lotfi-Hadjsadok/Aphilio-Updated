@@ -35,7 +35,7 @@
     "premium": "Premio",
     "removeImage": "Rimuovi l'immagine",
     "interfaceLanguage": "Lingua dell'interfaccia",
-    "logout": "Log out",
+    "logout": "Esci",
     "signIn": "Accedi"
   },
   "signIn": {
@@ -58,7 +58,7 @@
     },
     "url": {
       "title": "Qual è il tuo sito web?",
-      "description": "Analizzeremo il tuo sito per estrarre il DNA del tuo brand — colori, font, logo e voce — così tutto ciò che generiamo sarà coerente con la tua identità.",
+      "description": "Analizzeremo il tuo sito per estrarre il DNA del tuo brand, colori, font, logo e voce, così tutto ciò che generiamo sarà coerente con la tua identità.",
       "placeholder": "https://tuosito.it",
       "errorRequired": "Inserisci l'URL del sito web.",
       "errorInvalid": "Inserisci un URL valido."
@@ -107,7 +107,7 @@
       },
       "adCreatives": {
         "title": "Creativi Pubblicitari",
-        "description": "Crea concetti pubblicitari, headline e testi dal tuo DNA — ottimizzati per social, ricerca e iterazione rapida.",
+        "description": "Crea concetti pubblicitari, headline e testi dal tuo DNA, ottimizzati per social, ricerca e iterazione rapida.",
         "action": "Apri creativi"
       }
     },
@@ -233,7 +233,7 @@
     "newButton": "Nuovo",
     "noData": {
       "title": "Aggiungi prima un brand",
-      "description": "Salva prima un brand nella tua libreria — poi potrai usare questo studio per generare annunci.",
+      "description": "Salva prima un brand nella tua libreria, poi potrai usare questo studio per generare annunci.",
       "action": "Aggiungi brand"
     },
     "step1": {
@@ -252,8 +252,8 @@
     },
     "step4": {
       "title": "Genera le tue immagini",
-      "layoutsReady": "{count} layout pronto — seleziona la qualità e genera ogni scheda.",
-      "layoutsReadyPlural": "{count} layout pronti — seleziona la qualità e genera ogni scheda.",
+      "layoutsReady": "{count} layout pronto, seleziona la qualità e genera ogni scheda.",
+      "layoutsReadyPlural": "{count} layout pronti, seleziona la qualità e genera ogni scheda.",
       "adjustFormats": "Regola formati",
       "rebuildAll": "Ricostruisci tutto",
       "refreshing": "Aggiornamento…",
@@ -462,13 +462,13 @@
   },
   "landing": {
     "skipToContent": "Vai al contenuto",
-    "pill": "Intelligence del brand → Creatività pubblicitarie",
-    "headlineBefore": "Trasforma qualsiasi URL in",
-    "headlineHighlight": "creatività pubblicitarie in linea con il brand",
-    "headlineAfter": "in pochi minuti",
-    "subhead": "Aphilio estrae il DNA del tuo brand (colori, font, logo e tono di voce) direttamente da qualsiasi sito live, poi genera annunci e visual che rispecchiano davvero il tuo brand.",
-    "ctaPrimary": "Inizia con Google",
-    "ctaSecondary": "Vedi i prezzi",
+    "headline1": "Incolla un link.",
+    "headline2": "Ottieni il DNA del brand.",
+    "headlineEmoji": "🧬",
+    "headline3": "Pubblica ads che fermano lo scroll.",
+    "subhead": "Incolla un URL. Aphilio apre il tuo sito live in un browser reale, cattura colori, font, voce e angoli in secondi e genera creatività che non tradiscono mai il brand.",
+    "ctaSeeFeatures": "Vedi le funzioni",
+    "ctaSubscribe": "Abbonati",
     "navPricing": "Prezzi",
     "trustBrowser": "Rendering nel browser reale",
     "trustDna": "Estrazione con IA",
@@ -481,20 +481,19 @@
     "step2Description": "Colori, tipografia, loghi, voce, personalità e angoli di marketing vengono catturati e strutturati in un profilo riutilizzabile.",
     "step3Title": "Genera creatività in linea con il brand",
     "step3Description": "Usa il profilo DNA nello studio annunci o nella chat IA per generare immagini, testi e annunci multiformato in secondi.",
-    "previewEyebrow": "Anteprima live",
-    "previewTitle": "Cosa cattura il DNA dal tuo URL",
     "previewUrlPlaceholder": "https://tuosito.it",
     "previewPaletteLabel": "Palette del brand",
     "previewTypeLabel": "Tipografia",
     "previewTypeSample": "Aa: font del titolo del brand",
     "previewVoiceLabel": "Voce del brand",
     "previewVoiceSample": "Sicura, chiara, umana.",
-    "featuresEyebrow": "Cosa ottieni",
-    "featuresTitle": "Tre strumenti. Un brand. Tutto coerente.",
+    "featuresSectionAria": "Funzionalità",
     "featureSourceTitle": "Estrazione DNA del brand",
     "featureSourceDescription": "Incolla un URL e ottieni un profilo completo: colori, tipografia, loghi, voce, personalità e angoli di marketing, estratti dal sito live in pochi secondi.",
     "featureShipTitle": "Ad Creative Studio",
     "featureShipDescription": "Scegli angoli di marketing, template annunci e genera più formati (1:1, 4:5, 9:16, 16:9) ancorati al tuo DNA esatto.",
+    "featureLibraryTitle": "Libreria creativa",
+    "featureLibraryDescription": "Sfoglia e gestisci tutte le immagini generate in un unico posto, organizzate per brand, facili da rivedere e pronte per il riuso nelle campagne.",
     "featureAccountTitle": "Chat IA consapevole del brand",
     "featureAccountDescription": "Descrivi cosa ti serve in linguaggio naturale. L’IA recupera il contesto del brand e genera visual coerenti nella conversazione.",
     "ctaBandTitle": "Pronto a estrarre il DNA del tuo brand?",
@@ -524,7 +523,7 @@
     "pricingYearlyBillingNote": "240 $ addebitati una volta all’anno",
     "pricingYearlyCta": "Abbonati annuale",
     "pricingProF1": "Estrazioni DNA del brand illimitate",
-    "pricingProF2": "Ad Creative Studio — tutti i formati e layout",
+    "pricingProF2": "Ad Creative Studio, tutti i formati e layout",
     "pricingProF3": "Chat IA consapevole del brand con generazione immagini",
     "pricingProF4": "Libreria creativa con immagini salvate",
     "pricingProF5": "Supporto prioritario",

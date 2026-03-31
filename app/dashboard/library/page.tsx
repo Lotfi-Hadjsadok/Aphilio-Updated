@@ -42,7 +42,7 @@ export default async function LibraryPage() {
           <BrandLogoLink className="min-w-0 max-w-full" />
           <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
             <DashboardBackPill label={tCommon("dashboard")} />
-            <LogoutButton />
+            <LogoutButton label={tCommon("logout")} />
           </div>
         </div>
 

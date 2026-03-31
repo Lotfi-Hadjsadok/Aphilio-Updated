@@ -35,7 +35,7 @@
     "premium": "De primera calidad",
     "removeImage": "Quitar imagen",
     "interfaceLanguage": "Idioma de la interfaz",
-    "logout": "Log out",
+    "logout": "Cerrar sesión",
     "signIn": "Iniciar sesión"
   },
   "signIn": {
@@ -58,7 +58,7 @@
     },
     "url": {
       "title": "¿Cuál es tu sitio web?",
-      "description": "Analizaremos tu sitio para extraer el DNA de tu marca — colores, fuentes, logo y voz — para que todo lo que generemos sea coherente con tu imagen.",
+      "description": "Analizaremos tu sitio para extraer el DNA de tu marca, colores, fuentes, logo y voz, para que todo lo que generemos sea coherente con tu imagen.",
       "placeholder": "https://tusitio.com",
       "errorRequired": "Por favor, introduce una URL de sitio web.",
       "errorInvalid": "Por favor, introduce una URL válida."
@@ -107,7 +107,7 @@
       },
       "adCreatives": {
         "title": "Creativos Publicitarios",
-        "description": "Diseña conceptos publicitarios, titulares y textos desde tu DNA — optimizados para redes sociales, búsqueda e iteración rápida.",
+        "description": "Diseña conceptos publicitarios, titulares y textos desde tu DNA, optimizados para redes sociales, búsqueda e iteración rápida.",
         "action": "Abrir creativos"
       }
     },
@@ -233,7 +233,7 @@
     "newButton": "Nuevo",
     "noData": {
       "title": "Añade primero una marca",
-      "description": "Guarda primero una marca en tu biblioteca — luego podrás usar este estudio para generar anuncios.",
+      "description": "Guarda primero una marca en tu biblioteca, luego podrás usar este estudio para generar anuncios.",
       "action": "Añadir marca"
     },
     "step1": {
@@ -252,8 +252,8 @@
     },
     "step4": {
       "title": "Genera tus imágenes",
-      "layoutsReady": "{count} diseño listo — selecciona la calidad y genera cada tarjeta.",
-      "layoutsReadyPlural": "{count} diseños listos — selecciona la calidad y genera cada tarjeta.",
+      "layoutsReady": "{count} diseño listo, selecciona la calidad y genera cada tarjeta.",
+      "layoutsReadyPlural": "{count} diseños listos, selecciona la calidad y genera cada tarjeta.",
       "adjustFormats": "Ajustar formatos",
       "rebuildAll": "Reconstruir todo",
       "refreshing": "Actualizando…",
@@ -462,13 +462,13 @@
   },
   "landing": {
     "skipToContent": "Saltar al contenido",
-    "pill": "Inteligencia de marca → Creatividades publicitarias",
-    "headlineBefore": "Convierte cualquier URL en",
-    "headlineHighlight": "creatividades publicitarias acordes a tu marca",
-    "headlineAfter": "en minutos",
-    "subhead": "Aphilio extrae el ADN de tu marca (colores, tipografías, logo y voz) directamente de cualquier sitio web en vivo y genera anuncios y visuales que encajan de verdad con tu marca.",
-    "ctaPrimary": "Empezar con Google",
-    "ctaSecondary": "Ver precios",
+    "headline1": "Pega un enlace.",
+    "headline2": "Obtén el ADN de marca.",
+    "headlineEmoji": "🧬",
+    "headline3": "Publica anuncios imparables.",
+    "subhead": "Pega cualquier URL. Aphilio abre tu sitio en vivo en un navegador real, captura colores, fuentes, voz y ángulos en segundos y genera creatividades que nunca se desvían de tu marca.",
+    "ctaSeeFeatures": "Ver funciones",
+    "ctaSubscribe": "Suscribirse",
     "navPricing": "Precios",
     "trustBrowser": "Renderizado en navegador real",
     "trustDna": "Extracción con IA",
@@ -481,20 +481,19 @@
     "step2Description": "Colores, tipografía, logos, voz, personalidad y ángulos de marketing se capturan y estructuran en un perfil reutilizable.",
     "step3Title": "Genera creatividades acordes a la marca",
     "step3Description": "Usa tu perfil ADN en el estudio de anuncios o en el chat con IA para generar imágenes, textos y anuncios multiformato en segundos.",
-    "previewEyebrow": "Vista previa en vivo",
-    "previewTitle": "Qué captura el ADN de tu URL",
     "previewUrlPlaceholder": "https://tusitio.com",
     "previewPaletteLabel": "Paleta de marca",
     "previewTypeLabel": "Tipografía",
     "previewTypeSample": "Aa: fuente del titular de marca",
     "previewVoiceLabel": "Voz de marca",
     "previewVoiceSample": "Segura, clara, humana.",
-    "featuresEyebrow": "Lo que obtienes",
-    "featuresTitle": "Tres herramientas. Una marca. Todo acorde a la marca.",
+    "featuresSectionAria": "Funciones",
     "featureSourceTitle": "Extracción de ADN de marca",
     "featureSourceDescription": "Pega cualquier URL y obtén un perfil completo: colores, tipografía, logos, voz, personalidad y ángulos de marketing, extraídos del sitio en vivo en segundos.",
     "featureShipTitle": "Estudio de creatividades publicitarias",
     "featureShipDescription": "Elige ángulos de marketing, plantillas de anuncios y genera varios formatos (1:1, 4:5, 9:16, 16:9) basados en tu ADN exacto.",
+    "featureLibraryTitle": "Biblioteca creativa",
+    "featureLibraryDescription": "Explora y gestiona todas las imágenes generadas en un solo lugar, organizadas por marca, fáciles de revisitar y listas para reutilizar en campañas.",
     "featureAccountTitle": "Chat con IA consciente de la marca",
     "featureAccountDescription": "Describe lo que necesitas en lenguaje natural. La IA usa el contexto de marca y genera visuales acordes en la conversación.",
     "ctaBandTitle": "¿Listo para extraer el ADN de tu marca?",
