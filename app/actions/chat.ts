@@ -264,9 +264,11 @@ export async function sendChatMessageAction(
       }),
     ]);
 
+    const rawLogo = logoRow?.logo?.trim();
+    logoUrl = rawLogo ? rawLogo : null;
+
     if (loaded.ok) {
       contextName = loaded.result.name;
-      logoUrl = logoRow?.logo ?? null;
       similarTexts = await findSimilarTextForQuery(text, contextId);
       enrichedPrompt = buildEnrichedPrompt(
         text,
@@ -338,6 +340,7 @@ export async function sendChatMessageAction(
         enrichedPrompt,
         contextId,
         imageModel,
+        logoUrl,
       );
       generatedDataUrl = ragResult.imageUrl;
       autoRagReferenceUrls = ragResult.referenceImageUrls;

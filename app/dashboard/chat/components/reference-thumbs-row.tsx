@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type ReferenceThumbsRowProps = {
   urls: string[];
@@ -11,12 +12,14 @@ type ReferenceThumbsRowProps = {
 
 export function ReferenceThumbsRow({ urls, autoSelected = false }: ReferenceThumbsRowProps) {
   const [open, setOpen] = useState(false);
+  const translateChat = useTranslations("chat");
 
   if (urls.length === 0) return null;
 
-  const label = autoSelected
-    ? `${urls.length} auto-selected reference${urls.length !== 1 ? "s" : ""}`
-    : `${urls.length} reference${urls.length !== 1 ? "s" : ""}`;
+  const label =
+    urls.length === 1
+      ? translateChat("selectedImagesOne", { count: urls.length })
+      : translateChat("selectedImagesOther", { count: urls.length });
 
   return (
     <div className="mt-3 pl-14">

@@ -134,6 +134,15 @@ export function ResultExperience({
                 deletePending={deletePending}
               />
             )}
+            <Link
+              href="/dashboard"
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "sm" }),
+                "h-8 shrink-0 px-2.5 text-xs text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+              )}
+            >
+              {tCommon("dashboard")}
+            </Link>
             {newUrlEl}
             <LogoutButton
               className="h-8 px-2.5 text-xs"
@@ -159,13 +168,13 @@ export function ResultExperience({
 
         <div className="relative mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6">
-            <HeroBanner result={result} primary={primary} />
-
             <ToolsTile
               contextId={result.id}
               contextName={result.name}
               isSubscribed={isSubscribed}
             />
+
+            <HeroBanner result={result} primary={primary} />
 
             {result.branding && (
               <ColorsTile branding={result.branding} />

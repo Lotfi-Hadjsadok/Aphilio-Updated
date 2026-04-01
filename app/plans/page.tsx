@@ -62,7 +62,7 @@ export default async function PlansPage() {
               <LanguageSwitcher currentLocale={locale} variant="prominent" />
               <Link
                 href="/"
-                className="hidden text-lg font-medium text-muted-foreground transition-colors hover:text-foreground sm:block"
+                className="hidden text-base font-medium text-muted-foreground transition-colors hover:text-foreground sm:block"
               >
                 {t("plansBackHome")}
               </Link>
@@ -73,7 +73,7 @@ export default async function PlansPage() {
               href="/dashboard"
               className={cn(
                 buttonVariants({ variant: "outline", size: "default" }),
-                "h-10 w-fit shrink-0 self-center gap-1.5 rounded-lg px-4 text-base font-medium shadow-sm backdrop-blur-sm sm:h-11 sm:gap-2 sm:rounded-xl sm:px-6 sm:text-lg",
+                "h-10 w-fit shrink-0 self-center gap-1.5 rounded-lg px-4 text-sm font-medium shadow-sm backdrop-blur-sm sm:h-11 sm:gap-2 sm:rounded-xl sm:px-6 sm:text-base",
               )}
             >
               {tCommon("dashboard")}
@@ -84,7 +84,7 @@ export default async function PlansPage() {
               href="/sign-in"
               className={cn(
                 buttonVariants({ variant: "outline", size: "default" }),
-                "h-10 w-fit shrink-0 self-center gap-1.5 rounded-lg px-4 text-base font-medium shadow-sm backdrop-blur-sm sm:h-11 sm:gap-2 sm:rounded-xl sm:px-6 sm:text-lg",
+                "h-10 w-fit shrink-0 self-center gap-1.5 rounded-lg px-4 text-sm font-medium shadow-sm backdrop-blur-sm sm:h-11 sm:gap-2 sm:rounded-xl sm:px-6 sm:text-base",
               )}
             >
               {tCommon("signIn")}
@@ -98,10 +98,10 @@ export default async function PlansPage() {
           className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col px-6 pb-24 pt-10 sm:px-10 sm:pb-32 sm:pt-14 lg:pb-36"
         >
           <div className="mb-12 text-center sm:mb-14">
-            <h1 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl xl:text-7xl">
+            <h1 className="font-heading text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-4xl lg:text-5xl xl:text-6xl">
               {t("pricingTitle")}
             </h1>
-            <p className="mx-auto mt-5 max-w-2xl text-pretty text-lg text-muted-foreground sm:mt-6 sm:text-xl lg:text-2xl">
+            <p className="mx-auto mt-5 max-w-2xl text-pretty text-base text-muted-foreground sm:mt-6 sm:text-lg lg:text-xl">
               {t("pricingSubtitle")}
             </p>
           </div>

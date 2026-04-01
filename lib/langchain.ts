@@ -563,11 +563,16 @@ export async function generateImageFromPromptForContext(
   prompt: string,
   contextId: string,
   imageModel = IMAGE_MODEL_PREMIUM,
+  /** When set (including `null`), skips DB read — same contract as {@link generateImageWithKnownReferences}. */
+  explicitLogoUrl?: string | null,
 ): Promise<{ imageUrl: string; referenceImageUrls: string[] }> {
-  const [referenceImageGroups, logoUrl] = await Promise.all([
-    referenceImageGroupsFromPromptSemantics(prompt, contextId),
-    getLogoUrlForContext(contextId),
-  ]);
+  const referenceImageGroups = await referenceImageGroupsFromPromptSemantics(prompt, contextId);
+  const logoUrl =
+    explicitLogoUrl !== undefined
+      ? explicitLogoUrl?.trim()
+        ? explicitLogoUrl.trim()
+        : null
+      : await getLogoUrlForContext(contextId);
   const imageUrl = await generateImageFromPrompt(
     prompt,
     referenceImageGroups,

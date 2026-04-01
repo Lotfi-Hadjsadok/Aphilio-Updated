@@ -11,6 +11,7 @@ export function LockedToolActionCard({
   unlockHref,
   activatePlanLabel,
   unlockAriaLabel,
+  className,
 }: {
   icon: ComponentType<{ className?: string; strokeWidth?: number }>;
   title: string;
@@ -19,16 +20,18 @@ export function LockedToolActionCard({
   unlockHref: string;
   activatePlanLabel: string;
   unlockAriaLabel: string;
+  className?: string;
 }) {
   return (
     <Link
       href={unlockHref}
       className={cn(
-        "dashboard-tool-card group/dna-tool relative flex flex-1 items-center gap-3 overflow-hidden rounded-xl px-4 py-3.5",
+        "dashboard-tool-card group/dna-tool relative flex min-h-[3.25rem] flex-1 items-center gap-3.5 overflow-hidden rounded-2xl px-4 py-3.5 sm:min-h-[3.5rem] sm:px-5",
         "ring-1 ring-transparent transition-[box-shadow,ring-color] duration-300",
         "hover:shadow-[0_8px_30px_-12px_rgba(245,158,11,0.22)] hover:ring-amber-500/20",
         "dark:hover:shadow-[0_8px_32px_-12px_rgba(251,191,36,0.12)] dark:hover:ring-amber-400/15",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        className,
       )}
       aria-label={unlockAriaLabel}
     >
@@ -44,7 +47,7 @@ export function LockedToolActionCard({
       <div className="relative z-[1] flex min-h-[2.75rem] w-full flex-1 items-center gap-3">
         <span
           className={cn(
-            "relative flex size-9 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset transition-[opacity,filter] duration-300",
+            "relative flex size-10 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset transition-[opacity,filter] duration-300 sm:size-11",
             isPrimary
               ? "bg-accent-gradient ring-white/20"
               : "bg-muted/70 ring-border/60",
@@ -57,7 +60,7 @@ export function LockedToolActionCard({
           >
             <Icon
               className={cn(
-                "size-4 transition-[filter] duration-300 group-hover/dna-tool:brightness-110",
+                "size-[1.05rem] transition-[filter] duration-300 group-hover/dna-tool:brightness-110 sm:size-[1.125rem]",
                 isPrimary ? "text-white drop-shadow-sm" : "text-foreground",
               )}
               strokeWidth={2}

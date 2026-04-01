@@ -66,17 +66,17 @@ const jsonLd = {
 };
 
 const landingEyebrow =
-  "text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/90 sm:text-[1.125rem] sm:tracking-[0.16em]";
+  "text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/90 sm:text-sm sm:tracking-[0.16em]";
 const landingSectionHeading =
-  "font-heading text-3xl font-semibold leading-[1.12] tracking-tight text-foreground sm:text-5xl sm:leading-[1.08] lg:text-6xl lg:leading-[1.06] xl:text-7xl xl:leading-[1.04]";
+  "font-heading text-2xl font-semibold leading-[1.12] tracking-tight text-foreground sm:text-4xl sm:leading-[1.08] lg:text-5xl lg:leading-[1.06] xl:text-6xl xl:leading-[1.04]";
 const landingFeatureTitle =
-  "font-heading text-2xl font-semibold leading-snug tracking-tight text-foreground sm:text-4xl sm:leading-snug lg:text-5xl lg:leading-snug xl:text-6xl xl:leading-snug";
+  "font-heading text-xl font-semibold leading-snug tracking-tight text-foreground sm:text-3xl sm:leading-snug lg:text-4xl lg:leading-snug xl:text-5xl xl:leading-snug";
 const landingBody =
-  "text-base leading-[1.65] text-muted-foreground sm:text-[1.25rem] sm:leading-[1.65] lg:text-[1.3125rem]";
+  "text-sm leading-[1.65] text-muted-foreground sm:text-base sm:leading-[1.65] lg:text-lg";
 const landingCardTitle =
-  "font-heading text-xl font-semibold leading-snug tracking-tight text-foreground sm:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl";
+  "font-heading text-lg font-semibold leading-snug tracking-tight text-foreground sm:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl";
 const landingHeroHeadlineLine =
-  "block w-full text-[2.75rem] font-semibold leading-[1.12] tracking-tight text-foreground sm:text-[5.5rem] sm:leading-[1.06] lg:text-[6.25rem] lg:leading-[1.04]";
+  "block w-full text-[2.25rem] font-semibold leading-[1.12] tracking-tight text-foreground sm:text-[4.25rem] sm:leading-[1.06] lg:text-[5rem] lg:leading-[1.04]";
 
 const stepAccents = [
   {
@@ -240,7 +240,7 @@ export default async function Home() {
       content: {
         kind: "text",
         text: t("featureSourceTitle"),
-        textClassName: "mt-1 text-[0.875rem] font-semibold leading-[1.2] text-foreground/70 sm:text-[0.95rem]",
+        textClassName: "mt-1 text-[0.8125rem] font-semibold leading-[1.2] text-foreground/70 sm:text-[0.875rem]",
       },
     },
     {
@@ -254,7 +254,7 @@ export default async function Home() {
       content: {
         kind: "text",
         text: t("featureShipTitle"),
-        textClassName: "mt-1 text-[0.875rem] font-semibold leading-[1.2] text-foreground/70 sm:text-[0.95rem]",
+        textClassName: "mt-1 text-[0.8125rem] font-semibold leading-[1.2] text-foreground/70 sm:text-[0.875rem]",
       },
     },
     {
@@ -268,7 +268,7 @@ export default async function Home() {
       content: {
         kind: "text",
         text: t("featureLibraryTitle"),
-        textClassName: "mt-1 text-[0.875rem] font-semibold leading-[1.2] text-foreground/70 sm:text-[0.95rem]",
+        textClassName: "mt-1 text-[0.8125rem] font-semibold leading-[1.2] text-foreground/70 sm:text-[0.875rem]",
       },
     },
     {
@@ -282,7 +282,7 @@ export default async function Home() {
       content: {
         kind: "text",
         text: t("featureAccountTitle"),
-        textClassName: "mt-1 text-[0.875rem] font-semibold leading-[1.2] text-foreground/70 sm:text-[0.95rem]",
+        textClassName: "mt-1 text-[0.8125rem] font-semibold leading-[1.2] text-foreground/70 sm:text-[0.875rem]",
       },
     },
   ];
@@ -372,7 +372,7 @@ export default async function Home() {
               <LanguageSwitcher currentLocale={locale} variant="prominent" />
               <Link
                 href="/plans"
-                className="hidden text-lg font-medium text-muted-foreground transition-colors hover:text-foreground sm:block"
+                className="hidden text-base font-medium text-muted-foreground transition-colors hover:text-foreground sm:block"
               >
                 {t("navPricing")}
               </Link>
@@ -383,7 +383,7 @@ export default async function Home() {
               href="/dashboard"
               className={cn(
                 buttonVariants({ variant: "outline", size: "default" }),
-                "hidden h-10 w-fit shrink-0 self-center gap-1.5 rounded-lg px-4 text-base font-medium shadow-sm backdrop-blur-sm sm:inline-flex sm:h-11 sm:gap-2 sm:rounded-xl sm:px-6 sm:text-lg",
+                "hidden h-10 w-fit shrink-0 self-center gap-1.5 rounded-lg px-4 text-sm font-medium shadow-sm backdrop-blur-sm sm:inline-flex sm:h-11 sm:gap-2 sm:rounded-xl sm:px-6 sm:text-base",
               )}
             >
               {tCommon("dashboard")}
@@ -394,7 +394,7 @@ export default async function Home() {
               href="/sign-in"
               className={cn(
                 buttonVariants({ variant: "outline", size: "default" }),
-                "hidden h-10 w-fit shrink-0 self-center gap-1.5 rounded-lg px-4 text-base font-medium shadow-sm backdrop-blur-sm sm:inline-flex sm:h-11 sm:gap-2 sm:rounded-xl sm:px-6 sm:text-lg",
+                "hidden h-10 w-fit shrink-0 self-center gap-1.5 rounded-lg px-4 text-sm font-medium shadow-sm backdrop-blur-sm sm:inline-flex sm:h-11 sm:gap-2 sm:rounded-xl sm:px-6 sm:text-base",
               )}
             >
               {tCommon("signIn")}
@@ -424,7 +424,7 @@ export default async function Home() {
             </h1>
 
             {/* Subhead */}
-            <p className="mx-auto mt-10 max-w-[min(100%,46rem)] text-pretty text-[1.0625rem] leading-[1.65] text-muted-foreground sm:mt-12 sm:max-w-[48rem] sm:text-[1.5rem] sm:leading-[1.65]">
+            <p className="mx-auto mt-10 max-w-[min(100%,46rem)] text-pretty text-base leading-[1.65] text-muted-foreground sm:mt-12 sm:max-w-[48rem] sm:text-lg sm:leading-[1.65]">
               {t("subhead")}
             </p>
 
@@ -434,7 +434,7 @@ export default async function Home() {
                 href="#features"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
-                  "min-h-11 rounded-2xl border-border/80 bg-background/60 px-6 py-2.5 text-base font-semibold shadow-sm backdrop-blur-sm sm:min-h-16 sm:min-w-[14rem] sm:rounded-3xl sm:px-10 sm:py-4 sm:text-2xl",
+                  "min-h-11 rounded-2xl border-border/80 bg-background/60 px-6 py-2.5 text-sm font-semibold shadow-sm backdrop-blur-sm sm:min-h-14 sm:min-w-[14rem] sm:rounded-3xl sm:px-10 sm:py-3.5 sm:text-lg",
                 )}
               >
                 {t("ctaSeeFeatures")}
@@ -443,11 +443,11 @@ export default async function Home() {
                 href="/sign-in"
                 className={cn(
                   buttonVariants({ variant: "default", size: "lg" }),
-                  "min-h-11 rounded-2xl px-6 py-2.5 text-base font-semibold shadow-lg sm:min-h-16 sm:min-w-[14rem] sm:rounded-3xl sm:px-10 sm:py-4 sm:text-2xl",
+                  "min-h-11 rounded-2xl px-6 py-2.5 text-sm font-semibold shadow-lg sm:min-h-14 sm:min-w-[14rem] sm:rounded-3xl sm:px-10 sm:py-3.5 sm:text-lg",
                 )}
               >
                 {t("ctaViewPlans")}
-                <ArrowRight className="ml-1.5 size-4 sm:ml-2.5 sm:size-6" aria-hidden />
+                <ArrowRight className="ml-1.5 size-4 sm:ml-2.5 sm:size-5" aria-hidden />
               </Link>
             </div>
 
@@ -459,13 +459,13 @@ export default async function Home() {
                     className={cn(
                       "font-heading font-bold text-gradient",
                       statIndex === 2
-                        ? "text-5xl leading-none tracking-tight sm:text-7xl"
-                        : "text-4xl sm:text-6xl",
+                        ? "text-4xl leading-none tracking-tight sm:text-6xl"
+                        : "text-3xl sm:text-5xl",
                     )}
                   >
                     {value}
                   </div>
-                  <div className="mt-1 text-base text-muted-foreground/80 sm:text-xl">{label}</div>
+                  <div className="mt-1 text-sm text-muted-foreground/80 sm:text-base">{label}</div>
                 </div>
               ))}
             </div>
@@ -502,7 +502,7 @@ export default async function Home() {
                       {/* Feature badge */}
                       <span
                         className={cn(
-                          "inline-flex items-center gap-2 rounded-full px-3 py-1 text-[0.75rem] font-bold uppercase tracking-[0.14em] sm:px-4 sm:py-1.5 sm:text-[0.9375rem]",
+                          "inline-flex items-center gap-2 rounded-full px-3 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.14em] sm:px-4 sm:py-1.5 sm:text-[0.8125rem]",
                           accent.badgeClass,
                         )}
                       >
@@ -524,7 +524,7 @@ export default async function Home() {
                               <span className="size-3 rounded-full bg-amber-400/90" />
                               <span className="size-3 rounded-full bg-emerald-400/90" />
                             </div>
-                            <div className="min-w-0 flex-1 truncate rounded-md bg-background/70 px-3 py-2 text-left text-sm text-muted-foreground sm:py-2.5 sm:text-lg">
+                            <div className="min-w-0 flex-1 truncate rounded-md bg-background/70 px-3 py-2 text-left text-xs text-muted-foreground sm:py-2.5 sm:text-base">
                               {block.browserChromeUrl}
                             </div>
                           </div>
@@ -587,7 +587,7 @@ export default async function Home() {
                     />
                     <span
                       className={cn(
-                        "font-heading text-7xl font-bold tabular-nums transition-opacity duration-200 sm:text-8xl lg:text-9xl",
+                        "font-heading text-6xl font-bold tabular-nums transition-opacity duration-200 sm:text-7xl lg:text-8xl",
                         accent.numberClass,
                         "opacity-40 group-hover:opacity-70",
                       )}
@@ -679,7 +679,7 @@ export default async function Home() {
               <div className="relative mb-6 sm:mb-8">
                 <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/70 px-4 py-1.5 shadow-sm backdrop-blur-sm sm:gap-2.5 sm:px-5 sm:py-2">
                   <span className="size-2 rounded-full bg-accent-gradient animate-pulse-glow sm:size-2.5" aria-hidden />
-                  <span className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground sm:text-lg sm:tracking-[0.14em]">
+                  <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground sm:text-sm sm:tracking-[0.14em]">
                     {t("ctaBandEyebrow")}
                   </span>
                 </span>
@@ -687,11 +687,11 @@ export default async function Home() {
 
               <h2
                 id="cta-band-title"
-                className="relative font-heading text-3xl font-semibold leading-[1.12] tracking-tight text-foreground sm:text-5xl sm:leading-[1.08] lg:text-6xl lg:leading-[1.06] xl:text-[4.25rem] xl:leading-tight"
+                className="relative font-heading text-2xl font-semibold leading-[1.12] tracking-tight text-foreground sm:text-4xl sm:leading-[1.08] lg:text-5xl lg:leading-[1.06] xl:text-[3.25rem] xl:leading-tight"
               >
                 {t("ctaBandTitle")}
               </h2>
-              <p className="relative mx-auto mt-5 max-w-[50ch] text-lg leading-[1.6] text-muted-foreground/95 sm:mt-8 sm:text-2xl lg:text-3xl sm:leading-[1.55]">
+              <p className="relative mx-auto mt-5 max-w-[50ch] text-base leading-[1.6] text-muted-foreground/95 sm:mt-8 sm:text-lg lg:text-xl sm:leading-[1.55]">
                 {t("ctaBandDescription")}
               </p>
               <div className="relative mt-8 flex flex-col items-center gap-4 sm:mt-10 sm:flex-row sm:justify-center sm:gap-6">
@@ -699,33 +699,33 @@ export default async function Home() {
                   href="/sign-in"
                   className={cn(
                     buttonVariants({ variant: "default", size: "lg" }),
-                    "inline-flex min-h-11 rounded-2xl px-7 py-2.5 text-base font-semibold shadow-lg sm:min-h-16 sm:rounded-3xl sm:px-12 sm:py-4 sm:text-2xl",
+                    "inline-flex min-h-11 rounded-2xl px-7 py-2.5 text-sm font-semibold shadow-lg sm:min-h-14 sm:rounded-3xl sm:px-12 sm:py-3.5 sm:text-lg",
                   )}
                 >
                   {tCommon("signIn")}
-                  <ArrowRight className="ml-1.5 size-4 sm:ml-2.5 sm:size-6" aria-hidden />
+                  <ArrowRight className="ml-1.5 size-4 sm:ml-2.5 sm:size-5" aria-hidden />
                 </Link>
                 <Link
                   href="/plans"
                   className={cn(
                     buttonVariants({ variant: "ghost", size: "lg" }),
-                    "min-h-11 rounded-2xl px-4 text-base text-muted-foreground hover:text-foreground sm:min-h-16 sm:rounded-3xl sm:px-6 sm:text-2xl",
+                    "min-h-11 rounded-2xl px-4 text-sm text-muted-foreground hover:text-foreground sm:min-h-14 sm:rounded-3xl sm:px-6 sm:text-lg",
                   )}
                 >
                   {t("navPricing")}
                 </Link>
               </div>
-              <p className="relative mt-6 text-lg text-muted-foreground/65 sm:mt-8 sm:text-xl">
+              <p className="relative mt-6 text-base text-muted-foreground/65 sm:mt-8 sm:text-lg">
                 {t("trustWorkspace")}
               </p>
             </div>
           </section>
 
           <footer className="relative mx-auto mt-24 w-full max-w-6xl border-t border-border/60 pt-12 text-center sm:mt-28">
-            <p className="text-lg leading-relaxed text-muted-foreground/90 sm:text-xl lg:text-2xl">
+            <p className="text-base leading-relaxed text-muted-foreground/90 sm:text-lg lg:text-xl">
               {t("footerTagline")}
             </p>
-            <p className="mt-4 text-base leading-relaxed text-muted-foreground/65 sm:text-lg">
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground/65 sm:text-base">
               {t("footerCopyright", { year })}
             </p>
           </footer>
