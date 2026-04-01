@@ -211,6 +211,17 @@
     background-clip: text;
     color: transparent;
   }
+  .hero-pencil-underline-path {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+    animation: hero-pencil-draw 1.45s cubic-bezier(0.33, 1, 0.68, 1) 0.45s forwards;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-pencil-underline-path {
+      animation: none;
+      stroke-dashoffset: 0;
+    }
+  }
   .gradient-pill {
     @apply inline-flex items-center rounded-full border-0 px-2.5 py-0.5 text-[0.625rem] font-bold uppercase tracking-wider text-white;
     background-image: var(--accent-gradient);
@@ -472,6 +483,11 @@
   @keyframes fadeSlideIn {
     from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes hero-pencil-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
   }
   /* DNA preview — playful tool cards */
   @keyframes dna-tool-bob {

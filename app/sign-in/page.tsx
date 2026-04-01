@@ -34,9 +34,11 @@ export default async function SignInPage() {
       </div>
 
       <header className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-3 px-5 py-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:px-8 sm:py-6">
-        <BrandLogoLink priority size="header" className="shrink-0" />
-        <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center sm:mx-4 sm:justify-end">
-          <LanguageSwitcher currentLocale={locale} className="max-w-[11rem] sm:max-w-[13rem]" />
+        <div className="flex w-full min-w-0 items-center justify-between gap-3 sm:contents">
+          <BrandLogoLink priority size="header" className="shrink-0" />
+          <div className="flex min-h-0 min-w-0 shrink-0 items-center justify-end sm:mx-4 sm:flex-1 sm:justify-end">
+            <LanguageSwitcher currentLocale={locale} className="max-w-[11rem] sm:max-w-[13rem]" />
+          </div>
         </div>
       </header>
 

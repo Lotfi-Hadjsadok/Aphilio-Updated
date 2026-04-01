@@ -5,13 +5,13 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 
 const landingEyebrow =
-  "text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/90 sm:text-[0.8125rem] sm:tracking-[0.18em]";
+  "text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/90 sm:text-[1.125rem] sm:tracking-[0.16em]";
 const landingSectionHeading =
-  "font-heading text-3xl font-semibold leading-[1.12] tracking-tight text-foreground sm:text-4xl sm:leading-[1.08]";
+  "font-heading text-3xl font-semibold leading-[1.12] tracking-tight text-foreground sm:text-5xl sm:leading-[1.08] lg:text-6xl lg:leading-[1.06] xl:text-7xl xl:leading-[1.04]";
 const landingFeatureTitle =
-  "font-heading text-2xl font-semibold leading-snug tracking-tight text-foreground sm:text-3xl sm:leading-snug";
+  "font-heading text-2xl font-semibold leading-snug tracking-tight text-foreground sm:text-4xl sm:leading-snug lg:text-5xl lg:leading-snug xl:text-6xl xl:leading-snug";
 const landingBody =
-  "text-[0.9375rem] leading-[1.7] text-muted-foreground sm:text-[1.0625rem] sm:leading-[1.7]";
+  "text-base leading-[1.65] text-muted-foreground sm:text-[1.25rem] sm:leading-[1.65] lg:text-[1.3125rem]";
 
 type PricingPlansSectionProps = {
   id?: string;
@@ -38,11 +38,11 @@ export async function PricingPlansSection({
   return (
     <section
       id={id}
-      className={cn("mx-auto w-full max-w-5xl scroll-mt-24", className)}
+      className={cn("mx-auto w-full max-w-6xl scroll-mt-24", className)}
       aria-labelledby="pricing-title"
     >
       {showSectionHeader ? (
-        <div className="mb-14 space-y-5 text-center sm:mb-16">
+        <div className="mb-16 space-y-6 text-center sm:mb-20">
           <p className={landingEyebrow}>{t("pricingEyebrow")}</p>
           <h2 id="pricing-title" className={landingSectionHeading}>
             {t("pricingTitle")}
@@ -50,7 +50,7 @@ export async function PricingPlansSection({
           <p
             className={cn(
               landingBody,
-              "mx-auto max-w-md text-pretty text-muted-foreground/95",
+              "mx-auto max-w-xl text-pretty text-muted-foreground/95",
             )}
           >
             {t("pricingSubtitle")}
@@ -62,8 +62,8 @@ export async function PricingPlansSection({
         </h2>
       )}
 
-      <div className="grid gap-6 sm:grid-cols-2 sm:gap-7">
-        <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/80 p-7 shadow-sm ring-1 ring-foreground/[0.03] backdrop-blur-sm sm:p-9">
+      <div className="grid gap-8 sm:grid-cols-2 sm:gap-9">
+        <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/80 p-6 shadow-sm ring-1 ring-foreground/[0.03] backdrop-blur-sm sm:p-10">
           <div
             className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-accent-gradient opacity-[0.06] blur-3xl transition-opacity duration-300 group-hover:opacity-[0.11]"
             aria-hidden
@@ -74,14 +74,14 @@ export async function PricingPlansSection({
               {t("pricingMonthlyTagline")}
             </p>
             <div className="mt-6 flex items-baseline gap-2">
-              <span className="font-heading text-5xl font-bold tracking-tight">
+              <span className="font-heading text-5xl font-bold tracking-tight sm:text-7xl">
                 {t("pricingProMonthlyPrice")}
               </span>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-base text-muted-foreground sm:text-lg">
                 {t("pricingProPeriod")}
               </span>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground/80">
+            <p className="mt-2 text-sm text-muted-foreground/80 sm:text-base">
               {t("pricingMonthlyBillingNote")}
             </p>
           </div>
@@ -90,10 +90,10 @@ export async function PricingPlansSection({
             {proFeatures.map((feature) => (
               <li
                 key={feature}
-                className="flex items-start gap-3 text-[0.9375rem] leading-[1.6] text-foreground/85 sm:text-base sm:leading-[1.6]"
+                className="flex items-start gap-3 text-base leading-[1.55] text-foreground/85 sm:text-xl sm:leading-[1.55]"
               >
                 <Check
-                  className="mt-0.5 size-4 shrink-0 text-foreground/55"
+                  className="mt-0.5 size-5 shrink-0 text-foreground/55 sm:size-6"
                   aria-hidden
                 />
                 {feature}
@@ -107,7 +107,7 @@ export async function PricingPlansSection({
               href="/api/checkout/start?slug=monthly"
               className={cn(
                 buttonVariants({ variant: "outline", size: "default" }),
-                "w-full rounded-2xl py-6 text-base font-semibold",
+                "w-full rounded-xl py-4 text-base font-semibold sm:rounded-2xl sm:py-7 sm:text-2xl",
               )}
             >
               {t("pricingMonthlyCta")}
@@ -115,7 +115,7 @@ export async function PricingPlansSection({
           </div>
         </div>
 
-        <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-foreground/[0.12] bg-card/90 p-7 shadow-xl ring-1 ring-foreground/[0.06] backdrop-blur-sm sm:p-9">
+        <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-foreground/[0.12] bg-card/90 p-6 shadow-xl ring-1 ring-foreground/[0.06] backdrop-blur-sm sm:p-10">
           <div
             className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-accent-gradient opacity-[0.15] blur-3xl transition-opacity duration-300 group-hover:opacity-[0.22]"
             aria-hidden
@@ -132,24 +132,24 @@ export async function PricingPlansSection({
                 {t("pricingYearlyTagline")}
               </p>
             </div>
-            <span className="gradient-pill shrink-0 text-[0.6rem] tracking-[0.13em]">
+            <span className="gradient-pill shrink-0 text-[0.65rem] tracking-[0.12em] sm:text-[0.85rem]">
               {t("pricingProBadge")}
             </span>
           </div>
 
           <div className="relative mt-6">
             <div className="flex items-baseline gap-2">
-              <span className="font-heading text-5xl font-bold tracking-tight">
+              <span className="font-heading text-5xl font-bold tracking-tight sm:text-7xl">
                 {t("pricingProYearlyPrice")}
               </span>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-base text-muted-foreground sm:text-lg">
                 {t("pricingProPeriod")}
               </span>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground/80">
+            <p className="mt-2 text-sm text-muted-foreground/80 sm:text-base">
               {t("pricingYearlyBillingNote")}
             </p>
-            <p className="mt-2.5 text-sm font-bold text-gradient">
+            <p className="mt-2.5 text-base font-bold text-gradient sm:text-lg">
               {t("pricingProSaveLabel")}
             </p>
           </div>
@@ -158,10 +158,10 @@ export async function PricingPlansSection({
             {proFeatures.map((feature) => (
               <li
                 key={feature}
-                className="flex items-start gap-3 text-[0.9375rem] leading-[1.6] text-foreground/85 sm:text-base sm:leading-[1.6]"
+                className="flex items-start gap-3 text-base leading-[1.55] text-foreground/85 sm:text-xl sm:leading-[1.55]"
               >
                 <Check
-                  className="mt-0.5 size-4 shrink-0 text-foreground/55"
+                  className="mt-0.5 size-5 shrink-0 text-foreground/55 sm:size-6"
                   aria-hidden
                 />
                 {feature}
@@ -175,7 +175,7 @@ export async function PricingPlansSection({
               href="/api/checkout/start?slug=yearly"
               className={cn(
                 buttonVariants({ variant: "default", size: "default" }),
-                "w-full rounded-2xl py-6 text-base font-semibold",
+                "w-full rounded-xl py-4 text-base font-semibold sm:rounded-2xl sm:py-7 sm:text-2xl",
               )}
             >
               {t("pricingYearlyCta")}

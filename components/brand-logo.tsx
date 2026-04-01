@@ -10,17 +10,20 @@ type BrandLogoLinkProps = {
   className?: string;
   imageClassName?: string;
   priority?: boolean;
-  size?: "header" | "signIn";
+  /** `landing` — larger mark + wordmark for marketing pages (home, plans). */
+  size?: "header" | "signIn" | "landing";
 };
 
 const imageSizeStyles: Record<NonNullable<BrandLogoLinkProps["size"]>, string> = {
   header: "h-11 w-auto sm:h-12",
   signIn: "h-[4.5rem] w-auto sm:h-20",
+  landing: "h-12 w-auto sm:h-14 md:h-[4.25rem]",
 };
 
 const wordmarkStyles: Record<NonNullable<BrandLogoLinkProps["size"]>, string> = {
   header: "text-2xl font-semibold tracking-tight sm:text-[1.75rem]",
   signIn: "text-4xl font-semibold tracking-tight sm:text-5xl",
+  landing: "text-2xl font-semibold tracking-tight sm:text-3xl md:text-4xl lg:text-[2.5rem]",
 };
 
 export function BrandLogoLink({
@@ -32,7 +35,11 @@ export function BrandLogoLink({
   return (
     <Link
       href="/"
-      className={cn("inline-flex shrink-0 items-center gap-1 sm:gap-1.5", className)}
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1.5 sm:gap-2",
+        size === "landing" && "gap-2 sm:gap-2.5",
+        className,
+      )}
     >
       <Image
         src={LOGO_PATH}

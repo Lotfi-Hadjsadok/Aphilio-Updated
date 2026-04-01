@@ -76,7 +76,7 @@ export function DnaPreviewFlipChips({
       <div className="flex w-full min-w-0 flex-col gap-1.5">
         <p
           className={cn(
-            "self-center text-[0.6rem] font-bold uppercase leading-tight tracking-[0.16em]",
+            "self-center text-[0.7rem] font-bold uppercase leading-tight tracking-[0.14em] sm:text-[0.82rem]",
             chip.labelColor,
           )}
         >
@@ -98,7 +98,7 @@ export function DnaPreviewFlipChips({
             {chip.content.items.map((item) => (
               <span
                 key={item}
-                className="rounded-full border border-white/15 bg-background/45 px-1.5 py-0.5 text-[0.62rem] font-medium leading-tight text-foreground/75"
+                className="rounded-full border border-white/15 bg-background/45 px-2 py-0.5 text-[0.7rem] font-medium leading-tight text-foreground/75 sm:text-[0.82rem]"
               >
                 {item}
               </span>
@@ -110,7 +110,7 @@ export function DnaPreviewFlipChips({
               <span
                 key={`${prompt}-${promptIndex}`}
                 className={cn(
-                  "max-w-full rounded-md border px-1.5 py-0.5 text-left text-[0.62rem] font-medium leading-snug",
+                  "max-w-full rounded-md border px-2 py-1 text-left text-[0.7rem] font-medium leading-snug sm:text-[0.82rem]",
                   promptIndex % 2 === 0
                     ? "self-start border-white/15 bg-background/45 text-foreground/75"
                     : "self-end border-white/10 bg-white/10 text-foreground/70",
@@ -137,7 +137,7 @@ export function DnaPreviewFlipChips({
   }
 
   return (
-    <div className="mt-12 sm:mt-14 flex flex-wrap items-start justify-center gap-3 sm:gap-4">
+    <div className="mt-14 flex flex-wrap items-start justify-center gap-4 sm:mt-16 sm:gap-5">
       {chipsFront.map((frontChip, index) => {
         const backChip = backByIndex[index];
         if (!backChip) return null;
@@ -146,7 +146,7 @@ export function DnaPreviewFlipChips({
           <div
             key={`${frontChip.label}-${index}`}
             className={cn(
-              "animate-float w-fit max-w-[min(100%,18rem)] rounded-2xl border px-4 py-3 shadow-md backdrop-blur-sm",
+              "animate-float w-fit max-w-[min(100%,20rem)] rounded-2xl border px-4 py-3 shadow-md backdrop-blur-sm sm:px-5 sm:py-4",
               frontChip.borderClass,
               frontChip.bgClass,
             )}

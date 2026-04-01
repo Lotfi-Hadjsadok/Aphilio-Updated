@@ -70,9 +70,11 @@ export default async function DashboardPage() {
       <div className="relative mx-auto flex h-full min-h-0 w-full max-w-6xl flex-1 flex-col px-4 pt-6 pb-[max(3rem,env(safe-area-inset-bottom))] sm:px-8 sm:py-8">
         {/* Top bar: logo + language + library */}
         <header className="flex w-full min-w-0 flex-col gap-3 overflow-x-hidden sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
-          <BrandLogoLink className="min-w-0 max-w-full shrink-0 self-start sm:self-auto" />
-          <div className="flex min-h-0 min-w-0 w-full flex-1 items-center justify-center sm:mx-4 sm:w-auto">
-            <LanguageSwitcher currentLocale={locale} />
+          <div className="flex w-full min-w-0 items-center justify-between gap-3 sm:contents">
+            <BrandLogoLink className="min-w-0 max-w-full shrink-0 sm:self-auto" />
+            <div className="flex min-h-0 min-w-0 shrink-0 items-center justify-end sm:mx-4 sm:flex-1 sm:justify-center sm:w-auto">
+              <LanguageSwitcher currentLocale={locale} />
+            </div>
           </div>
           <div className="flex w-full min-w-0 shrink-0 flex-wrap items-center justify-center gap-2 self-center sm:w-fit sm:self-auto">
             {isSubscribed ? (

@@ -55,51 +55,53 @@ export default async function PlansPage() {
           />
         </div>
 
-        <header className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-3 px-5 py-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:px-8 sm:py-7">
-          <BrandLogoLink priority className="shrink-0" />
-          <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center gap-6 sm:mx-4">
-            <LanguageSwitcher currentLocale={locale} />
-            <Link
-              href="/"
-              className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:block"
-            >
-              {t("plansBackHome")}
-            </Link>
+        <header className="relative z-10 mx-auto flex w-full max-w-7xl flex-col gap-4 px-6 py-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-5 sm:px-10 sm:py-8">
+          <div className="flex w-full min-w-0 items-center justify-between gap-3 sm:contents">
+            <BrandLogoLink priority size="landing" className="shrink-0" />
+            <div className="flex min-h-0 min-w-0 shrink-0 items-center justify-end gap-6 sm:min-w-0 sm:flex-1 sm:justify-center sm:mx-4 sm:gap-7">
+              <LanguageSwitcher currentLocale={locale} variant="prominent" />
+              <Link
+                href="/"
+                className="hidden text-lg font-medium text-muted-foreground transition-colors hover:text-foreground sm:block"
+              >
+                {t("plansBackHome")}
+              </Link>
+            </div>
           </div>
           {session ? (
             <Link
               href="/dashboard"
               className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "w-fit shrink-0 self-center gap-1.5 rounded-xl px-5 text-sm font-medium shadow-sm backdrop-blur-sm",
+                buttonVariants({ variant: "outline", size: "default" }),
+                "h-10 w-fit shrink-0 self-center gap-1.5 rounded-lg px-4 text-base font-medium shadow-sm backdrop-blur-sm sm:h-11 sm:gap-2 sm:rounded-xl sm:px-6 sm:text-lg",
               )}
             >
               {tCommon("dashboard")}
-              <ArrowRight className="size-3.5 opacity-60" aria-hidden />
+              <ArrowRight className="size-3.5 opacity-60 sm:size-4" aria-hidden />
             </Link>
           ) : (
             <Link
               href="/sign-in"
               className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "w-fit shrink-0 self-center gap-1.5 rounded-xl px-5 text-sm font-medium shadow-sm backdrop-blur-sm",
+                buttonVariants({ variant: "outline", size: "default" }),
+                "h-10 w-fit shrink-0 self-center gap-1.5 rounded-lg px-4 text-base font-medium shadow-sm backdrop-blur-sm sm:h-11 sm:gap-2 sm:rounded-xl sm:px-6 sm:text-lg",
               )}
             >
               {tCommon("signIn")}
-              <ArrowRight className="size-3.5 opacity-60" aria-hidden />
+              <ArrowRight className="size-3.5 opacity-60 sm:size-4" aria-hidden />
             </Link>
           )}
         </header>
 
         <main
           id="main-content"
-          className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 pb-20 pt-8 sm:px-8 sm:pb-28 sm:pt-12 lg:pb-32"
+          className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col px-6 pb-24 pt-10 sm:px-10 sm:pb-32 sm:pt-14 lg:pb-36"
         >
-          <div className="mb-10 text-center">
-            <h1 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-foreground sm:text-4xl">
+          <div className="mb-12 text-center sm:mb-14">
+            <h1 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl xl:text-7xl">
               {t("pricingTitle")}
             </h1>
-            <p className="mx-auto mt-4 max-w-lg text-pretty text-muted-foreground sm:text-[1.0625rem]">
+            <p className="mx-auto mt-5 max-w-2xl text-pretty text-lg text-muted-foreground sm:mt-6 sm:text-xl lg:text-2xl">
               {t("pricingSubtitle")}
             </p>
           </div>
