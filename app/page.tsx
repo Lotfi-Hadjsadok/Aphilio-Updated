@@ -76,7 +76,7 @@ const landingBody =
 const landingCardTitle =
   "font-heading text-xl font-semibold leading-snug tracking-tight text-foreground sm:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl";
 const landingHeroHeadlineLine =
-  "block w-full text-[2.75rem] font-semibold leading-[1.12] tracking-tight text-foreground sm:text-[5.5rem] sm:leading-[1.06] lg:text-[7rem] lg:leading-[1.03]";
+  "block w-full text-[2.75rem] font-semibold leading-[1.12] tracking-tight text-foreground sm:text-[5.5rem] sm:leading-[1.06] lg:text-[6.25rem] lg:leading-[1.04]";
 
 const stepAccents = [
   {
@@ -405,7 +405,7 @@ export default async function Home() {
 
         <main
           id="main-content"
-          className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col px-6 pb-24 pt-7 sm:px-10 sm:pb-32 sm:pt-14 lg:pb-36 lg:pt-22"
+          className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col px-6 pb-24 pt-7 sm:px-10 sm:pb-32 sm:pt-14 lg:pb-36 lg:pt-16"
         >
           {/* ─── HERO ─────────────────────────────────────────────────────── */}
           <div className="flex flex-col items-center justify-center text-center">
@@ -440,7 +440,7 @@ export default async function Home() {
                 {t("ctaSeeFeatures")}
               </Link>
               <Link
-                href="/plans"
+                href="/sign-in"
                 className={cn(
                   buttonVariants({ variant: "default", size: "lg" }),
                   "min-h-11 rounded-2xl px-6 py-2.5 text-base font-semibold shadow-lg sm:min-h-16 sm:min-w-[14rem] sm:rounded-3xl sm:px-10 sm:py-4 sm:text-2xl",
