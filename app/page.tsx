@@ -302,7 +302,7 @@ export default async function Home() {
       },
     },
     {
-      label: t("chipTypography"),
+      label: t("chipAspectRatios"),
       borderClass: "border-purple-500/25",
       bgClass: "bg-purple-500/[0.07]",
       labelColor: "text-purple-400",

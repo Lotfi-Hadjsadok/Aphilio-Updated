@@ -293,12 +293,13 @@ async function referenceImageGroupsFromPromptSemantics(
   return groups;
 }
 
-async function getLogoUrlForContext(contextId: string): Promise<string | null> {
+export async function getLogoUrlForContext(contextId: string): Promise<string | null> {
   const row = await prisma.scrapedContext.findUnique({
     where: { id: contextId },
     select: { logo: true },
   });
-  return row?.logo ?? null;
+  const trimmed = row?.logo?.trim();
+  return trimmed ? trimmed : null;
 }
 
 // ── Image helpers ─────────────────────────────────────────────────────────────
@@ -563,16 +564,15 @@ export async function generateImageFromPromptForContext(
   prompt: string,
   contextId: string,
   imageModel = IMAGE_MODEL_PREMIUM,
-  /** When set (including `null`), skips DB read — same contract as {@link generateImageWithKnownReferences}. */
+  /** When non-empty, used as-is; otherwise the context row's logo is loaded so chat/RAG always receives a logo when stored. */
   explicitLogoUrl?: string | null,
 ): Promise<{ imageUrl: string; referenceImageUrls: string[] }> {
   const referenceImageGroups = await referenceImageGroupsFromPromptSemantics(prompt, contextId);
-  const logoUrl =
-    explicitLogoUrl !== undefined
-      ? explicitLogoUrl?.trim()
-        ? explicitLogoUrl.trim()
-        : null
-      : await getLogoUrlForContext(contextId);
+  const trimmedExplicit =
+    typeof explicitLogoUrl === "string" && explicitLogoUrl.trim().length > 0
+      ? explicitLogoUrl.trim()
+      : null;
+  const logoUrl = trimmedExplicit ?? (await getLogoUrlForContext(contextId));
   const imageUrl = await generateImageFromPrompt(
     prompt,
     referenceImageGroups,

@@ -7,6 +7,7 @@ import {
   embeddingArrayToPgVectorLiteral,
   generateImageFromPrompt,
   generateImageFromPromptForContext,
+  getLogoUrlForContext,
   IMAGE_MODEL_FAST,
   IMAGE_MODEL_PREMIUM,
 } from "@/lib/langchain";
@@ -31,7 +32,23 @@ import type {
   SendChatMessageState,
 } from "@/types/chat";
 import type { ReferenceImageGroup } from "@/types/ad-creatives";
-import type { BrandingPersonality } from "@/types/scrape";
+import type { BrandingPersonality, TypographyEntry } from "@/types/scrape";
+
+function formatTypographyForPrompt(entries: TypographyEntry[] | null | undefined): string | null {
+  if (!entries || entries.length === 0) return null;
+  const lines: string[] = [];
+  for (const entry of entries) {
+    const family = entry.fontfamily?.trim() ?? "";
+    if (!family) continue;
+    const heading = entry.heading?.trim();
+    const body = entry.body?.trim();
+    const pieces = [family];
+    if (heading) pieces.push(`headings: ${heading}`);
+    if (body) pieces.push(`body: ${body}`);
+    lines.push(pieces.join(" — "));
+  }
+  return lines.length > 0 ? lines.join("; ") : null;
+}
 
 function rowToPersistedMessage(row: {
   id: string;
@@ -67,6 +84,8 @@ function buildEnrichedPrompt(
   personality?: BrandingPersonality | null,
   primaryColor?: string | null,
   similarTexts?: Array<{ heading: string | null; content: string }>,
+  typography?: TypographyEntry[] | null,
+  brandLogoAttached?: boolean,
 ): string {
   const lines: string[] = [`Creative brief: ${userText}`];
 
@@ -82,12 +101,29 @@ function buildEnrichedPrompt(
       lines.push(`Value proposition: ${personality.valueProposition}`);
   }
 
+  const typographySummary = formatTypographyForPrompt(typography);
+  if (typographySummary) {
+    lines.push(
+      "",
+      "Typography (mandatory): Every on-image headline, subheadline, button label, and caption MUST use ONLY these brand typefaces, respecting heading vs body roles where specified: " +
+        typographySummary +
+        " Do not substitute system UI fonts, generic grotesks, or lookalike typefaces.",
+    );
+  }
+
   if (similarTexts && similarTexts.length > 0) {
     lines.push("", "Relevant brand content:");
     for (const doc of similarTexts) {
       const snippet = doc.content.slice(0, 350);
       lines.push(doc.heading ? `[${doc.heading}] ${snippet}` : snippet);
     }
+  }
+
+  if (brandLogoAttached) {
+    lines.push(
+      "",
+      "Brand logo: The official logo is provided as a separate labeled image block immediately after this text. Use that attachment as the only source for the mark — pixel-accurate, no redraw or substitute.",
+    );
   }
 
   lines.push("", `Generate this creative in ${aspectRatio} aspect ratio.`);
@@ -256,16 +292,26 @@ export async function sendChatMessageAction(
     });
     if (!contextOwnership) return { status: "error", message: "Context not found." };
 
-    const [loaded, logoRow] = await Promise.all([
+    const [loaded, contextRow] = await Promise.all([
       loadSavedContext(contextId),
       prisma.scrapedContext.findUnique({
         where: { id: contextId },
-        select: { logo: true },
+        select: { logo: true, typography: true },
       }),
     ]);
 
-    const rawLogo = logoRow?.logo?.trim();
-    logoUrl = rawLogo ? rawLogo : null;
+    const typographyFromRow = Array.isArray(contextRow?.typography)
+      ? (contextRow.typography as TypographyEntry[])
+      : null;
+    const typographyForPrompt =
+      loaded.ok && loaded.result.branding?.typography && loaded.result.branding.typography.length > 0
+        ? loaded.result.branding.typography
+        : typographyFromRow;
+
+    logoUrl = contextRow?.logo?.trim() || null;
+    if (!logoUrl) {
+      logoUrl = await getLogoUrlForContext(contextId);
+    }
 
     if (loaded.ok) {
       contextName = loaded.result.name;
@@ -278,6 +324,20 @@ export async function sendChatMessageAction(
         loaded.result.personality,
         loaded.result.branding?.colors?.primary,
         similarTexts,
+        typographyForPrompt,
+        Boolean(logoUrl),
+      );
+    } else {
+      enrichedPrompt = buildEnrichedPrompt(
+        text,
+        aspectRatio,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        typographyForPrompt,
+        Boolean(logoUrl),
       );
     }
   } else {
