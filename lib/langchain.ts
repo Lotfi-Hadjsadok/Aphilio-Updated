@@ -293,7 +293,7 @@ async function referenceImageGroupsFromPromptSemantics(
   return groups;
 }
 
-export async function getLogoUrlForContext(contextId: string): Promise<string | null> {
+async function getLogoUrlForContext(contextId: string): Promise<string | null> {
   const row = await prisma.scrapedContext.findUnique({
     where: { id: contextId },
     select: { logo: true },

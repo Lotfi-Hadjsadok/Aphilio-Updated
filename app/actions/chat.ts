@@ -7,7 +7,6 @@ import {
   embeddingArrayToPgVectorLiteral,
   generateImageFromPrompt,
   generateImageFromPromptForContext,
-  getLogoUrlForContext,
   IMAGE_MODEL_FAST,
   IMAGE_MODEL_PREMIUM,
 } from "@/lib/langchain";
@@ -33,6 +32,17 @@ import type {
 } from "@/types/chat";
 import type { ReferenceImageGroup } from "@/types/ad-creatives";
 import type { BrandingPersonality, TypographyEntry } from "@/types/scrape";
+
+/** Prepends the brand logo URL to persisted reference thumbnails (deduped). */
+function mergeBrandLogoIntoReferenceUrls(
+  referenceUrls: string[],
+  logoUrl: string | null,
+): string[] {
+  const trimmedLogo = logoUrl?.trim();
+  if (!trimmedLogo) return referenceUrls;
+  const rest = referenceUrls.filter((url) => url.trim() !== trimmedLogo);
+  return [trimmedLogo, ...rest];
+}
 
 function formatTypographyForPrompt(entries: TypographyEntry[] | null | undefined): string | null {
   if (!entries || entries.length === 0) return null;
@@ -122,7 +132,8 @@ function buildEnrichedPrompt(
   if (brandLogoAttached) {
     lines.push(
       "",
-      "Brand logo: The official logo is provided as a separate labeled image block immediately after this text. Use that attachment as the only source for the mark — pixel-accurate, no redraw or substitute.",
+      "Brand logo: The official logo is provided as a separate labeled image block immediately after this text. Use that attachment as the only source for the mark — pixel-accurate, no redraw or substitute. " +
+        "Unless this brief explicitly requests no logo, include the mark visibly in the final composition.",
     );
   }
 
@@ -309,9 +320,6 @@ export async function sendChatMessageAction(
         : typographyFromRow;
 
     logoUrl = contextRow?.logo?.trim() || null;
-    if (!logoUrl) {
-      logoUrl = await getLogoUrlForContext(contextId);
-    }
 
     if (loaded.ok) {
       contextName = loaded.result.name;
@@ -420,9 +428,10 @@ export async function sendChatMessageAction(
     // Manual references are what the user intentionally picked (shown in the user bubble).
     // Auto-RAG references are only shown below the bot's generated image.
     const manualReferenceUrls: string[] = [...filteredContextUrls, ...uploadedReferenceImageUrls];
-    const botReferenceUrls: string[] = noImagesManuallyProvided
-      ? autoRagReferenceUrls
-      : manualReferenceUrls;
+    const botReferenceUrls: string[] = mergeBrandLogoIntoReferenceUrls(
+      noImagesManuallyProvided ? autoRagReferenceUrls : manualReferenceUrls,
+      logoUrl,
+    );
 
     await prisma.generatedCreative.create({
       data: {

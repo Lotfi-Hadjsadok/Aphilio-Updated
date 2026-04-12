@@ -12,7 +12,8 @@ export const IMAGE_MODEL_LOGO_FIDELITY_RULES =
   "When a logo block follows, it is a separate labeled block containing only the official logo image(s). " +
   "The logo is immutable source material: carry it into the output with zero modification to the artwork itself: same shapes, letterforms, spacing, proportions, and pixel-level appearance. " +
   "Do not redraw, redesign, simplify, stylize, recolor, re-filter, add outlines, glows, shadows, or effects to the mark; do not substitute another logo or invent a wordmark. " +
-  "You may only translate and uniformly scale the whole logo; never stretch, skew, or crop the mark.";
+  "You may only translate and uniformly scale the whole logo; never stretch, skew, or crop the mark. " +
+  "Unless the brief explicitly demands a logo-free composition, the final ad MUST visibly include this exact logo as a clear, readable brand element — omitting it or replacing it with another mark is not allowed.";
 
 /** Used when at least one non-logo reference image URL is passed (user-selected or semantic retrieval). */
 export const IMAGE_MODEL_REFERENCE_IMAGES_RULES =
@@ -22,7 +23,8 @@ export const IMAGE_MODEL_REFERENCE_IMAGES_RULES =
 
 export const LOGO_BLOCK_USER_INSTRUCTION =
   "Official brand logo: the following image(s) are the only source for the logo. " +
-  "Reproduce the mark exactly; do not redraw or substitute.";
+  "Reproduce the mark exactly; do not redraw or substitute. " +
+  "Place this logo prominently in the creative unless the text brief explicitly says not to use a logo.";
 
 export function sectionReferenceUserInstruction(sectionTitle: string): string {
   return (
