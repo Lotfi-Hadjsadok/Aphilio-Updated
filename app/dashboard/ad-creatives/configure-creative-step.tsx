@@ -7,6 +7,8 @@ import {
   ASPECT_RATIO_OPTIONS,
   defaultAspectRatioForTemplate,
 } from "@/lib/ad-creatives/templates";
+import { LOCALE_OPTIONS } from "@/lib/locale-options";
+import type { Locale } from "@/lib/i18n-locales";
 import { studioCategoryIcon, studioTemplateIcon } from "./ad-creative-template-icons";
 import type {
   AdAspectRatio,
@@ -15,6 +17,13 @@ import type {
   SelectedTemplate,
 } from "@/types/ad-creatives";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
   adStudioCategoryShellCn,
@@ -41,6 +50,8 @@ export function ConfigureCreativeStep({
   selectedTemplates,
   setSelectedTemplates,
   selectedSectionIds,
+  outputLanguage,
+  onOutputLanguageChange,
   generateFormAction,
   generatePending,
   generateError,
@@ -53,6 +64,8 @@ export function ConfigureCreativeStep({
   selectedTemplates: SelectedTemplate[];
   setSelectedTemplates: (templates: SelectedTemplate[]) => void;
   selectedSectionIds: Set<string>;
+  outputLanguage: Locale;
+  onOutputLanguageChange: (code: Locale) => void;
   generateFormAction: (formData: FormData) => void;
   generatePending: boolean;
   generateError: string | null;
@@ -65,6 +78,7 @@ export function ConfigureCreativeStep({
   const tCategories = useTranslations("adCreatives.categories");
   const tLayouts = useTranslations("adCreatives.layouts");
   const tAspectOpts = useTranslations("adCreatives.aspectRatioOptions");
+  const activeLanguage = LOCALE_OPTIONS.find((item) => item.code === outputLanguage);
   const sectionIdsValue = [...selectedSectionIds].join(",");
   const selectedTemplatesJson = JSON.stringify(selectedTemplates);
 
@@ -104,6 +118,7 @@ export function ConfigureCreativeStep({
         <input type="hidden" name="selectedAngles" value={JSON.stringify(selectAngleState.selectedAngles)} />
         <input type="hidden" name="sectionIds" value={sectionIdsValue} />
         <input type="hidden" name="selectedTemplates" value={selectedTemplatesJson} />
+        <input type="hidden" name="outputLanguage" value={outputLanguage} />
 
         <div className={studioScrollCn}>
           <div className={studioContentCn}>
@@ -121,6 +136,43 @@ export function ConfigureCreativeStep({
                   </span>
                 ) : null}
               </StepHeader>
+
+              <div className="flex flex-col gap-2 rounded-xl border border-border/50 bg-muted/20 px-3.5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+                <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {tCommon("adLanguage")}
+                </p>
+                <Select
+                  value={outputLanguage}
+                  onValueChange={(value) => onOutputLanguageChange(value as Locale)}
+                  disabled={generatePending}
+                >
+                  <SelectTrigger
+                    aria-label={tCommon("adLanguageAria")}
+                    className="h-10 w-full min-w-[10rem] max-w-md rounded-xl border-border bg-background/80 text-sm sm:w-auto sm:min-w-[12rem]"
+                  >
+                    <SelectValue>
+                      <span className="flex min-w-0 flex-1 items-center gap-2">
+                        <span className="text-base leading-none" aria-hidden>
+                          {activeLanguage?.flag ?? "🌐"}
+                        </span>
+                        <span className="truncate">
+                          {activeLanguage?.label ?? outputLanguage}
+                        </span>
+                      </span>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LOCALE_OPTIONS.map((item) => (
+                      <SelectItem key={item.code} value={item.code}>
+                        <span className="mr-1.5 text-base leading-none" aria-hidden>
+                          {item.flag}
+                        </span>
+                        <span>{item.label}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               <div className="space-y-4">
                 {AD_TEMPLATE_CATEGORIES.map((category) => {

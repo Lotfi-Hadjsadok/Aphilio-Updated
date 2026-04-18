@@ -35,6 +35,8 @@
     "premium": "Premium",
     "removeImage": "Remove image",
     "interfaceLanguage": "Interface language",
+    "adLanguage": "Ad language",
+    "adLanguageAria": "Language for headlines and on-image text in generations",
     "logout": "Log out",
     "signIn": "Sign in"
   },
@@ -276,7 +278,18 @@
     "grantCreditsErrorMissingUser": "Missing user.",
     "grantCreditsErrorInvalidAmount": "Enter a positive credit amount.",
     "grantCreditsErrorUserNotFound": "User not found.",
-    "grantCreditsErrorPolar": "Polar is not configured or the request failed."
+    "grantCreditsErrorPolar": "Polar is not configured or the request failed.",
+    "deleteUser": "Delete user",
+    "deleteUserTriggerAria": "Delete user {email}",
+    "deleteUserTitle": "Delete user and Cloudflare files?",
+    "deleteUserDescription": "This removes {email} from the database and deletes their images in Cloudflare R2 (chat uploads and ad creatives). This cannot be undone.",
+    "deleteUserConfirm": "Delete permanently",
+    "deleteUserErrorUnauthorized": "You are not allowed to delete users.",
+    "deleteUserErrorMissingUser": "Missing user.",
+    "deleteUserCannotDeleteSelf": "You cannot delete your own account from this panel.",
+    "deleteUserErrorNotFound": "User not found.",
+    "deleteUserErrorR2": "Could not delete files in Cloudflare R2. Check R2 credentials and try again.",
+    "deleteUserErrorDatabase": "Cloudflare files were removed but the database delete failed. Retry or fix the account manually."
   },
   "chat": {
     "title": "Chat",
@@ -449,7 +462,7 @@
     },
     "step3": {
       "title": "Layouts and placements",
-      "description": "Select formats in each theme and tune aspect ratio per creative."
+      "description": "Choose ad language, select formats in each theme, and tune aspect ratio per creative."
     },
     "step4": {
       "title": "Generate your images",

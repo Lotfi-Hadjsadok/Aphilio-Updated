@@ -1,4 +1,10 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
+  ListObjectsV2Command,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import sharp from "sharp";
 
 function getR2Client(): S3Client {
@@ -74,4 +80,68 @@ export async function deleteImageFromR2(key: string): Promise<void> {
   const bucket = getR2BucketName();
 
   await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+}
+
+const R2_DELETE_BATCH_SIZE = 1000;
+
+/**
+ * Deletes every object whose key starts with `prefix` (must end with `/` for user scoping).
+ * Used when removing a user’s chat and creative uploads from R2 before deleting their DB row.
+ */
+export async function deleteAllR2ObjectsUnderPrefix(prefix: string): Promise<void> {
+  const client = getR2Client();
+  const bucket = getR2BucketName();
+  let continuationToken: string | undefined;
+
+  for (;;) {
+    const listBatch = await client.send(
+      new ListObjectsV2Command({
+        Bucket: bucket,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+        MaxKeys: R2_DELETE_BATCH_SIZE,
+      }),
+    );
+
+    const objectKeys = (listBatch.Contents ?? [])
+      .map((item) => item.Key)
+      .filter((key): key is string => Boolean(key));
+
+    if (objectKeys.length > 0) {
+      const deleteBatch = await client.send(
+        new DeleteObjectsCommand({
+          Bucket: bucket,
+          Delete: {
+            Objects: objectKeys.map((objectKey) => ({ Key: objectKey })),
+            Quiet: true,
+          },
+        }),
+      );
+
+      const deleteFailures = deleteBatch.Errors ?? [];
+      if (deleteFailures.length > 0) {
+        const firstCode = deleteFailures[0]?.Code ?? "Unknown";
+        const firstMessage = deleteFailures[0]?.Message ?? "";
+        throw new Error(
+          `R2 bulk delete failed (${firstCode}${firstMessage ? `: ${firstMessage}` : ""}).`,
+        );
+      }
+    }
+
+    if (!listBatch.IsTruncated || !listBatch.NextContinuationToken) {
+      break;
+    }
+
+    continuationToken = listBatch.NextContinuationToken;
+  }
+}
+
+/**
+ * Removes all R2 uploads for a user (chat images, reference uploads, and ad creatives).
+ */
+export async function deleteAllR2ObjectsForUser(userId: string): Promise<void> {
+  await Promise.all([
+    deleteAllR2ObjectsUnderPrefix(`chat/${userId}/`),
+    deleteAllR2ObjectsUnderPrefix(`creatives/${userId}/`),
+  ]);
 }

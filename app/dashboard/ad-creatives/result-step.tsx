@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, Loader2, Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
+import type { Locale } from "@/lib/i18n-locales";
 import type {
   AdCreativesDnaPayload,
   GenerateAdPromptsState,
@@ -19,6 +20,7 @@ import { GeneratedAdCard } from "./generated-ad-card";
 export function ResultStep({
   payload,
   generateState,
+  outputLanguage,
   generateFormAction,
   generatePending,
   generateError,
@@ -32,6 +34,7 @@ export function ResultStep({
 }: {
   payload: AdCreativesDnaPayload;
   generateState: GenerateAdPromptsState & { status: "success" };
+  outputLanguage: Locale;
   generateFormAction: (formData: FormData) => void;
   generatePending: boolean;
   generateError: string | null;
@@ -109,6 +112,7 @@ export function ResultStep({
               />
               <input type="hidden" name="sectionIds" value={sectionIdsValue} />
               <input type="hidden" name="selectedTemplates" value={JSON.stringify(selectedTemplates)} />
+              <input type="hidden" name="outputLanguage" value={outputLanguage} />
 
               <StepHeader
                 stepNumber={4}

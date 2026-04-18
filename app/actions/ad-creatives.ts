@@ -6,6 +6,7 @@ import {
   flattenAdCreativesSectionOptions,
   resolveScrapedSectionById,
 } from "@/lib/ad-creatives/context";
+import { normalizeOutputLanguage } from "@/lib/generation-language";
 import { generateAllAdPromptsFromTemplates, findSimilarDocumentsForAngles } from "@/lib/langchain";
 import {
   parseCommaSeparatedIds,
@@ -201,6 +202,7 @@ export async function generateAdPromptsAction(
   }
 
   const selectedSections = buildSelectedSectionsForModel(loaded.result, resolvedSectionIds);
+  const outputLanguage = normalizeOutputLanguage(String(formData.get("outputLanguage") ?? ""));
 
   try {
     const { referenceImageGroups } = await findSimilarDocumentsForAngles(
@@ -215,6 +217,7 @@ export async function generateAdPromptsAction(
         personality: loaded.result.personality,
         selectedSections,
         selectedAngles,
+        outputLanguage,
       },
       selectedTemplates,
       referenceImageGroups,

@@ -208,7 +208,28 @@ const POST_LOAD_SETTLE_MS = 600;
 
 // ── Playwright + Cheerio helpers ─────────────────────────────────────────────
 
+async function scrollPageToRevealLazyContent(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+    for (let round = 0; round < 3; round++) {
+      const height = document.documentElement.scrollHeight;
+      const viewport = Math.max(1, window.innerHeight);
+      for (let y = 0; y < height; y += Math.floor(viewport * 0.82)) {
+        window.scrollTo(0, y);
+        await delay(120);
+      }
+      window.scrollTo(0, document.documentElement.scrollHeight);
+      await delay(200);
+      window.scrollTo(0, 0);
+      await delay(100);
+    }
+  });
+}
+
 async function waitForPageReady(page: Page): Promise<void> {
+  await page.waitForLoadState("networkidle", { timeout: NETWORK_IDLE_TIMEOUT_MS }).catch(() => {});
+  await new Promise((resolve) => setTimeout(resolve, POST_LOAD_SETTLE_MS));
+  await scrollPageToRevealLazyContent(page);
   await page.waitForLoadState("networkidle", { timeout: NETWORK_IDLE_TIMEOUT_MS }).catch(() => {});
   await new Promise((resolve) => setTimeout(resolve, POST_LOAD_SETTLE_MS));
 }
@@ -398,6 +419,20 @@ function findMinHeadingLevel($: CheerioAPI, root: Cheerio<AnyNode>): number | nu
   return minLevel;
 }
 
+/** True if `sectionEl` is inside `root` and has no `<section>` ancestor before `root` (split is relative to `root`, not the whole document). */
+function isTopLevelSectionUnderRoot($: CheerioAPI, root: Cheerio<AnyNode>, sectionEl: AnyNode): boolean {
+  const rootNode = root[0];
+  if (!rootNode) return false;
+  let current = $(sectionEl).parent();
+  while (current.length) {
+    const node = current[0];
+    if (node === rootNode) return true;
+    if (current.is("section")) return false;
+    current = current.parent();
+  }
+  return false;
+}
+
 /** Remove nodes that appear before `marker` in document order (marker stays). */
 function removePrecedingSiblingsInDocumentOrder(
   $: CheerioAPI,
@@ -533,7 +568,7 @@ function splitIntoSectionHtmls(
 
   const topSections = root
     .find("section")
-    .filter((_sectionIndex, sectionElement) => $(sectionElement).parents("section").length === 0);
+    .filter((_sectionIndex, sectionElement) => isTopLevelSectionUnderRoot($, root, sectionElement));
 
   if (topSections.length >= 2) {
     return topSections
@@ -552,9 +587,8 @@ function splitIntoSectionHtmls(
       .filter((chunk) => chunk.html.trim().length > 0);
   }
 
-  if (topSections.length === 1) {
-    return splitIntoSectionHtmls($, topSections.first(), depth + 1);
-  }
+  // Do not recurse into a single <section>: that drops sibling nodes (e.g. divs) that sit
+  // beside the section under the same parent. Fall through to heading-based splitting on `root`.
 
   const level = findMinHeadingLevel($, root);
   if (level === null) {
@@ -997,10 +1031,22 @@ export async function scrapeWebsite(_prevState: ScrapeState, formData: FormData)
     let parent = existingContext;
 
     if (!parent) {
-      parent = await transaction.scrapedContext.create({
-        data: {
+      parent = await transaction.scrapedContext.upsert({
+        where: { userId_baseUrl: { userId: session.user.id, baseUrl } },
+        create: {
           userId: session.user.id,
           baseUrl,
+          name,
+          logo: sanitizedBranding?.logo ?? null,
+          favicon: sanitizedBranding?.favicon ?? null,
+          primaryColor: sanitizedBranding?.colors.primary ?? null,
+          secondaryColor: sanitizedBranding?.colors.secondary ?? null,
+          ogImage: sanitizedBranding?.ogImage ?? null,
+          typography: sanitizedBranding?.typography ? (sanitizedBranding.typography as object[]) : undefined,
+          personality: personality ? (personality as object) : undefined,
+          marketingAngles: marketingAngles.length > 0 ? marketingAngles : undefined,
+        },
+        update: {
           name,
           logo: sanitizedBranding?.logo ?? null,
           favicon: sanitizedBranding?.favicon ?? null,

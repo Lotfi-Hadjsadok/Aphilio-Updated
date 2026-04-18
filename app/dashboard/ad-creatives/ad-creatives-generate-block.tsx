@@ -8,6 +8,9 @@ import {
   useMemo,
   useState,
 } from "react";
+import { useLocale } from "next-intl";
+import type { Locale } from "@/lib/i18n-locales";
+import { normalizeOutputLanguage } from "@/lib/generation-language";
 import {
   selectAngleWithSimilaritiesAction,
   generateAdPromptsAction,
@@ -70,11 +73,13 @@ export function AdCreativesGenerateBlock({
     status: "idle" as const,
   });
 
+  const uiLocale = useLocale();
   const [currentStep, setCurrentStep] = useState<2 | 3 | 4>(() => deriveInitialStep(resume));
   const [pickedAngles, setPickedAngles] = useState<string[]>(() => resume?.pickedAngles ?? []);
   const [selectedTemplates, setSelectedTemplates] = useState<SelectedTemplate[]>(
     () => resume?.selectedTemplates ?? [],
   );
+  const [outputLanguage, setOutputLanguage] = useState<Locale>(() => normalizeOutputLanguage(uiLocale));
 
   const allSectionIds = useMemo(
     () => new Set(payload.sectionOptions.map((option) => option.id)),
@@ -202,6 +207,8 @@ export function AdCreativesGenerateBlock({
           selectedTemplates={selectedTemplates}
           setSelectedTemplates={setSelectedTemplates}
           selectedSectionIds={allSectionIds}
+          outputLanguage={outputLanguage}
+          onOutputLanguageChange={setOutputLanguage}
           generateFormAction={generateFormAction}
           generatePending={generatePending}
           generateError={generateError}
@@ -220,6 +227,7 @@ export function AdCreativesGenerateBlock({
         <ResultStep
           payload={payload}
           generateState={generateState}
+          outputLanguage={outputLanguage}
           generateFormAction={generateFormAction}
           generatePending={generatePending}
           generateError={generateError}

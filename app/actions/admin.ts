@@ -7,6 +7,7 @@ import {
   ingestPolarCreditGrant,
   ingestPolarCreditUsageAwait,
 } from "@/lib/polar/ingest-credits";
+import { deleteAllR2ObjectsForUser } from "@/lib/r2";
 import { getServerSession, isPlatformAdmin } from "@/lib/server-auth";
 import prisma from "@/lib/prisma";
 
@@ -74,4 +75,77 @@ export async function adjustAdminCreditsAction(
   });
 
   return { status: "success", userId: targetUserId, operation };
+}
+
+export type DeleteAdminUserState =
+  | { status: "idle" }
+  | { status: "success"; deletedUserId: string }
+  | { status: "error"; message: string; attemptedUserId: string | null };
+
+export async function deleteAdminUserAction(
+  _previous: DeleteAdminUserState,
+  formData: FormData,
+): Promise<DeleteAdminUserState> {
+  const translateAdmin = await getTranslations("admin");
+  const session = await getServerSession();
+  const targetUserId = String(formData.get("userId") ?? "").trim();
+
+  if (!session || !isPlatformAdmin(session)) {
+    return {
+      status: "error",
+      message: translateAdmin("deleteUserErrorUnauthorized"),
+      attemptedUserId: targetUserId.length > 0 ? targetUserId : null,
+    };
+  }
+
+  if (!targetUserId) {
+    return {
+      status: "error",
+      message: translateAdmin("deleteUserErrorMissingUser"),
+      attemptedUserId: null,
+    };
+  }
+
+  if (targetUserId === session.user.id) {
+    return {
+      status: "error",
+      message: translateAdmin("deleteUserCannotDeleteSelf"),
+      attemptedUserId: targetUserId,
+    };
+  }
+
+  const exists = await prisma.user.findUnique({
+    where: { id: targetUserId },
+    select: { id: true },
+  });
+
+  if (!exists) {
+    return {
+      status: "error",
+      message: translateAdmin("deleteUserErrorNotFound"),
+      attemptedUserId: targetUserId,
+    };
+  }
+
+  try {
+    await deleteAllR2ObjectsForUser(targetUserId);
+  } catch {
+    return {
+      status: "error",
+      message: translateAdmin("deleteUserErrorR2"),
+      attemptedUserId: targetUserId,
+    };
+  }
+
+  try {
+    await prisma.user.delete({ where: { id: targetUserId } });
+  } catch {
+    return {
+      status: "error",
+      message: translateAdmin("deleteUserErrorDatabase"),
+      attemptedUserId: targetUserId,
+    };
+  }
+
+  return { status: "success", deletedUserId: targetUserId };
 }

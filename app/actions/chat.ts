@@ -23,6 +23,7 @@ import {
   revertOptimisticCreditsDeduction,
 } from "@/lib/polar/ingest-credits";
 import type { AdImageGenerationMode } from "@/types/ad-creatives";
+import { labelForOutputLanguage, normalizeOutputLanguage } from "@/lib/generation-language";
 import { isSvgUrl, messageFromUnknownError } from "@/lib/utils";
 import type {
   ConversationSummary,
@@ -96,6 +97,7 @@ function buildEnrichedPrompt(
   similarTexts?: Array<{ heading: string | null; content: string }>,
   typography?: TypographyEntry[] | null,
   brandLogoAttached?: boolean,
+  outputLanguageLabel?: string,
 ): string {
   const lines: string[] = [`Creative brief: ${userText}`];
 
@@ -134,6 +136,13 @@ function buildEnrichedPrompt(
       "",
       "Brand logo: The official logo is provided as a separate labeled image block immediately after this text. Use that attachment as the only source for the mark — pixel-accurate, no redraw or substitute. " +
         "Unless this brief explicitly requests no logo, include the mark visibly in the final composition.",
+    );
+  }
+
+  if (outputLanguageLabel) {
+    lines.push(
+      "",
+      `Output language: ${outputLanguageLabel}. All on-image text (headlines, subheadlines, CTAs, captions, buttons) must be in this language.`,
     );
   }
 
@@ -270,6 +279,8 @@ export async function sendChatMessageAction(
   const rawMode = String(formData.get("imageMode") ?? "fast");
   const aspectRatio = String(formData.get("aspectRatio") ?? "1:1");
   const imageModel = rawMode === "premium" ? IMAGE_MODEL_PREMIUM : IMAGE_MODEL_FAST;
+  const outputLanguage = normalizeOutputLanguage(String(formData.get("outputLanguage") ?? ""));
+  const outputLanguageLabel = labelForOutputLanguage(outputLanguage);
 
   if (!text) return { status: "error", message: "Please enter a message." };
 
@@ -334,6 +345,7 @@ export async function sendChatMessageAction(
         similarTexts,
         typographyForPrompt,
         Boolean(logoUrl),
+        outputLanguageLabel,
       );
     } else {
       enrichedPrompt = buildEnrichedPrompt(
@@ -346,10 +358,22 @@ export async function sendChatMessageAction(
         undefined,
         typographyForPrompt,
         Boolean(logoUrl),
+        outputLanguageLabel,
       );
     }
   } else {
-    enrichedPrompt = buildEnrichedPrompt(text, aspectRatio);
+    enrichedPrompt = buildEnrichedPrompt(
+      text,
+      aspectRatio,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      outputLanguageLabel,
+    );
   }
 
   // ── Build reference image groups (user-chosen only) ──────────────────────

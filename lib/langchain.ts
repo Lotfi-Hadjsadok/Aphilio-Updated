@@ -19,6 +19,8 @@ import {
   LOGO_BLOCK_USER_INSTRUCTION,
   sectionReferenceUserInstruction,
 } from "@/lib/ad-creatives/prompts";
+import { labelForOutputLanguage } from "@/lib/generation-language";
+import type { Locale } from "@/lib/i18n-locales";
 import type { BrandingPersonality, BrandingDNA } from "@/types/scrape";
 import type {
   AdAspectRatio,
@@ -734,6 +736,7 @@ type AdPromptBatchInput = {
   personality: BrandingPersonality | null;
   selectedSections: { heading: string | null; markdown: string }[];
   selectedAngles: string[];
+  outputLanguage: Locale;
 };
 
 /**
@@ -748,14 +751,18 @@ export async function generateAllAdPromptsFromTemplates(
 ): Promise<GeneratedAdPrompt[]> {
   if (templates.length === 0) return [];
 
+  const outputLanguageLabel = labelForOutputLanguage(input.outputLanguage);
+
   const modelContent = await invokeChatWithStructuredJson(
-    buildBatchAdPromptsSystemPrompt(input.selectedAngles),
+    buildBatchAdPromptsSystemPrompt(input.selectedAngles, outputLanguageLabel),
     {
       brandName: input.brandName,
       baseUrl: input.baseUrl,
       branding: input.branding,
       personality: input.personality,
       marketingAngles: input.selectedAngles,
+      outputLanguage: outputLanguageLabel,
+      outputLanguageCode: input.outputLanguage,
       selectedSections: input.selectedSections.map(({ heading, markdown }) => ({
         heading,
         copy: markdown.slice(0, 600),

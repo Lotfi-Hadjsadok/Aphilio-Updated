@@ -64,16 +64,24 @@ const BATCH_AD_PROMPTS_FIELD_RULES =
   "- primaryColor: dominant hex. Use branding.colors.primary if available; derive from brand tone otherwise.\n" +
   "- accentColor: complementary hex. Use branding.colors.secondary if available; empty string for minimal designs.\n" +
   "- fontStyle: concise typography description. Infer from branding.typography if present.\n" +
-  "- headline: main ad text that directly reflects the marketing angle(s), direct, under 12 words.\n" +
-  "- subheadline: one supporting line that reinforces the angle(s) (max 1 sentence).\n" +
+  "- headline: main ad text in the output language that directly reflects the marketing angle(s), direct, under 12 words.\n" +
+  "- subheadline: one supporting line in the output language that reinforces the angle(s) (max 1 sentence).\n" +
   "- description: 1-2 sentences on visual composition aligned with the angle(s).\n" +
-  "- filledPrompt: completely self-contained image-gen prompt (layout, background, all hex colors, font style, exact text overlays, visual elements, lighting, aspect-ratio composition). The text overlays in filledPrompt MUST use the headline and subheadline you defined. Be exhaustively specific.\n" +
+  "- filledPrompt: completely self-contained image-gen prompt (layout, background, all hex colors, font style, exact text overlays, visual elements, lighting, aspect-ratio composition). The text overlays in filledPrompt MUST use the headline and subheadline you defined, in the output language. Be exhaustively specific.\n" +
   "Output ONLY valid JSON. No markdown fences.";
 
-export function buildBatchAdPromptsSystemPrompt(selectedAngles: string[]): string {
+export function buildBatchAdPromptsSystemPrompt(
+  selectedAngles: string[],
+  outputLanguageLabel: string,
+): string {
+  const languageRule =
+    `Output language: ${outputLanguageLabel}. ` +
+    "Every headline, subheadline, on-image string, CTA, and label in filledPrompt MUST be written in this language. " +
+    "Do not mix languages unless the source brand content explicitly requires a different language for a proper noun or quote.";
   return (
     "You are an expert SaaS ad creative director specialising in high-ROI paid social ads. " +
     "Given brand context, marketing angles, and a list of ad templates, return one tailored creative per template in the prompts array. " +
+    `${languageRule}\n` +
     `${buildMarketingAnglesInstruction(selectedAngles)}\n` +
     BATCH_AD_PROMPTS_FIELD_RULES
   );

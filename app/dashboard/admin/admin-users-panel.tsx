@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useActionState, useEffect, useState } from "react";
 import {
   AlertCircle,
   Loader2,
@@ -10,8 +11,11 @@ import {
   UserRound,
   Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
 
+import {
+  deleteAdminUserAction,
+  type DeleteAdminUserState,
+} from "@/app/actions/admin";
 import { authClient } from "@/lib/auth-client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +31,9 @@ import type { AdminListedUser } from "@/lib/admin/list-admin-users";
 import { cn } from "@/lib/utils";
 
 import { AdminAdjustCreditsForm } from "./admin-adjust-credits-form";
+import { AdminDeleteUserDialog } from "./admin-delete-user-dialog";
+
+const initialDeleteUserState: DeleteAdminUserState = { status: "idle" };
 
 type AdminUsersPanelProps = {
   currentUserId: string;
@@ -60,12 +67,22 @@ export function AdminUsersPanel({
   const [searchInput, setSearchInput] = useState(emailQuery);
   const [actionError, setActionError] = useState<string | null>(null);
   const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
+  const [deleteUserState, deleteUserFormAction, deleteUserPending] = useActionState(
+    deleteAdminUserAction,
+    initialDeleteUserState,
+  );
 
   useEffect(() => {
     setUsers(initialUsers);
     setTotal(initialTotal);
     setSearchInput(emailQuery);
   }, [initialUsers, initialTotal, emailQuery]);
+
+  useEffect(() => {
+    if (deleteUserState.status === "success") {
+      router.refresh();
+    }
+  }, [deleteUserState, router]);
 
   function navigateToSearch(query: string) {
     const trimmed = query.trim();
@@ -260,21 +277,30 @@ export function AdminUsersPanel({
                           creditsBalanceStoredUnits={listedUser.aphilioCreditsBalance}
                         />
                         {isSelf ? null : (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="h-8 w-full gap-1.5 px-2.5 text-xs sm:w-auto sm:self-end"
-                            disabled={isBusy}
-                            onClick={() => handleImpersonate(listedUser.id)}
-                          >
-                            {isBusy ? (
-                              <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                            ) : (
-                              <UserRound className="size-3.5 opacity-70" aria-hidden />
-                            )}
-                            {translateAdmin("impersonate")}
-                          </Button>
+                          <>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="h-8 w-full gap-1.5 px-2.5 text-xs sm:w-auto sm:self-end"
+                              disabled={isBusy}
+                              onClick={() => handleImpersonate(listedUser.id)}
+                            >
+                              {isBusy ? (
+                                <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                              ) : (
+                                <UserRound className="size-3.5 opacity-70" aria-hidden />
+                              )}
+                              {translateAdmin("impersonate")}
+                            </Button>
+                            <AdminDeleteUserDialog
+                              targetUserId={listedUser.id}
+                              userEmail={listedUser.email}
+                              deleteUserAction={deleteUserFormAction}
+                              deletePending={deleteUserPending}
+                              deleteState={deleteUserState}
+                            />
+                          </>
                         )}
                       </div>
                     </div>

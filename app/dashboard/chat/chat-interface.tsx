@@ -39,6 +39,9 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { LOCALE_OPTIONS } from "@/lib/locale-options";
+import type { Locale } from "@/lib/i18n-locales";
+import { normalizeOutputLanguage } from "@/lib/generation-language";
 
 import { ASPECT_RATIOS, EMPTY_IMAGES_PROMISE } from "./lib/constants";
 import { resizeImageToBase64 } from "./lib/helpers";
@@ -105,6 +108,9 @@ export function ChatInterface({
 
   const [imageMode, setImageMode] = useState<ChatImageMode>("fast");
   const [aspectRatio, setAspectRatio] = useState<ChatAspectRatio>("1:1");
+  const [outputLanguage, setOutputLanguage] = useState<Locale>(() =>
+    normalizeOutputLanguage(currentLocale),
+  );
   const [selectedContextId, setSelectedContextId] = useState<string>(initialContextId ?? "");
   const [selectedContextImageUrls, setSelectedContextImageUrls] = useState<string[]>([]);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -369,6 +375,7 @@ export function ChatInterface({
     loadState.status === "idle" && activeConversationId !== null && localMessages.length === 0;
   const hasAttachments = selectedContextImageUrls.length > 0 || uploadedImages.length > 0;
   const selectedContext = savedContexts.find((context) => context.id === selectedContextId);
+  const activeOutputLanguage = LOCALE_OPTIONS.find((item) => item.code === outputLanguage);
 
   return (
     <div className="flex min-h-0 flex-1 flex-row overflow-hidden">
@@ -644,6 +651,38 @@ export function ChatInterface({
                 </SelectContent>
               </Select>
 
+              <Select
+                value={outputLanguage}
+                onValueChange={(value) => setOutputLanguage(normalizeOutputLanguage(value))}
+                disabled={isSendPending}
+              >
+                <SelectTrigger
+                  aria-label={tCommon("adLanguageAria")}
+                  className="h-10 w-full min-w-[9rem] max-w-[12rem] shrink-0 border-border bg-muted/30 text-sm text-foreground shadow-sm sm:w-[12rem] sm:min-w-[12rem] sm:max-w-[12rem]"
+                >
+                  <SelectValue placeholder={tCommon("adLanguage")}>
+                    <span className="flex min-w-0 flex-1 items-center gap-2">
+                      <span className="text-base leading-none" aria-hidden>
+                        {activeOutputLanguage?.flag ?? "🌐"}
+                      </span>
+                      <span className="truncate">
+                        {activeOutputLanguage?.label ?? outputLanguage}
+                      </span>
+                    </span>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {LOCALE_OPTIONS.map((item) => (
+                    <SelectItem key={item.code} value={item.code}>
+                      <span className="mr-1.5 text-base leading-none" aria-hidden>
+                        {item.flag}
+                      </span>
+                      <span>{item.label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
               {/* Aspect ratio pills */}
               <div className="flex shrink-0 items-center gap-2">
                 {ASPECT_RATIOS.map((ratio) => (
@@ -766,6 +805,7 @@ export function ChatInterface({
               <input type="hidden" name="contextId" value={selectedContextId} />
               <input type="hidden" name="imageMode" value={imageMode} />
               <input type="hidden" name="aspectRatio" value={aspectRatio} />
+              <input type="hidden" name="outputLanguage" value={outputLanguage} />
               <input
                 type="hidden"
                 name="contextImageUrls"
